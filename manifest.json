@@ -1,11 +1,11 @@
 {
-"display_name"："📊状态栏1.0"，"显示名称“”(_N)："📊状态栏1.0",
-"loading_order"：15，"loading_order": 15,
-"requires"：[]，"requires": [],
-"可选"：[]，"optional": [],
-"js"："index.js"，"js": "index.js",
-"css"："style.css"，"css"："style.css",
-"作者"："用户"，"作者":"User",
-    "版本": "3.0.0",
-    "主页": ""
+    "display_name": "📊 状态栏 1.0",
+    "loading_order": 15,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "User",
+    "version": "1.0.0",
+    "homePage": ""
 }
