@@ -1,0 +1,14 @@
+/* === 状态栏引擎 V28 专用外置样式表 (极速硬件加速版) === */
+#st-v5-root {
+    z-index: 2147483646 !important;
+    user-select: none;
+}
+
+#st-v5-panel {
+    will-change: width, height, transform;
+    contain: layout style;
+}
+
+.st-hidden-uv {
+    display: none !important;
+}
