@@ -1766,7 +1766,10 @@
             const keyHTML = `
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;width:100%;">
                     <span style="color:#f9e2af;font-weight:bold;font-size:13px;line-height:1.35;word-break:break-word;">${cleanTitle}</span>
-                    ${badges.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end;">${badges.join("")}</div>` : ""}
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-end;margin-left:auto;">
+                        ${badges.join("")}
+                        <span class="st-inline-refresh-slot"></span>
+                    </div>
                 </div>`;
 
             let barHTML = "";
@@ -3856,10 +3859,13 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                         const isRev = (it.editKey === "shame" || it.editKey === "sta");
                         const lvNum = tier6(pctForBadge, isRev) + 1;
 
-                       b.innerHTML = `
-                            <button class="st-quick-refresh-item" type="button" title="单独刷新此按钮数据" style="position:absolute;top:6px;right:24px;z-index:5;background:rgba(255,255,255,0.12);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:1px 6px;font-size:11px;cursor:pointer;line-height:1.3;">🔄</button>
+                       const cardKeyHTML = it.keyHTML.replace(
+                            '<span class="st-inline-refresh-slot"></span>',
+                            `<button class="st-quick-refresh-item" type="button" title="单独刷新此按钮数据" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.45);border-radius:6px;padding:1px 5px;font-size:10.5px;cursor:pointer;line-height:1.2;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">🔄</button>`
+                        );
+                        b.innerHTML = `
                             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;overflow:hidden;padding-right:10px;">
-                                ${it.keyHTML}${it.barHTML || ""}
+                                ${cardKeyHTML}${it.barHTML || ""}
                                 <div style="font-size:11px;color:${tc.sub};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${objPreview}</div>
                                 ${thoughtPreview ? `<div style="font-size:11px;color:#ffd6e7;font-style:italic;background:rgba(243,139,168,0.12);padding:3px 7px;border-radius:6px;border-left:2.5px solid #f38ba8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${thoughtPreview}</div>` : ""}
                             </div>
