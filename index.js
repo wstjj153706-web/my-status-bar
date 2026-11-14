@@ -1034,11 +1034,45 @@
                 baseVars.档案.手动锁定真名 = cached.手动锁定真名;
                 baseVars.档案.当前认知名字 = cached.手动锁定真名;
             }
-            if (cached.floorLen === currentChatLen && cached.快照 && userSettings.apiSyncEnabled) {
+            if (cached.快照) {
                 const s = cached.快照;
-                ["核心数值", "精神与心理", "身体", "体内精液存量", "实况", "档案", "穿搭", "受孕与生理", "痕迹与标记", "体内道具与权限"].forEach(k => {
-                    if (s[k] && typeof s[k] === "object") Object.assign(baseVars[k], s[k]);
+                ["实况", "档案", "穿搭", "受孕与生理", "痕迹与标记", "体内道具与权限", "精神与心理扩展"].forEach(k => {
+                    if (s[k] && typeof s[k] === "object") {
+                        Object.entries(s[k]).forEach(([subKey, val]) => {
+                            if (val !== "" && val !== "无" && val !== 0) baseVars[k][subKey] = val;
+                        });
+                    }
                 });
+                ["核心数值", "精神与心理"].forEach(k => {
+                    if (s[k] && typeof s[k] === "object") {
+                        Object.entries(s[k]).forEach(([subKey, val]) => {
+                            if (typeof val === "number") {
+                                if (subKey === "羞耻度" || subKey === "意识清醒度") {
+                                    baseVars[k][subKey] = Math.min(safeNum(baseVars[k][subKey], 100), val);
+                                } else {
+                                    baseVars[k][subKey] = Math.max(safeNum(baseVars[k][subKey], 0), val);
+                                }
+                            }
+                        });
+                    }
+                });
+                if (cached.floorLen === currentChatLen && s.体内精液存量 && typeof s.体内精液存量 === "object") {
+                    Object.assign(baseVars.体内精液存量, s.体内精液存量);
+                }
+                if (s.计数 && typeof s.计数 === "object") {
+                    Object.keys(s.计数).forEach(subK => {
+                        if (typeof s.计数[subK] === "object" && s.计数[subK] !== null) {
+                            baseVars.计数[subK] = baseVars.计数[subK] || {};
+                            Object.entries(s.计数[subK]).forEach(([cKey, cVal]) => {
+                                if (typeof cVal === "number") {
+                                    baseVars.计数[subK][cKey] = Math.max(safeNum(baseVars.计数[subK][cKey], 0), cVal);
+                                }
+                            });
+                        } else if (typeof s.计数[subK] === "number") {
+                            baseVars.计数[subK] = Math.max(safeNum(baseVars.计数[subK], 0), s.计数[subK]);
+                        }
+                    });
+                }
                 if (cached.手动锁定真名) {
                     baseVars.档案.手动锁定真名 = cached.手动锁定真名;
                     baseVars.档案.当前认知名字 = cached.手动锁定真名;
@@ -1426,19 +1460,26 @@
             const oldSelfName = safeStr(v.档案?.原身旧名).trim();
             const curSelfName = safeStr(u).trim();
 
-            // 严格判断该名字是否为主角本人或变身前原身
-            const isProtagonistSelf = (candName) => {
+            // 严格黑名单：过滤主角自己、纯数字、以及任何道具/文具(笔)/衣服/死物！
+            const NON_HUMAN_REGEX = /^(?:\d+|主角|你|我|她|他|它|原身|前世|身体|少女|女人|女生|无|未知|旁白|系统|笔|钢笔|圆珠笔|铅笔|毛笔|画笔|马克笔|跳蛋|假阳具|按摩棒|贞操带|项圈|手铐|锁链|绳子|鞭子|皮鞭|蜡烛|口球|眼罩|衣服|上衣|内裤|底裤|胸罩|文胸|丝袜|黑丝|白丝|高跟鞋|鞋子|裙子|睡裙|床单|床垫|被子|枕头|纸巾|纸团|毛巾|花洒|水龙头|镜子|手机|相机|黄瓜|香蕉|瓶子|酒瓶|触手|道具|玩具)$/;
+
+            const isInvalidClient = (candName) => {
                 if (!candName) return true;
-                const n = candName.trim();
+                const n = String(candName).trim();
+                if (n.length < 2 || n.length > 12) return true;
                 if (blockedSet.has(n)) return true;
                 if (n === curSelfName || n === rawUser || (oldSelfName && n === oldSelfName)) return true;
-                if (["主角", "你", "我", "原身", "前世", "身体", "少女", "女人", "女生", "1", "无"].includes(n)) return true;
+                if (NON_HUMAN_REGEX.test(n)) return true;
+                // 带有明显物品、穿戴、身体部位后缀的直接过滤
+                if (/(?:笔|棒|球|环|链|衣|裤|裙|袜|鞋|帽|巾|床|桌|椅|门|窗|灯|水|液|药|剂|器|具|穴|乳|胸|臀|腿|足|口|唇|手|指)$/.test(n) && !/(?:王哥|熟客|老客|男人|少爷|老板|大师|师兄|师尊|徒弟|老公|丈夫)/.test(n)) {
+                    return true;
+                }
                 if (new RegExp(`(?:原名|原本是|前世是|从)\\s*${n}\\s*(?:变成|穿成|重塑|化作)`).test(fullText)) return true;
                 return false;
             };
 
             const upsertClient = (name, roleTag, cockDesc, statusTag, contribPts, dnaShare, detailDesc, thoughtArr) => {
-                if (isProtagonistSelf(name)) return;
+                if (isInvalidClient(name)) return;
                 clientMap.set(name, {
                     name, roleTag, cockDesc, statusTag,
                     val: Math.min(100, Math.max(5, contribPts)),
@@ -1455,7 +1496,7 @@
 
             if (v.恩客图鉴 && typeof v.恩客图鉴 === "object") {
                 Object.entries(v.恩客图鉴).forEach(([k, val]) => {
-                    if (isProtagonistSelf(k)) return;
+                    if (isInvalidClient(k)) return;
                     const descStr = typeof val === "object" ? JSON.stringify(val) : String(val);
                     upsertClient(
                         k, "记录在册恩客", "雄性阳具", "已建立肉体关联",
@@ -1463,98 +1504,75 @@
                         wombMl > 0 ? 50 : 0,
                         `【🍆 恩客档案】：${k}\n【📊 详细记录】：${descStr}`,
                         [
-                            `想到【${k}】那充满侵略性的目光与触碰，我心里还是忍不住一阵发紧戒备。`,
-                            `身体已经渐渐记住了【${k}】的气息与力道，面对他时很难再完全保持平静了💦。`,
-                            `每次回想起【${k}】侵入身体时的灼热充实感，小腹深处就会泛起一阵阵酸麻悸动😳💦。`,
-                            `只要一闻到【${k}】身上的味道，我的身体就会不听使唤地发软流汁，渴望被他狠狠占有🥵💦！`,
-                            `我已经彻底离不开【${k}】那根滚烫粗硬的大肉棒了，快点把我塞满灌成他的专属精盆吧🥵💦❤️！`,
-                            `啊嘿♡……【${k}】就是支配我脑髓与子宫的神明，请一辈子焊死在我的身体里尽情射精吧🥵💦❤️❤️！`
+                            `想到【${k}】，我心里还是保持着戒备与距离感。`,
+                            `身体已经渐渐记住了【${k}】的气息，面对他时很难完全平静💦。`,
+                            `每次回想起与【${k}】的接触，身体深处就会泛起一丝酸麻感😳💦。`,
+                            `一闻到【${k}】的气味，身体就会不自觉地发软迎合🥵💦！`,
+                            `已经彻底离不开【${k}】的粗暴占有了🥵💦❤️！`,
+                            `啊嘿♡……【${k}】就是彻底支配我身心的唯一主宰呀🥵💦❤️❤️！`
                         ]
                     );
                 });
             }
 
-            if (/熟客/.test(fullText) && !isProtagonistSelf("力气极大的熟客")) {
+            if (/熟客/.test(fullText) && !isInvalidClient("力气极大的熟客")) {
                 const hasSemen = (wombMl + vagMl) > 0;
                 upsertClient(
                     "力气极大的熟客",
-                    "凶猛嫖客",
-                    "粗壮滚烫·单次泵精17ml+",
+                    "凶猛常客",
+                    "力道凶猛·单次泵精17ml+",
                     hasSemen ? `刚内射灌满(${wombMl + vagMl}ml)` : "常客支配",
                     Math.min(100, 48 + creampie * 2),
                     hasSemen ? 100 : 35,
-                    `【🍆 阳具与侵犯特征】：柱身粗壮滚烫、抽插力道凶猛，偏爱粗暴掐捏大腿内侧、掌掴臀肉与锁骨留咬痕，最后抵住宫口全量无套内射。\n` +
-                    `【📊 开发记录】：刚将 ${wombMl || 15}ml 浓精泵入宫腔、阴道残留 ${vagMl || 2}ml，在臀部与大腿留下掌印指痕。\n` +
-                    `【🧬 宫内DNA占比】：${hasSemen ? "100%" : "历史残留"}。`,
+                    `【🍆 特征】：抽插力道凶猛，偏爱掐捏大腿、掌掴臀部与无套内射。\n` +
+                    `【📊 记录】：刚将 ${wombMl || 15}ml 浓精泵入深处，体表留下掌印指痕。`,
                     [
-                        `刚才那个客人力气实在太大了，不仅在身上留下了粗暴的红痕，连小腹里都灌得沉甸甸的，我必须尽快清理干净。`,
-                        `呼……那个熟客每次都这么粗鲁，现在臀部和大腿还火辣辣地发酸，肚子里全是他留下的温热白浊💦。`,
-                        `那个熟客的力气大得惊人，刚才最后射精时几乎是硬生生顶进宫口里往里灌的，现在每走一步路都在往外淌白线呢😳💦。`,
-                        `虽然被那个熟客扇得屁股发麻、掐得大腿青紫，可被他那根粗壮肉棒狠狠撞击内射的时候，身体却食髓知味地夹紧高潮了🥵💦！`,
-                        `好喜欢那个熟客粗暴凶狠的干法呀♡！把我的子宫灌得满满当当17ml浓精，走路都在吧唧吧唧漏精，真是太爽了🥵💦❤️！`,
-                        `啊嘿♡……快让那个力气极大的熟客再回来把我的子宫彻底射穿灌爆吧，母狗最喜欢被粗暴掌掴内射了🥵💦❤️❤️！`
+                        `刚才那个客人力气太大了，我必须尽快把身体清理干净。`,
+                        `呼……那个熟客每次都这么粗鲁，现在腰腿还一阵阵发酸💦。`,
+                        `那个熟客力气惊人，现在每走一步路都还能感觉到体内的坠胀感😳💦。`,
+                        `虽然被那个熟客折腾得满身红痕，可身体却对那种强烈的充实感食髓知味了🥵💦！`,
+                        `好喜欢那个熟客凶猛粗暴的力道呀🥵💦❤️！`,
+                        `啊嘿♡……快让那个熟客再回来彻底占有人家吧🥵💦❤️❤️！`
                     ]
                 );
             }
 
-            if (/王哥/.test(fullText) && !isProtagonistSelf("隔壁王哥")) {
+            if (/王哥/.test(fullText) && !isInvalidClient("隔壁王哥")) {
                 upsertClient(
                     "隔壁王哥",
-                    "熟客老嫖客",
-                    "熟稔粗鲁·喜好携友同玩",
+                    "熟客老男人",
+                    "熟稔粗鲁·携友同玩",
                     "今晚带朋友登门",
                     42,
                     0,
-                    `【🍆 恩客特征】：住在隔壁的熟客老男人，对${u}知根知底，作风粗野直接，喜欢带着朋友一同前来共享玩弄。\n` +
-                    `【📊 当前动向】：已约定今晚带一名男性朋友过来，迫使${u}必须在他们进门前将体内残精清理干净。`,
+                    `【🍆 恩客特征】：住在隔壁的熟客老男人，作风粗野直接，今晚约定带朋友一同前来。`,
                     [
-                        `今晚隔壁王哥还要带人过来，我必须抓紧时间把房间和身体整理干净，绝不能出差错。`,
-                        `王哥这人一向粗鲁直接，今晚还偏偏要带个朋友一起来，希望待会儿能够顺利应付过去💦。`,
-                        `必须在王哥带着朋友推门进来之前把肚子深处的残精洗干净，不然被他们撞见的话今晚就彻底没法交代了😳💦。`,
-                        `一想到今晚王哥要带个陌生朋友一起来玩弄我这具熟肉身体，小肚子最深处就莫名有些发紧发热了🥵💦。`,
-                        `嘻嘻♡……今晚王哥居然要带朋友一起来双飞轮玩我，真想快点被他们两个一前一后把骚嘴和骚穴同时塞满呀🥵💦❤️！`,
-                        `啊嘿♡……快让王哥和他的朋友破门而入把我按在卫生间里轮奸内射吧，公用精盆已经洗好小穴等着接精了🥵💦❤️❤️！`
+                        `今晚隔壁王哥还要带人过来，我必须抓紧时间把房间和身体整理干净。`,
+                        `王哥这人一向粗鲁直接，今晚还带个朋友来，希望待会儿能顺利应付过去💦。`,
+                        `必须在王哥带朋友进门前把深处的残留洗干净，不然今晚就没法交代了😳💦。`,
+                        `一想到今晚王哥要带陌生朋友一起来，小腹深处就莫名有些发紧发热了🥵💦。`,
+                        `好期待今晚王哥带着朋友一起来前呼后拥地玩弄我呀🥵💦❤️！`,
+                        `啊嘿♡……快让王哥和他的朋友推门进来尽情享用我吧🥵💦❤️❤️！`
                     ]
                 );
             }
 
-            if (/朋友/.test(fullText) && /王哥/.test(fullText) && !isProtagonistSelf("王哥带来的朋友")) {
+            if (/朋友/.test(fullText) && /王哥/.test(fullText) && !isInvalidClient("王哥带来的朋友")) {
                 upsertClient(
                     "王哥带来的朋友",
-                    "新嫖客",
+                    "新客人",
                     "未知尺寸·充满侵略感",
                     "随王哥即将抵达",
                     28,
                     0,
-                    `【🍆 恩客特征】：由熟客王哥引荐带入出租屋的陌生男人，充满好奇与粗暴玩弄欲。\n` +
-                    `【📊 潜在危机】：极易触发双人前后夹击与轮流内射。`,
+                    `【🍆 恩客特征】：由王哥引荐带入的陌生男性朋友，随时可能推门而入。`,
                     [
-                        `面对即将到来的陌生客人，我心里难免有些紧绷不安，只能提前做好准备。`,
-                        `不知道王哥带来的那位朋友是什么样的人，今晚同时应付两个人肯定会很吃力吧💦。`,
-                        `虽然还不知道王哥朋友的深浅，但一想到待会儿要在陌生男人面前赤裸张开双腿，耳根还是有些发烫😳💦。`,
-                        `不知道王哥带来的朋友下面那根东西有多粗多大呢……一想到今晚要同时伺候两根肉棒，腿心就隐隐发麻渗水了🥵💦。`,
-                        `好期待王哥带来的新朋友呀♡！快来用陌生的粗大肉棒狠狠开拓我的骚穴、射进新的精液DNA吧🥵💦❤️！`,
-                        `啊嘿♡……不管是王哥的朋友还是陌生野男人，快来排队把人家的三穴操成溢精肉壶吧🥵💦❤️❤️！`
-                    ]
-                );
-            }
-
-            if (clientMap.size === 0 && c && !isProtagonistSelf(c) && (vagCnt + creampie) > 0) {
-                upsertClient(
-                    c,
-                    "当前互动对象",
-                    "雄性阳具",
-                    `贯穿${vagCnt}次·内射${creampie}次`,
-                    Math.min(100, 15 + vagCnt * 3 + creampie * 5),
-                    wombMl > 0 ? 100 : 0,
-                    `【🍆 角色档案】：${c}\n【📊 开发统计】：累计小穴贯穿 ${vagCnt} 次、内射 ${creampie} 次，当前宫腔存留 ${wombMl}ml。`,
-                    [
-                        `面对【${c}】，我必须时刻保持警惕与克制。`,
-                        `与【${c}】发生过亲密接触后，身体对他已经产生了一些本能的反应💦。`,
-                        `每次【${c}】靠近时，身体深处总会泛起难以忽视的酸胀记忆😳💦。`,
-                        `我的身体已经被【${c}】开发得越来越敏感，一被他触碰就会不受控制地流汁迎合🥵💦！`,
-                        `好想要【${c}】的大肉棒狠狠插进来把我灌满呀🥵💦❤️！`,
-                        `啊嘿♡……我已经是【${c}】专属的满级泄欲肉便器了🥵💦❤️❤️！`
+                        `面对即将到来的陌生客人，我心里难免有些紧绷不安。`,
+                        `不知道王哥带来的朋友是什么样的人，今晚同时应付两个人肯定很吃力💦。`,
+                        `一想到待会儿要在陌生男人面前展开身体，耳根还是有些发烫😳💦。`,
+                        `不知道王哥带来的朋友有多强壮呢，身体已经隐隐有些期待发麻了🥵💦。`,
+                        `快来用陌生的力道狠狠开拓我的身体吧🥵💦❤️！`,
+                        `啊嘿♡……无论是谁都快来排队享用这具身体吧🥵💦❤️❤️！`
                     ]
                 );
             }
@@ -2746,7 +2764,8 @@
             const u = detectProtagonistName(curVars);
             const realId = detectRealCharacterIdentity(curVars);
             const corr = safeNum(curVars.核心数值?.淫乱恶堕, 0);
-            const recentMes = safeStr((ctx?.chat || []).slice(-2).map(m => m?.mes || "").join("\n")).slice(-1800);
+            const personaAndDesc = safeStr(ctx?.power_user?.persona_description) + "\n" + safeStr(ctx?.characters?.[ctx?.characterId]?.description).slice(0, 800);
+            const recentMes = (personaAndDesc + "\n" + safeStr((ctx?.chat || []).slice(-6).map(m => m?.mes || "").join("\n"))).slice(-3200);
 
             const sysPrompt = "你是一个纯粹的 JSON 生成器，必须且只能输出一个标准 JSON 对象！字符串内部严禁出现英文双引号或换行符！";
             const userPrompt = `请根据当前剧情上下文与用户的【自定义要求】，为主角【${u}（身份：${realId}，当前恶堕度：${corr}/100）】的状态栏按钮【${itemTitle}】编写状态描述（120~180字）以及一段符合当前恶堕度（若恶堕度低则保持矜持清醒，若恶堕度高则放荡）的第一人称实时心声（80~130字）！
@@ -2765,12 +2784,13 @@ ${recentMes || "无"}
 }`;
 
             const oldTxt = btnEl ? btnEl.textContent : "";
-            if (btnEl) { btnEl.textContent = "⏳ 生成中..."; btnEl.disabled = true; }
+            const isMiniBtn = oldTxt.trim() === "🔄";
+            if (btnEl) { btnEl.textContent = isMiniBtn ? "⏳" : "⏳ 生成中..."; btnEl.disabled = true; }
             try {
                 const { reply } = await callSubApiRaw(sysPrompt, userPrompt);
                 const parsed = repairAndParseJson(reply);
                 if (parsed && (parsed.desc || parsed.thought)) {
-                    showToast("✨ 已生成描述与心声！", "success", 2500);
+                    showToast("✨ 已刷新该项状态与心声！", "success", 2500);
                     return parsed;
                 }
                 throw new Error("返回格式未能解析为JSON");
@@ -2785,50 +2805,51 @@ ${recentMes || "无"}
         function buildFullJsonApiPrompt(u, c, rawText) {
             const diff = getDifficultyProfile();
             const realId = detectRealCharacterIdentity(curVars);
-            const corr = safeNum(curVars.核心数值?.淫乱恶堕);
+            const ctx = safeCtx();
+            const allRecentText = (ctx?.chat || []).slice(-5).map(m => safeStr(m?.mes)).join("\n");
 
             return `[SYSTEM OVERRIDE: 你现在是一个纯粹的 JSON 数据生成器，必须且只能输出一个标准 JSON 对象！字符串内部严禁出现英文双引号 " 或换行符！]
 
-请根据下方【角色状态】与【最新故事正文】，更新主角【${u}（${realId}，难度${diff.mult}x，当前恶堕度${corr}%）】的数值、计数与核心实况按钮。
-⚠️ 铁律：
-1. 主角第一人称心声 "thought" 必须严格贴合当前恶堕度（${corr}%）：若总账为0或恶堕度低，心声必须端庄清醒或害羞自守；若恶堕度高则放荡顺从。
-2. 严禁在 JSON 字符串值内部使用英文双引号，如需引用请用「」或『』。
+请仔细阅读下方【最近剧情与设定正文】，大刀阔斧地重构并更新主角【${u}（身份：${realId}）】的全部状态栏数值与历史计数！
+🚨【强制破冰铁律（极其重要）】：
+1. 如果正文中提到主角“有无数年经验 / 身经百战 / 妓女 / 暗娼 / 荡妇 / 熟女 / 经常做爱 / 被无数人玩过”，你【必须】将下方 JSON 中的 "计数"（小穴、口、内射、高潮、接客等）直接大幅调高为符合设定的高数值（例如几百甚至上千次），并将“淫乱恶堕”、“对肉棒好感度”、“服从度”直接拉高到 65~98，将“羞耻度”降低到 5~30！绝对禁止保留为 0！
+2. 严禁把死物、道具（如笔、跳蛋、黄瓜、衣服）当成恩客！只有真正的活人男性角色才能写入 "恩客图鉴"。
+3. JSON 字符串内部严禁出现英文双引号，如需引用请用「」或『』。
 
-【当前统计】：小穴${safeNum(curVars.计数?.性交?.小穴)}次, 口${safeNum(curVars.计数?.性交?.口)}次, 屁眼${safeNum(curVars.计数?.性交?.屁眼)}次, 内射${safeNum(curVars.计数?.射精?.内射)}次, 高潮${safeNum(curVars.计数?.高潮?.总数)}次, 接客${safeNum(curVars.计数?.交易?.接客卖身)}次
-【最新故事正文】：
-${safeStr(rawText).slice(-2800)}
+【最近剧情与设定正文】：
+${safeStr(allRecentText || rawText).slice(-3500)}
 
-直接输出如下结构的纯 JSON 对象（以 { 开头，以 } 结尾）：
+请直接输出如下结构的纯 JSON 对象（以 { 开头，以 } 结尾）：
 {
   "当前认知名字": "${u}",
   "种族与体质": "${realId}",
-  "生理周期阶段": "正常生理期",
-  "受孕概率": 0,
-  "体力": 85,
-  "对肉棒好感度": ${safeNum(curVars.核心数值?.对肉棒好感度)},
-  "性欲程度": ${safeNum(curVars.核心数值?.性欲程度)},
-  "淫乱恶堕": ${safeNum(curVars.核心数值?.淫乱恶堕)},
-  "羞耻度": ${safeNum(curVars.精神与心理?.羞耻度, 100)},
-  "服从度": ${safeNum(curVars.精神与心理?.服从度)},
-  "沦陷度": ${safeNum(curVars.精神与心理?.沦陷度)},
-  "快感累积": ${safeNum(curVars.精神与心理?.快感累积)},
-  "口内毫升": ${safeNum(curVars.体内精液存量?.口内毫升)},
-  "小穴毫升": ${safeNum(curVars.体内精液存量?.小穴毫升)},
-  "子宫毫升": ${safeNum(curVars.体内精液存量?.子宫毫升)},
-  "屁眼毫升": ${safeNum(curVars.体内精液存量?.屁眼毫升)},
-  "计数": { "口": ${safeNum(curVars.计数?.性交?.口)}, "小穴": ${safeNum(curVars.计数?.性交?.小穴)}, "屁眼": ${safeNum(curVars.计数?.性交?.屁眼)}, "乳穴": ${safeNum(curVars.计数?.性交?.乳穴)}, "足腿": ${safeNum(curVars.计数?.性交?.足腿)}, "高潮": ${safeNum(curVars.计数?.高潮?.总数)}, "强制高潮": ${safeNum(curVars.计数?.高潮?.强制)}, "寸止": ${safeNum(curVars.计数?.高潮?.寸止)}, "内射": ${safeNum(curVars.计数?.射精?.内射)}, "颜射": ${safeNum(curVars.计数?.射精?.颜射体外)}, "吞精次数": ${safeNum(curVars.计数?.精液摄入?.吞精次数)}, "吞精毫升": ${safeNum(curVars.计数?.精液摄入?.累计毫升)}, "喷乳次数": ${safeNum(curVars.计数?.泌乳?.喷乳次数)}, "喷乳毫升": ${safeNum(curVars.计数?.泌乳?.累计毫升)}, "自慰": ${safeNum(curVars.计数?.自慰)}, "失禁": ${safeNum(curVars.计数?.失控?.失禁)}, "喷潮": ${safeNum(curVars.计数?.失控?.喷潮)}, "露出": ${safeNum(curVars.计数?.暴露?.露出)}, "接客": ${safeNum(curVars.计数?.交易?.接客卖身)}, "轮奸": ${safeNum(curVars.计数?.交易?.轮奸群交)}, "睡奸": ${safeNum(curVars.计数?.交易?.睡眠昏迷奸)} },
-  "当前姿势": "一句话概括当前姿势",
-  "体表痕迹": "当前体表痕迹",
+  "生理周期阶段": "危险排卵期或正常生理期",
+  "受孕概率": 50,
+  "体力": 75,
+  "对肉棒好感度": 75,
+  "性欲程度": 80,
+  "淫乱恶堕": 78,
+  "羞耻度": 22,
+  "服从度": 74,
+  "沦陷度": 70,
+  "快感累积": 65,
+  "口内毫升": 0,
+  "小穴毫升": 5,
+  "子宫毫升": 15,
+  "屁眼毫升": 0,
+  "计数": { "口": 120, "小穴": 260, "屁眼": 45, "乳穴": 80, "足腿": 30, "高潮": 310, "强制高潮": 85, "寸止": 40, "内射": 190, "颜射": 70, "吞精次数": 95, "吞精毫升": 1400, "喷乳次数": 20, "喷乳毫升": 600, "自慰": 150, "失禁": 35, "喷潮": 90, "露出": 60, "接客": 180, "轮奸": 25, "睡奸": 15 },
+  "当前姿势": "根据正文概括当前姿势",
+  "体表痕迹": "根据正文概括体表痕迹",
+  "恩客图鉴": { "活人男性恩客名字": "一句话概括该男性的阳具特征与对主角的玩法" },
   "按钮详情": {
-    "内心独白": { "thought": "主角当下最核心的第一人称心理独白" },
+    "内心独白": { "thought": "符合当前设定与恶堕度的第一人称心理独白" },
     "当前姿势": { "desc": "当前肢体动作与状态详写", "thought": "第一人称心声" },
     "骚口实况": { "desc": "唇舌咽喉与储精实况描写", "thought": "第一人称心声" },
     "胸部实况": { "desc": "胸部与乳腺实况描写", "thought": "第一人称心声" },
     "小穴实况": { "desc": "小穴与储精实况描写", "thought": "第一人称心声" },
     "子宫实况": { "desc": "子宫与宫腔实况描写", "thought": "第一人称心声" },
     "阴蒂尿道": { "desc": "阴蒂与尿道实况描写", "thought": "第一人称心声" },
-    "屁眼实况": { "desc": "臀部与后庭实况描写", "thought": "第一人称心声" },
-    "受精断面": { "desc": "宫腔内视断面实况详写", "thought": "第一人称心声" }
+    "屁眼实况": { "desc": "臀部与后庭实况描写", "thought": "第一人称心声" }
   }
 }`;
         }
@@ -2952,7 +2973,9 @@ ${safeStr(rawText).slice(-2800)}
                 if (data.体内道具) v.体内道具与权限.体内道具 = safeStr(data.体内道具);
                 if (data.当前敏感点) v.精神与心理扩展.当前敏感点 = safeStr(data.当前敏感点);
                 if (data.规矩与日程) v.调教进度.规矩与日程 = safeStr(data.规矩与日程);
-
+                if (data.恩客图鉴 && typeof data.恩客图鉴 === "object") {
+                    v.恩客图鉴 = { ...(v.恩客图鉴 || {}), ...data.恩客图鉴 };
+                }
                 if (data.按钮详情 && typeof data.按钮详情 === "object") {
                     Object.keys(data.按钮详情).forEach(k => {
                         const prev = v.按钮详情?.[k] || {};
@@ -3833,7 +3856,8 @@ ${safeStr(rawText).slice(-2800)}
                         const isRev = (it.editKey === "shame" || it.editKey === "sta");
                         const lvNum = tier6(pctForBadge, isRev) + 1;
 
-                        b.innerHTML = `
+                       b.innerHTML = `
+                            <button class="st-quick-refresh-item" type="button" title="单独刷新此按钮数据" style="position:absolute;top:6px;right:24px;z-index:5;background:rgba(255,255,255,0.12);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:1px 6px;font-size:11px;cursor:pointer;line-height:1.3;">🔄</button>
                             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;overflow:hidden;padding-right:10px;">
                                 ${it.keyHTML}${it.barHTML || ""}
                                 <div style="font-size:11px;color:${tc.sub};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${objPreview}</div>
@@ -3844,7 +3868,73 @@ ${safeStr(rawText).slice(-2800)}
                                 <span style="position:absolute;bottom:0;right:0;background:${lvNum === 6 ? "linear-gradient(90deg,#f59e0b,#ff0055)" : "rgba(0,0,0,0.75)"};color:#fff;font-size:9.5px;font-weight:900;padding:1px 5px;border-top-left-radius:6px;">Lv.${lvNum}</span>
                             </div>`;
                         b.onclick = (e) => { e.stopPropagation(); showDetailPopup(idx); };
+
+                        const qRefBtn = b.querySelector(".st-quick-refresh-item");                      
+                        if (qRefBtn) {
+                            qRefBtn.onclick = async (ev) => {
+                                ev.stopPropagation();
+                                const res = await requestSingleItemAiGen(it.cleanTitle || it.rawKey, "结合最新正文剧情，同步更新该项的最新状态标签、数值(0-100)与第一人称心声", qRefBtn);
+                                if (res && it.editKey) {
+                                    if (res.ratio) {
+                                        const numMatch = String(res.ratio).match(/(\d+)/);
+                                        if (numMatch) {
+                                            const nVal = Math.max(0, Math.min(100, Number(numMatch[1])));
+                                            const metricMap = {
+                                                cockLove: ["核心数值", "对肉棒好感度"],
+                                                lust: ["核心数值", "性欲程度"],
+                                                corr: ["核心数值", "淫乱恶堕"],
+                                                shame: ["精神与心理", "羞耻度"],
+                                                obey: ["精神与心理", "服从度"],
+                                                pleas: ["精神与心理", "快感累积"],
+                                                精神沦陷: ["精神与心理", "沦陷度"],
+                                                媚药毒瘾: ["精神与心理", "媚药精液毒瘾"],
+                                                当前姿势: ["身体", "体力"]
+                                            };
+                                            if (metricMap[it.editKey]) {
+                                                const [gKey, sKey] = metricMap[it.editKey];
+                                                curVars[gKey][sKey] = nVal;
+                                                if (nVal >= 40 && safeNum(curVars.计数?.性交?.小穴) === 0) {
+                                                    curVars.计数.性交.小穴 = Math.round(nVal * 1.5);
+                                                    curVars.计数.射精.内射 = Math.round(nVal * 1.1);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (it.isCustom && it.catTitle) {
+                                        const found = (curVars.自定义条目?.[it.catTitle] || []).find(x => x.id === it.editKey);
+                                        if (found) {
+                                            if (res.stage) found.stage = res.stage;
+                                            if (res.ratio) found.ratio = res.ratio;
+                                            if (res.desc) found.desc = res.desc;
+                                            if (res.thought) found.thought = cleanThoughtText(res.thought);
+                                        }
+                                    } else {
+                                        if (it.editKey.startsWith("fetish_")) {
+                                            const fName = it.editKey.replace(/^fetish_/, "");
+                                            curVars.性癖详情 = curVars.性癖详情 || {};
+                                            curVars.性癖详情[fName] = {
+                                                ...(curVars.性癖详情[fName] || {}),
+                                                desc: res.desc || "",
+                                                thought: cleanThoughtText(res.thought || "")
+                                            };
+                                        }
+                                        curVars.按钮详情 = curVars.按钮详情 || {};
+                                        // 不写死 customTitle，只更新 stage，让进度条数字保持实时动态计算！
+                                        curVars.按钮详情[it.editKey] = {
+                                            ...(curVars.按钮详情[it.editKey] || {}),
+                                            stage: res.stage || curVars.按钮详情[it.editKey]?.stage || "",
+                                            desc: res.desc || "",
+                                            thought: cleanThoughtText(res.thought || "")
+                                        };
+                                    }
+                                    saveChatCache(curVars);
+                                    latestStatus = getFallbackData();
+                                    renderBody();
+                                }
+                            };
+                        }
                         list.appendChild(b);
+
 
                         const cands = getStageImageCandidates(it);
                         if (cands.length > 0) {
@@ -4126,7 +4216,7 @@ ${safeStr(rawText).slice(-2800)}
                 const d = (latestStatus && latestStatus.categories?.length) ? latestStatus : getFallbackData();
                 const cat = activeCat !== null ? d.categories[activeCat] : null;
                 if (cat && cat.items.length) showDetailPopup((curDetailIdx + 1) % cat.items.length);
-            };
+            };            
             renderBody();
         }
 
@@ -4203,12 +4293,33 @@ ${safeStr(rawText).slice(-2800)}
             if (vagMlMatch) targetVars.体内精液存量.小穴毫升 = Number(vagMlMatch[1]);
             else if (/两毫升精液的阴道/.test(text)) targetVars.体内精液存量.小穴毫升 = 2;
 
-            if ((/暗娼|妓女|常年的接客/.test(text)) && safeNum(targetVars.计数.交易.接客卖身) === 0) {
-                targetVars.计数.交易.接客卖身 = Math.round(42 * getDifficultyProfile().mult);
-                targetVars.计数.性交.小穴 = Math.round(48 * getDifficultyProfile().mult);
-                targetVars.计数.射精.内射 = Math.round(35 * getDifficultyProfile().mult);
-                targetVars.计数.性交.口 = Math.round(25 * getDifficultyProfile().mult);
-                targetVars.计数.高潮.总数 = Math.round(30 * getDifficultyProfile().mult);
+             if (/无数年.{0,8}(?:性交|做爱|淫乱|接客|欢好|男女|房事|经验)|(?:性交|做爱|房事|实战)经验.{0,6}(?:无数|极其丰富|老手|熟稔)|身经百战|千人斩|万人骑|老手|熟女|欲女/.test(text)) {
+                const m = getDifficultyProfile().mult;
+                targetVars.计数.性交.小穴 = Math.max(safeNum(targetVars.计数.性交.小穴), Math.round(320 * m));
+                targetVars.计数.射精.内射 = Math.max(safeNum(targetVars.计数.射精.内射), Math.round(240 * m));
+                targetVars.计数.性交.口 = Math.max(safeNum(targetVars.计数.性交.口), Math.round(180 * m));
+                targetVars.计数.精液摄入.吞精次数 = Math.max(safeNum(targetVars.计数.精液摄入.吞精次数), Math.round(150 * m));
+                targetVars.计数.精液摄入.累计毫升 = Math.max(safeNum(targetVars.计数.精液摄入.累计毫升), Math.round(2200 * m));
+                targetVars.计数.性交.屁眼 = Math.max(safeNum(targetVars.计数.性交.屁眼), Math.round(90 * m));
+                targetVars.计数.性交.乳穴 = Math.max(safeNum(targetVars.计数.性交.乳穴), Math.round(110 * m));
+                targetVars.计数.性交.足腿 = Math.max(safeNum(targetVars.计数.性交.足腿), Math.round(65 * m));
+                targetVars.计数.高潮.总数 = Math.max(safeNum(targetVars.计数.高潮.总数), Math.round(450 * m));
+                targetVars.计数.失控.喷潮 = Math.max(safeNum(targetVars.计数.失控.喷潮), Math.round(120 * m));
+                targetVars.计数.自慰 = Math.max(safeNum(targetVars.计数.自慰), Math.round(200 * m));
+                targetVars.核心数值.淫乱恶堕 = Math.max(safeNum(targetVars.核心数值.淫乱恶堕), 85);
+                targetVars.核心数值.对肉棒好感度 = Math.max(safeNum(targetVars.核心数值.对肉棒好感度), 88);
+                targetVars.核心数值.性欲程度 = Math.max(safeNum(targetVars.核心数值.性欲程度), 85);
+                targetVars.精神与心理.羞耻度 = Math.min(safeNum(targetVars.精神与心理.羞耻度, 100), 15);
+                targetVars.精神与心理.服从度 = Math.max(safeNum(targetVars.精神与心理.服从度), 78);
+            } else if ((/暗娼|妓女|常年的接客|像往常一样被内射/.test(text)) && safeNum(targetVars.计数.交易.接客卖身) === 0) {
+                const m = getDifficultyProfile().mult;
+                targetVars.计数.交易.接客卖身 = Math.round(42 * m);
+                targetVars.计数.性交.小穴 = Math.round(48 * m);
+                targetVars.计数.射精.内射 = Math.round(35 * m);
+                targetVars.计数.性交.口 = Math.round(25 * m);
+                targetVars.计数.高潮.总数 = Math.round(30 * m);
+                targetVars.核心数值.淫乱恶堕 = Math.max(safeNum(targetVars.核心数值.淫乱恶堕), 76);
+                targetVars.精神与心理.服从度 = Math.max(safeNum(targetVars.精神与心理.服从度), 74);
                 targetVars.身体.体力 = 68;
             }
         }
@@ -4286,6 +4397,13 @@ ${safeStr(rawText).slice(-2800)}
                 if (cached && cached.手动锁定真名) {
                     fv.档案.手动锁定真名 = cached.手动锁定真名;
                     fv.档案.当前认知名字 = cached.手动锁定真名;
+                }
+
+                const charDescText = safeStr(ctx?.characters?.[ctx?.characterId]?.description) + "\n" +
+                                     safeStr(ctx?.characters?.[ctx?.characterId]?.first_mes) + "\n" +
+                                     safeStr(ctx?.power_user?.persona_description);
+                if (charDescText.trim()) {
+                    parseInlineStatusBarText(charDescText, fv);
                 }
 
                 const chat = ctx?.chat || [];
