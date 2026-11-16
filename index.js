@@ -1,4 +1,4 @@
-// == 状态栏1.0 ==
+// == 状态栏1.0 (全器质崩坏畸变重制版) ==
 (function () {
     "use strict";
     const DIAG_ID = "st-v10-diag-radar";
@@ -300,7 +300,7 @@
         }
 
         // =========================================================================
-        // 🎨 五大高定特色主题（带真实 SVG 暗纹图层、专属雕花角标与异形边框）
+        // 🎨 五大高定特色主题 + Lv.5/Lv.6 器质崩坏视觉污染特效 + CSS级 UpdateVariable 隐形
         // =========================================================================
         const THEMES = {
             "魅魔粉": {
@@ -360,6 +360,13 @@
             const style = document.createElement("style");
             style.id = "st-v10-custom-css";
             style.textContent = `
+                /* 手机端流式生成前置隐藏：一旦出现 UpdateVariable 标签立即隐形 */
+                UpdateVariable, updatevariable, .st-hidden-uv {
+                    display: none !important;
+                    visibility: hidden !important;
+                    height: 0 !important;
+                    overflow: hidden !important;
+                }
                 @keyframes stPulseGlow {
                     0%, 100% { box-shadow: 0 0 8px rgba(255, 0, 60, 0.75), inset 0 0 4px rgba(255, 255, 255, 0.35); }
                     50% { box-shadow: 0 0 18px rgba(255, 0, 60, 1), 0 0 26px rgba(136, 19, 55, 0.9), inset 0 0 8px rgba(255, 255, 255, 0.65); }
@@ -367,6 +374,10 @@
                 @keyframes stStage6GodGlow {
                     0%, 100% { box-shadow: 0 0 10px #f59e0b, 0 0 20px #ff0055, inset 0 0 8px #fde047; border-color: #fde047 !important; }
                     50% { box-shadow: 0 0 22px #ff0055, 0 0 36px #7e22ce, inset 0 0 14px #ffffff; border-color: #ff758f !important; }
+                }
+                @keyframes stCorruptCardPulse {
+                    0%, 100% { border-color: #ff0055 !important; box-shadow: 0 0 14px rgba(255, 0, 85, 0.55), inset 0 0 18px rgba(153, 27, 27, 0.45) !important; }
+                    50% { border-color: #fde047 !important; box-shadow: 0 0 24px rgba(255, 0, 85, 0.9), inset 0 0 28px rgba(220, 38, 38, 0.75) !important; }
                 }
                 @keyframes stHeartbeat {
                     0%, 100% { transform: scale(1); }
@@ -377,6 +388,17 @@
                     position: relative;
                 }
                 .st-v28-card:hover { transform: translateY(-2px); }
+
+                /* 进阶优化点2：阶段5(重口崩坏)与阶段6(彻底畸变)卡片专属视觉污染背景 */
+                .st-corrupted-card-lv5 {
+                    background-image: radial-gradient(circle at 92% 15%, rgba(225, 29, 72, 0.28), transparent 48%), linear-gradient(155deg, rgba(69, 10, 20, 0.92), rgba(24, 6, 14, 0.96)) !important;
+                    border-left: 4.5px solid #ff0055 !important;
+                    box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4), inset 0 0 15px rgba(225, 29, 72, 0.22) !important;
+                }
+                .st-corrupted-card-lv6 {
+                    background-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 0 Q10 18 8 28 Q6 36 12 44 M28 0 Q32 14 26 26 Q22 36 30 44' fill='none' stroke='rgba(255,0,85,0.14)' stroke-width='2'/%3E%3C/svg%3E"), radial-gradient(circle at 85% 20%, rgba(255, 0, 85, 0.38), transparent 55%), linear-gradient(160deg, rgba(76, 5, 25, 0.96), rgba(15, 2, 8, 0.99)) !important;
+                    animation: stCorruptCardPulse 2.2s infinite ease-in-out !important;
+                }
 
                 /* 1. 魅魔粉专属蕾丝桃心浮雕 */
                 .st-theme-succubus .st-v28-card {
@@ -567,6 +589,7 @@
             hideRawBlock: true,
             theme: "魅魔粉",
             difficultyMode: "normal",
+            worldBreakMode: "auto",
             strictMentalLock: true,
             injectReversePrompt: true,
             autoMetabolism: true,
@@ -618,14 +641,13 @@
             const recentMes = (ctx?.chat || []).slice(-6).map(m => safeStr(m?.mes)).join(" ");
             const combined = `${safeStr(v?.档案?.身份与背景)} ${personaDesc} ${recentMes}`;
 
-            if (/云岚宗|纳兰嫣然|斗气|少宗主/.test(combined)) return "云岚宗少宗主";
-            if (/修仙|仙子|圣女|剑仙|女帝|灵根/.test(combined)) return "清冷修仙者";
-            if (/魅魔|淫魔|Succubus/i.test(combined)) return "魅魔之躯";
+            if (/修仙|仙子|圣女|剑仙|女帝|灵根/.test(combined)) return "修真者";
+            if (/魅魔|Succubus/i.test(combined)) return "魅魔之躯";
             if (/精灵|Elf/i.test(combined)) return "精灵之躯";
             if (/千金|大小姐|豪门|夫人|妻子|太太/.test(combined)) return "名门千金";
-            if (/妓女|暗娼|风尘|卖身|接客/.test(combined)) return "风尘女子";
-            if (/大学生|学妹|校花|少女|高中生/.test(combined)) return "青春少女";
-            return "敏感娇躯";
+            if (/大学生|学妹|学姐|校花|学生/.test(combined)) return "在校学生";
+            if (/少女|女生/.test(combined)) return "年轻少女";
+            return "普通人类";
         }
 
         function tier6(val, rev = false) {
@@ -643,6 +665,9 @@
             return ["第一阶段", "第二阶段", "第三阶段", "第四阶段", "第五阶段", "第六阶段·极"][tier6(val, rev)];
         }
 
+        // =========================================================================
+        // 🌈 崩坏畸变全光谱：Lv.1 完好如初 ➡️ Lv.6 彻底崩坏畸变
+        // =========================================================================
         const EXCLUSIVE_SPECTRA = {
             cockLove: {
                 grads: [
@@ -654,7 +679,7 @@
                     "linear-gradient(90deg, #fbbf24 0%, #ff0055 50%, #3b0764 100%)"
                 ],
                 cols: ["#bfdbfe", "#fbcfe8", "#f5d0fe", "#e9d5ff", "#fda4af", "#fde047"],
-                emos: ["(˘•ω•˘)🛡️戒备", "(￣_￣)🍆适应", "(⁄•⁄ω⁄•⁄)💓眼馋", "(º﹃º )👅跪舔", "(♡°▽°♡)🐶肉棒奴", "♛(🤪🍆💦)终极肉套"]
+                emos: ["(˘•ω•˘)🛡️戒备排斥", "(￣_￣)🍆粘膜适应", "(⁄•⁄ω⁄•⁄)💓空虚渴求", "(º﹃º )👅跪舔崇拜", "(♡°▽°♡)🐶断根戒断", "♛(🤪🍆💀)脑干阳具寄生"]
             },
             lust: {
                 grads: [
@@ -666,7 +691,7 @@
                     "linear-gradient(90deg, #ffffff 0%, #ff003c 45%, #450a0a 100%)"
                 ],
                 cols: ["#a7f3d0", "#fde68a", "#fdba74", "#fda4af", "#f87171", "#fef08a"],
-                emos: ["( -_-)❄️平静", "(｡•́︿•̀｡)🌡️微燥", "(⸝⸝＞◡＜⸝⸝)🔥乳硬", "(🥵💦)🌋湿裤", "(🤪🔥)♨️夹腿狂磨", "💥(🥵❤️‍🔥⛲)永动发情"]
+                emos: ["( -_-)❄️清心克制", "(｡•́︿•̀｡)🌡️春情微燥", "(⸝⸝＞◡＜⸝⸝)🔥欲火焚身", "(🥵💦)🌋重度发骚", "(🤪🔥)♨️狂暴发情", "💥(🥵❤️‍🔥💀)下丘脑烧毁"]
             },
             corr: {
                 grads: [
@@ -678,7 +703,7 @@
                     "linear-gradient(90deg, #fde047 0%, #9333ea 45%, #020005 100%)"
                 ],
                 cols: ["#f8fafc", "#e9d5ff", "#d8b4fe", "#f0abfc", "#fda4af", "#fde047"],
-                emos: ["(｡•̀ᴗ-)✨清白", "( ´•̥×•̥`)🌫️染尘", "(¬‿¬ )🍷放荡", "(淫▽淫)👠娼妇", "(🤪🖤⛓️)🐷精盆", "💀(👁️‍🗨️🖤🔞)深渊便器"]
+                emos: ["(｡•̀ᴗ-)✨完好清白", "( ´•̥×•̥`)🌫️初度染尘", "(¬‿¬ )🍷食髓知味", "(淫▽淫)👠放荡娼妇", "(🤪🖤⛓️)🐷公用精盆", "💀(👁️‍🗨️🖤🔞)彻底崩坏肉坑"]
             },
             shame: {
                 grads: [
@@ -690,7 +715,7 @@
                     "linear-gradient(90deg, #00f5d4 0%, #ff0055 50%, #09000b 100%)"
                 ],
                 cols: ["#fecdd3", "#fbcfe8", "#e9d5ff", "#fda4af", "#fb7185", "#67e8f9"],
-                emos: ["(⁄>⁄ω⁄<⁄)🍅羞愤", "(🫣💦)耳根滚烫", "( ˙-˙ )😐习以为常", "(😏👙)敞腿任看", "(🤪🐾)羞耻全灭", "📸(🤪✌️💦)失禁露出"]
+                emos: ["(⁄>⁄ω⁄<⁄)🍅羞愤自持", "(🫣💦)耳根滚烫", "( ˙-˙ )😐习以为常", "(😏👙)敞腿任看", "(🤪🐾)羞耻全灭", "📸(🤪✌️💀)羞耻神经坏死"]
             },
             obey: {
                 grads: [
@@ -702,7 +727,7 @@
                     "linear-gradient(90deg, #fde047 0%, #d97706 45%, #1c1917 100%)"
                 ],
                 cols: ["#cbd5e1", "#bfdbfe", "#fbcfe8", "#fde68a", "#fda4af", "#fde047"],
-                emos: ["( `^´ )⚔️抗拒", "(´-ω-`)💧妥协", "( ´•̥ω•̥`)🙇温顺", "(▽・ω・▽)🐾乞怜", "(⛓️🐶💦)任打任操", "👑(🧎‍♀️👅💦)绝对肉奴"]
+                emos: ["( `^´ )⚔️孤高自主", "(´-ω-`)💧被动妥协", "( ´•̥ω•̥`)🙇温顺配合", "(▽・ω・▽)🐾摇尾乞怜", "(⛓️🐶💦)绝对盲从", "👑(🧎‍♀️👅💀)前额叶切除木偶"]
             },
             pleas: {
                 grads: [
@@ -714,7 +739,7 @@
                     "linear-gradient(90deg, #ffffff 0%, #ff0055 45%, #3b0764 100%)"
                 ],
                 cols: ["#f8fafc", "#fbcfe8", "#f5d0fe", "#fda4af", "#ff4d6d", "#ffffff"],
-                emos: ["( ˘ω˘ )💤平静", "(😳⚡)尾椎微麻", "(🥺💓)趾尖蜷缩", "(🥵⚡💦)濒临绝顶", "(🤪⛲)潮吹失神", "⚡(翻白眼👅💦)脑髓熔断"]
+                emos: ["( ˘ω˘ )💤神思清明", "(😳⚡)尾椎微麻", "(🥺💓)趾尖蜷缩", "(🥵⚡💦)濒临绝顶", "(🤪⛲)潮吹失神", "⚡(翻白眼👅💀)多巴胺烧穿熔断"]
             },
             hypno: {
                 grads: [
@@ -726,7 +751,7 @@
                     "linear-gradient(90deg, #ff007f 0%, #7e22ce 50%, #05000a 100%)"
                 ],
                 cols: ["#bae6fd", "#c7d2fe", "#f5d0fe", "#fbcfe8", "#d8b4fe", "#ff758f"],
-                emos: ["(・_・)🧠清醒", "(°_° )🌀恍惚", "(＠_＠;)💫催眠", "(♡_♡)🎀常识改写", "(🤤💭)人格碎裂", "💖(👁️♡👁️🤤)脑死母猪"]
+                emos: ["(・_・)🧠理智完好", "(°_° )🌀浅层恍惚", "(＠_＠;)💫催眠暗示", "(♡_♡)🎀常识改写", "(🤤💭)人格碎裂", "💖(👁️♡👁️💀)脑实质海绵化痴呆"]
             },
             drug: {
                 grads: [
@@ -738,7 +763,7 @@
                     "linear-gradient(90deg, #a3e635 0%, #ff0055 50%, #1a0014 100%)"
                 ],
                 cols: ["#bbf7d0", "#fef08a", "#d9f99d", "#f5d0fe", "#e9d5ff", "#bef264"],
-                emos: ["(🌱)纯净无毒", "(😳🍷)微醺依恋", "(🥵🧪)药力发热", "(🤤💉)精液戒断", "(🤪🧪💦)断精发狂", "☣️(🤪💉🥛)精液毒虫"]
+                emos: ["(🌱)纯净无毒", "(😳🍷)微醺依恋", "(🥵🧪)药力发热", "(🤤💉)精液戒断", "(🤪🧪💦)断精发狂", "☣️(🤪💉💀)脑脊液毒化母猪"]
             },
             mouth: {
                 grads: [
@@ -750,7 +775,7 @@
                     "linear-gradient(90deg, #fde047 0%, #e11d48 50%, #1f000d 100%)"
                 ],
                 cols: ["#ffe4e6", "#fecdd3", "#fda4af", "#f472b6", "#fda4af", "#fde047"],
-                emos: ["💋洁净初唇", "👅唾液敏化", "😮‍💨深喉适应", "🤤吞精成瘾", "🤪奉仕口器", "👑食道生殖化"]
+                emos: ["💋洁净初唇", "👅唇肿涎溢", "😮‍💨咽喉松弛", "🤤颚骨半脱臼", "🤪食道肉壶化", "💀口腔排泄器畸变"]
             },
             chest: {
                 grads: [
@@ -762,7 +787,7 @@
                     "linear-gradient(90deg, #fffbeb 0%, #ff0055 50%, #3b0764 100%)"
                 ],
                 cols: ["#fce7f3", "#fbcfe8", "#f9a8d4", "#fef3c7", "#fbcfe8", "#fde047"],
-                emos: ["🌸娇嫩处乳", "🍒乳尖充血", "🥵揉捏变形", "🍼乳腺喷奶", "🐄泌乳母畜", "👑永动奶袋"]
+                emos: ["🌸娇嫩处乳", "🍒乳尖肥大", "🥵乳晕黑紫扩张", "🍼乳腺失控漏奶", "🐄下垂巨乳奶袋", "💀崩坏泌乳肉囊"]
             },
             vag: {
                 grads: [
@@ -774,7 +799,7 @@
                     "linear-gradient(90deg, #fde047 0%, #ff003c 48%, #1a000c 100%)"
                 ],
                 cols: ["#ffe4e6", "#fbcfe8", "#fda4af", "#f472b6", "#ff4d6d", "#fde047"],
-                emos: ["🌸紧致初鲍", "💧初破微张", "🌺熟稔名器", "🥵大开肉壶", "🤪漏精便器", "💀永久洞开"]
+                emos: ["🌸紧致初鲍", "💧初破红肿", "🌺外翻黑木耳", "🥵括约肌松弛洞开", "🤪肉壁脱垂漏精壶", "💀彻底崩坏烂肉洞"]
             },
             womb: {
                 grads: [
@@ -786,7 +811,7 @@
                     "linear-gradient(90deg, #fde047 0%, #d946ef 45%, #2e1065 100%)"
                 ],
                 cols: ["#f5d0fe", "#f0abfc", "#e879f9", "#fda4af", "#ffccd5", "#fde047"],
-                emos: ["🤍紧闭处子", "🥺宫口微酸", "🫀锁精苗床", "🥵宫口常张", "🤪宫颈脱垂", "👑受精圣杯"]
+                emos: ["🤍紧闭处子", "🥺宫口充血微松", "🫀宫口扩张锁精", "🥵宫腔肥大下坠", "🤪宫颈重度脱垂", "💀外翻脱垂死肉苗床"]
             },
             clit: {
                 grads: [
@@ -798,7 +823,7 @@
                     "linear-gradient(90deg, #fef08a 0%, #00f5d4 45%, #be123c 100%)"
                 ],
                 cols: ["#fef9c3", "#fde68a", "#fbcfe8", "#fdba74", "#fda4af", "#67e8f9"],
-                emos: ["🌱包皮隐没", "😳充血勃起", "⚡触电酸豆", "🥵肥大外露", "⛲失禁漏尿", "🌊永动潮吹"]
+                emos: ["🌱包皮隐没", "😳充血外露", "⚡阴蒂肥大勃起", "🥵尿道扩张漏尿", "⛲阴蒂肉棒化失禁", "💀括约肌坏死漏尿狂"]
             },
             anal: {
                 grads: [
@@ -810,7 +835,7 @@
                     "linear-gradient(90deg, #fb923c 0%, #be123c 50%, #1a0014 100%)"
                 ],
                 cols: ["#fed7aa", "#fda4af", "#fb7185", "#e9d5ff", "#d8b4fe", "#fdba74"],
-                emos: ["💮紧闭菊蕾", "😣异物适应", "😮‍💨括约肌软化", "🕳️后庭大开", "🥛直肠储精", "💀排泄肉腔"]
+                emos: ["💮紧闭菊蕾", "😣裂伤红肿", "😮‍💨褶皱磨平松弛", "🕳️后庭空洞不合", "🥛直肠翻肉轻度脱肛", "💀重度脱肛崩坏排泄腔"]
             },
             pee: {
                 grads: [
@@ -822,7 +847,7 @@
                     "linear-gradient(90deg, #fde047 0%, #ff003c 50%, #1a0008 100%)"
                 ],
                 cols: ["#fef9c3", "#fde047", "#fdba74", "#fda4af", "#ff4d6d", "#fde047"],
-                emos: ["🤍尿道紧闭", "😳小腹微酸", "😣夹腿憋尿", "🥵濒临漏尿", "💦括约肌崩解", "⛲失禁决堤"]
+                emos: ["🤍尿道紧闭", "😳小腹微酸", "😣夹腿憋尿", "🥵濒临漏尿", "💦括约肌崩解", "⛲24h失禁滴尿"]
             },
             semen: {
                 grads: [
@@ -834,7 +859,7 @@
                     "linear-gradient(90deg, #ffffff 0%, #fde047 35%, #ff0055 100%)"
                 ],
                 cols: ["#cbd5e1", "#ffffff", "#fbcfe8", "#fda4af", "#ffccd5", "#fde047"],
-                emos: ["🤍无残留", "🥛微量挂壁", "🤤白浊咕啾", "🥵灌满外溢", "🫃精盆撑满", "💥灌爆苗床"]
+                emos: ["🤍无残留", "🥛微量挂壁", "🤤白浊咕啾", "🥵灌满外溢", "🫃精盆撑满", "💥灌爆撑裂苗床"]
             },
             milk: {
                 grads: [
@@ -846,7 +871,7 @@
                     "linear-gradient(90deg, #ffffff 0%, #fde047 45%, #ec4899 100%)"
                 ],
                 cols: ["#cbd5e1", "#fef3c7", "#fde68a", "#fbcfe8", "#fecdd3", "#fde047"],
-                emos: ["🌸未泌乳", "🍼乳腺微胀", "🥺乳尖渗奶", "🥵涨奶酸痛", "🐄双乳狂喷", "🌊母乳喷泉"]
+                emos: ["🌸未泌乳", "🍼乳腺微胀", "🥺乳尖渗奶", "🥵涨奶酸痛", "🐄双乳狂喷", "🌊失禁浊乳喷泉"]
             },
             sta: {
                 grads: [
@@ -858,7 +883,7 @@
                     "linear-gradient(90deg, #450a0a 0%, #090000 100%)"
                 ],
                 cols: ["#86efac", "#fde047", "#fdba74", "#fda4af", "#f87171", "#fca5a5"],
-                emos: ["✨精力充沛", "😮‍💨腰腿微酸", "🥵香汗淋漓", "🫠双腿打颤", "😵‍💫濒临虚脱", "💀彻底失神"]
+                emos: ["✨亭亭玉立", "😮‍💨腰腿酸软", "🥵膝软外八不合", "🫠双腿痉挛瘫软", "😵‍💫髋骨脱臼爬行", "💀四肢废用肉垫"]
             }
         };
 
@@ -939,6 +964,7 @@
                 性癖: { 条目: [] },
                 恩客图鉴: {},
                 已屏蔽恩客: [],
+                历史最高崩坏度: {},
                 实况: {
                     内心独白: "", 当前姿势: "", 当前衣装: "",
                     骚口实况: "", 胸部实况: "", 小穴实况: "", 子宫实况: "", 阴蒂尿道实况: "", 屁眼实况: ""
@@ -1016,6 +1042,7 @@
                     floorLen: curLen,
                     手动锁定真名: varsObj.档案?.手动锁定真名 || "",
                     已屏蔽恩客: varsObj.已屏蔽恩客 || [],
+                    历史最高崩坏度: varsObj.历史最高崩坏度 || {},
                     快照: varsObj,
                     按钮详情: varsObj.按钮详情 || {},
                     性癖详情: varsObj.性癖详情 || {},
@@ -1030,33 +1057,50 @@
             if (cached.性癖详情) baseVars.性癖详情 = { ...baseVars.性癖详情, ...cached.性癖详情 };
             if (cached.自定义条目) baseVars.自定义条目 = { ...baseVars.自定义条目, ...cached.自定义条目 };
             if (Array.isArray(cached.已屏蔽恩客)) baseVars.已屏蔽恩客 = [...cached.已屏蔽恩客];
+            const isRolledBack = (typeof cached.floorLen === "number" && cached.floorLen > currentChatLen);
+            if (!isRolledBack && cached.floorLen === currentChatLen && cached.历史最高崩坏度 && typeof cached.历史最高崩坏度 === "object") {
+                baseVars.历史最高崩坏度 = { ...baseVars.历史最高崩坏度, ...cached.历史最高崩坏度 };
+            }
             if (cached.手动锁定真名) {
                 baseVars.档案.手动锁定真名 = cached.手动锁定真名;
                 baseVars.档案.当前认知名字 = cached.手动锁定真名;
             }
-            if (cached.快照) {
+            if (cached.快照 && !isRolledBack) {
                 const s = cached.快照;
-                ["实况", "档案", "穿搭", "受孕与生理", "痕迹与标记", "体内道具与权限", "精神与心理扩展"].forEach(k => {
+                // 仅在同楼层时恢复实况与痕迹，防止跨楼层把已经洗掉的涂鸦/拔掉的道具又死灰复燃
+                const isSameFloor = (cached.floorLen === currentChatLen);
+                ["档案", "穿搭", "受孕与生理", "精神与心理扩展"].forEach(k => {
                     if (s[k] && typeof s[k] === "object") {
                         Object.entries(s[k]).forEach(([subKey, val]) => {
-                            if (val !== "" && val !== "无" && val !== 0) baseVars[k][subKey] = val;
-                        });
-                    }
-                });
-                ["核心数值", "精神与心理"].forEach(k => {
-                    if (s[k] && typeof s[k] === "object") {
-                        Object.entries(s[k]).forEach(([subKey, val]) => {
-                            if (typeof val === "number") {
-                                if (subKey === "羞耻度" || subKey === "意识清醒度") {
-                                    baseVars[k][subKey] = Math.min(safeNum(baseVars[k][subKey], 100), val);
-                                } else {
-                                    baseVars[k][subKey] = Math.max(safeNum(baseVars[k][subKey], 0), val);
-                                }
+                            if (val !== "" && val !== "无" && val !== 0 && !baseVars[k][subKey]) {
+                                baseVars[k][subKey] = val;
                             }
                         });
                     }
                 });
-                if (cached.floorLen === currentChatLen && s.体内精液存量 && typeof s.体内精液存量 === "object") {
+                // 区分【不可逆长期指标】与【可上下浮动的短期状态（性欲、快感、意识清醒度）】
+                const FLOATING_KEYS = new Set(["性欲程度", "快感累积", "意识清醒度"]);
+                ["核心数值", "精神与心理"].forEach(k => {
+                    if (s[k] && typeof s[k] === "object") {
+                        Object.entries(s[k]).forEach(([subKey, val]) => {
+                            if (typeof val !== "number") return;
+                            if (FLOATING_KEYS.has(subKey)) {
+                                // 浮动数值：只在同楼层且当前未被新指令修改时沿用，绝不用 Math.max 锁死上限！
+                                if (isSameFloor && baseVars[k][subKey] === (subKey === "意识清醒度" ? 100 : 0)) {
+                                    baseVars[k][subKey] = val;
+                                }
+                            } else if (subKey === "羞耻度") {
+                                baseVars[k][subKey] = Math.min(safeNum(baseVars[k][subKey], 100), val);
+                            } else {
+                                baseVars[k][subKey] = Math.max(safeNum(baseVars[k][subKey], 0), val);
+                            }
+                        });
+                    }
+                });
+                if (isSameFloor && s.身体 && typeof s.身体.体力 === "number" && baseVars.身体.体力 === 100) {
+                    baseVars.身体.体力 = s.身体.体力;
+                }
+                if (isSameFloor && s.体内精液存量 && typeof s.体内精液存量 === "object") {
                     Object.assign(baseVars.体内精液存量, s.体内精液存量);
                 }
                 if (s.计数 && typeof s.计数 === "object") {
@@ -1073,15 +1117,11 @@
                         }
                     });
                 }
-                if (cached.手动锁定真名) {
-                    baseVars.档案.手动锁定真名 = cached.手动锁定真名;
-                    baseVars.档案.当前认知名字 = cached.手动锁定真名;
-                }
             }
         }
 
         // =========================================================================
-        // 🎭 精准识别主角认知真名与原身旧名（支持变身/夺舍继承名字 + 手动确认强制锁定）
+        // 🎭 精准识别主角认知真名与原身旧名
         // =========================================================================
         function detectProtagonistName(v) {
             if (v?.档案?.手动锁定真名 && safeStr(v.档案.手动锁定真名).trim()) {
@@ -1104,7 +1144,6 @@
                 const mes = allTexts[i];
                 if (!mes) continue;
 
-                // 识别变身/重塑/夺舍句式，如“从XXX变成了纳兰嫣然”、“继承了云韵的名字与身体”
                 const transMatch = mes.match(/(?:原本是|原名|前世是|从)\s*([^\s，。！？,."“”'‘’（）()]{2,8}?)\s*(?:变成了|重塑为|穿成了|夺舍了|化作了)\s*([^\s，。！？,."“”'‘’（）()的]{2,8})/);
                 if (transMatch) {
                     detectedOldName = transMatch[1].trim();
@@ -1159,9 +1198,11 @@
             const cleanBody = floorText.replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>|<summary>[\s\S]*?<\/summary>/gi, "");
             if (!cleanBody) return;
 
-            const sp = targetVars.体内精液存量;
-            if (!sp) return;
+            const sp = targetVars.体内精液存量 || {};
+            const mark = targetVars.痕迹与标记 || {};
+            const prop = targetVars.体内道具与权限 || {};
 
+            // 1. 冲洗/抠弄清理体液
             if (/(?:花洒|喷头|水流|温水).{0,16}(?:冲刷|冲洗|灌入|洗净).{0,16}(?:甬道|深处|残精|小穴|宫腔)/.test(cleanBody)) {
                 sp.小穴毫升 = Math.max(0, Math.round(safeNum(sp.小穴毫升) * 0.15));
                 sp.子宫毫升 = Math.max(0, Math.round(safeNum(sp.子宫毫升) * 0.35));
@@ -1177,17 +1218,110 @@
                 sp.口内毫升 = Math.max(0, Math.round(safeNum(sp.口内毫升) * 0.3));
             }
 
-            if (/(?:沉沉睡去|一觉睡到|次日清晨|第二天早上|醒来时已是)/.test(cleanBody)) {
-                targetVars.身体.体力 = Math.min(100, safeNum(targetVars.身体.体力, 70) + 45);
-                sp.小穴毫升 = Math.max(0, Math.round(safeNum(sp.小穴毫升) * 0.25));
-                sp.子宫毫升 = Math.max(0, Math.round(safeNum(sp.子宫毫升) * 0.5));
+            // 2. 清洗/擦拭身体：自动洗掉可逆的低阶涂鸦与墨迹（Lv.4+ 的刺青/烙铁/刀刻不可洗掉）
+            if (/(?:洗净|洗掉|擦掉|擦净|擦拭干净|沐浴露|肥皂|温水冲洗).{0,18}(?:涂鸦|字迹|正字|墨迹|墨水|肚皮|大腿|身子|全身)/.test(cleanBody)) {
+                const isPermanentScar = /刺青|纹身|烙铁|烙印|烫伤|刀刻|血痕/.test(safeStr(mark.公开涂鸦字迹) + safeStr(mark.体表痕迹));
+                if (!isPermanentScar) {
+                    mark.公开涂鸦字迹 = "无";
+                    if (/正字|马克笔|墨迹|涂鸦/.test(safeStr(mark.体表痕迹))) {
+                        mark.体表痕迹 = "无";
+                    }
+                    if (targetVars.历史最高崩坏度 && safeNum(targetVars.历史最高崩坏度.mod_scar) < 60) {
+                        delete targetVars.历史最高崩坏度.mod_scar;
+                    }
+                }
+            }
+
+            // 3. 拔出/取出体内临时道具或摘下普通环饰：若未达到机械焊死/铁丝缝合阶段(Lv.4+)，取出后立即恢复
+            if (/(?:拔出|取出|摘下|扯出|掉出|拿掉|解开).{0,12}(?:跳蛋|假阳具|按摩棒|尾塞|肛塞|道具)/.test(cleanBody)) {
+                const isFused = /焊死|铆钉|机械核心|无法取出/.test(safeStr(prop.体内道具));
+                if (!isFused) {
+                    prop.体内道具 = "无";
+                    if (targetVars.历史最高崩坏度 && safeNum(targetVars.历史最高崩坏度.mod_prop) < 60) {
+                        delete targetVars.历史最高崩坏度.mod_prop;
+                    }
+                }
+            }
+            if (/(?:摘下|取下|解下|拿掉).{0,12}(?:银环|乳环|阴唇环|阴蒂环|环饰|穿刺)/.test(cleanBody)) {
+                const isFusedPierce = /缝合|锁死|撕裂|钢筋|嵌合|生锈/.test(safeStr(mark.穿刺与环饰));
+                if (!isFusedPierce) {
+                    mark.穿刺与环饰 = "无";
+                    if (targetVars.历史最高崩坏度 && safeNum(targetVars.历史最高崩坏度.mod_pierce) < 60) {
+                        delete targetVars.历史最高崩坏度.mod_pierce;
+                    }
+                }
+            }
+
+            // 4. 高潮泄身或事后平复：快感累积自然回落，体力微耗
+            if (/(?:高潮过后的余韵|平复着呼吸|喘息渐渐平息|软倒在床|瘫软下来休息)/.test(cleanBody)) {
+                targetVars.精神与心理.快感累积 = Math.max(10, Math.round(safeNum(targetVars.精神与心理.快感累积) * 0.35));
+                targetVars.核心数值.性欲程度 = Math.max(15, Math.round(safeNum(targetVars.核心数值.性欲程度) * 0.65));
+            }
+
+            // 5. 睡眠与次日代谢：体力大幅恢复，短期快感与性欲消退，可逆瘀伤淡化
+            if (/(?:沉沉睡去|一觉睡到|次日清晨|第二天早上|醒来时已是|睡了一觉)/.test(cleanBody)) {
+                targetVars.身体.体力 = Math.min(100, safeNum(targetVars.身体.体力, 70) + 55);
+                targetVars.精神与心理.快感累积 = Math.max(0, Math.round(safeNum(targetVars.精神与心理.快感累积) * 0.15));
+                targetVars.核心数值.性欲程度 = Math.max(0, Math.round(safeNum(targetVars.核心数值.性欲程度) * 0.4));
+                targetVars.精神与心理.意识清醒度 = Math.min(100, safeNum(targetVars.精神与心理.意识清醒度, 80) + 40);
+                sp.小穴毫升 = Math.max(0, Math.round(safeNum(sp.小穴毫升) * 0.2));
+                sp.子宫毫升 = Math.max(0, Math.round(safeNum(sp.子宫毫升) * 0.4));
                 sp.口内毫升 = 0;
+                if (safeNum(mark.鞭痕与掌印) > 0) {
+                    mark.鞭痕与掌印 = Math.max(0, Math.floor(safeNum(mark.鞭痕与掌印) * 0.5));
+                }
             }
         }
 
         // =========================================================================
-        // 🧮 严苛复合升阶算法：综合「总账大类 + 六孔大类 + 性癖大类」控制恶堕速度
+        // 🧮 严苛复合崩坏升阶算法 + 进阶优化点1：不可逆器质崩坏锁 (lockIrreversible)
         // =========================================================================
+        function getBreakthroughCaps(v) {
+            const mode = userSettings.worldBreakMode || "auto";
+            // 1. 无限制奇幻魔改模式：全部开放到 100% (Lv.6)
+            if (mode === "fantasy_unleashed" || mode === "realistic_gore") {
+                return { organCap: 100, pregCap: 100, modCap: 100, mentalCap: 100, isRealisticGore: mode === "realistic_gore" };
+            }
+            // 2. 严格写实生理锁死模式：全部强制封顶 79% (Lv.4 人类写实生理崩坏极限)
+            if (mode === "realistic_lock") {
+                return { organCap: 79, pregCap: 79, modCap: 79, mentalCap: 79, isRealisticGore: true };
+            }
+
+            // 3. 智能自动检测模式 (auto)：扫描当前存档变量与最近剧情是否出现超凡/极端破界因子
+            const ctx = safeCtx();
+            const recentText = (ctx?.chat || []).slice(-8).map(m => safeStr(m?.mes)).join(" ") + " " + safeStr(ctx?.characters?.[ctx?.characterId]?.description);
+            const c = v?.计数 || {}, mark = v?.痕迹与标记 || {}, prop = v?.体内道具与权限 || {};
+
+            const hasFantasyOrMonster = safeNum(c.性交?.兽交异种) > 0 || /魔族|魔物|触手|异种|妖兽|虫族|史莱姆|深渊|魅魔|魔化|寄生|产卵|生化|机械改造|赛博/.test(recentText);
+            const hasExtremePhysical = /拳交|扩阴器|扩肛器|脱垂|脱肛|尿道扩张|宫颈扩张|彻底崩坏|烂肉洞|失禁改造/.test(recentText);
+            const hasExtremeMod = (mark.淫纹与刻印 && mark.淫纹与刻印 !== "无") || (mark.穿刺与环饰 && mark.穿刺与环饰 !== "无") || (prop.体内道具 && prop.体内道具 !== "无") || /烙铁|刀刻|刺青|钢钉|铅球|电击/.test(recentText);
+            const hasExtremeMental = safeNum(v?.精神与心理扩展?.催眠深度) >= 60 || safeNum(v?.精神与心理?.媚药精液毒瘾) >= 60 || safeNum(c.失控?.阿嘿颜) >= 8 || /催眠洗脑|人格粉碎|脑死|母猪化|前额叶/.test(recentText);
+
+            return {
+                organCap: hasFantasyOrMonster ? 100 : (hasExtremePhysical ? 95 : 79),
+                pregCap:  hasFantasyOrMonster ? 100 : 79, // 无魔族/异种时，受孕大类永远锁死在 <=79% 正常人类怀孕极限！
+                modCap:   hasFantasyOrMonster ? 100 : (hasExtremeMod ? 95 : 79),
+                mentalCap: hasFantasyOrMonster ? 100 : (hasExtremeMental ? 95 : 79),
+                isRealisticGore: !hasFantasyOrMonster
+            };
+        }
+
+        function lockIrreversible(v, key, curVal) {
+            v.历史最高崩坏度 = v.历史最高崩坏度 || {};
+            const caps = getBreakthroughCaps(v);
+            let maxAllowed = 79;
+            if (key.startsWith("organ_")) maxAllowed = caps.organCap;
+            else if (key.startsWith("preg_")) maxAllowed = caps.pregCap;
+            else if (key.startsWith("mod_")) maxAllowed = caps.modCap;
+            else maxAllowed = caps.mentalCap;
+
+            const prevMax = Math.min(maxAllowed, safeNum(v.历史最高崩坏度[key], 0));
+            const clampedCur = Math.min(maxAllowed, Math.round(safeNum(curVal, 0)));
+            const lockedVal = Math.max(prevMax, clampedCur);
+            v.历史最高崩坏度[key] = lockedVal;
+            return lockedVal;
+        }
+
         function calcStage6Score(rawPoints, unitWeight = 1.0, diffMult = 3.0, passesStage6Gate = false) {
             if (rawPoints <= 0) {
                 return {
@@ -1198,7 +1332,6 @@
                 };
             }
             const eff = (rawPoints * unitWeight) / Math.max(0.5, diffMult);
-            // 大幅提高各阶门槛，防止升阶过快
             const T1 = 18, T2 = 55, T3 = 125, T4 = 240, T5 = 420;
             let score = 0, nextTargetEff = T1;
 
@@ -1249,30 +1382,41 @@
             const vagPts = vag * 1.0 + mast * 0.4 + creampie * 0.35 + squirt * 0.7 + gang * 1.5;
             const vagGate6 = (vag >= 100 * dMult && orgasm >= 60 * dMult);
             const vagObj = calcStage6Score(vagPts, 1.0, dMult, vagGate6);
+            vagObj.val = lockIrreversible(v, "organ_vag", vagObj.val);
+            vagObj.tier = tier6(vagObj.val, false);
 
             const wombPts = creampie * 1.2 + vag * 0.25 + gang * 1.8 + pregCnt * 25;
             const wombGate6 = (creampie >= 90 * dMult);
             const wombObj = calcStage6Score(wombPts, 1.05, dMult, wombGate6);
+            wombObj.val = lockIrreversible(v, "organ_womb", wombObj.val);
+            wombObj.tier = tier6(wombObj.val, false);
 
             const mouthPts = mouth * 1.0 + swallow * 1.2 + (swallowMl / 45);
             const mouthGate6 = ((mouth + swallow) >= 85 * dMult);
             const mouthObj = calcStage6Score(mouthPts, 1.0, dMult, mouthGate6);
+            mouthObj.val = lockIrreversible(v, "organ_mouth", mouthObj.val);
+            mouthObj.tier = tier6(mouthObj.val, false);
 
             const chestPts = tit * 1.2 + milk * 1.6 + (milkMl / 50) + mast * 0.25;
             const chestGate6 = ((tit + milk) >= 65 * dMult);
             const chestObj = calcStage6Score(chestPts, 1.15, dMult, chestGate6);
+            chestObj.val = lockIrreversible(v, "organ_chest", chestObj.val);
+            chestObj.tier = tier6(chestObj.val, false);
 
             const clitPts = orgasm * 0.7 + forceOrg * 1.0 + edge * 1.3 + squirt * 1.5 + leak * 1.8 + mast * 0.5;
             const clitGate6 = (orgasm >= 80 * dMult && (squirt + leak) >= 25 * dMult);
             const clitObj = calcStage6Score(clitPts, 1.0, dMult, clitGate6);
+            clitObj.val = lockIrreversible(v, "organ_clit", clitObj.val);
+            clitObj.tier = tier6(clitObj.val, false);
 
             const analPts = anal * 1.3 + leak * 0.8 + gang * 1.4;
             const analGate6 = (anal >= 65 * dMult);
             const analObj = calcStage6Score(analPts, 1.2, dMult, analGate6);
+            analObj.val = lockIrreversible(v, "organ_anal", analObj.val);
+            analObj.tier = tier6(analObj.val, false);
 
             const totalLedgerCount = vag + mouth + anal + tit + foot + creampie + swallow + orgasm + squirt + leak + mast + exp + hooker + gang + sleep + milk;
 
-            // 六孔平均开发度与最高两孔均值
             const sixScores = [vagObj.val, wombObj.val, mouthObj.val, chestObj.val, clitObj.val, analObj.val].sort((a, b) => b - a);
             const top2OrganAvg = Math.round((sixScores[0] + sixScores[1]) / 2);
             const all6OrganAvg = Math.round(sixScores.reduce((a, b) => a + b, 0) / 6);
@@ -1284,7 +1428,6 @@
 
             const ledgerCurve = calcStage6Score(totalWeightedPts, 0.75, dMult, sixScores[0] >= 100 && totalWeightedPts >= 450 * dMult);
 
-            // 综合锚点 = 总账曲线(45%) + 主力孔位均值(35%) + 六孔全均值(20%)
             const compositeScore = totalLedgerCount === 0
                 ? 0
                 : Math.round(ledgerCurve.val * 0.45 + top2OrganAvg * 0.35 + all6OrganAvg * 0.20);
@@ -1320,9 +1463,10 @@
 
             const upsertAuto = (shortName, originTpl, pts, unitWeight = 1.0, gate6 = false) => {
                 if (pts <= 0) return;
-                const { val: calcVal, curPts, nextThreshold } = calcStage6Score(pts, unitWeight, dMult, gate6 && corr >= 95);
+                const { val: rawVal, curPts, nextThreshold } = calcStage6Score(pts, unitWeight, dMult, gate6 && corr >= 95);
+                const calcVal = lockIrreversible(v, `fet_${shortName}`, rawVal);
                 const stg = stageNameFromVal(calcVal);
-                const originStr = `${originTpl}（开发点：${curPts} / 下一阶：${nextThreshold}）`;
+                const originStr = `${originTpl}（畸变点：${curPts} / 下一阶：${nextThreshold}）`;
 
                 resultMap.set(shortName, {
                     name: shortName, origin: originStr, val: calcVal, stage: stg,
@@ -1375,7 +1519,6 @@
 
             if (!userSettings.strictMentalLock) return;
 
-            // 当总账次数全为 0 且体内无精液时：强制处于第 1 阶段纯洁清白期！
             const sp = v.体内精液存量 || {};
             const totalMl = safeNum(sp.口内毫升) + safeNum(sp.小穴毫升) + safeNum(sp.子宫毫升) + safeNum(sp.屁眼毫升);
 
@@ -1393,9 +1536,14 @@
                 return;
             }
 
-            // 综合锚点：结合总账曲线 + 六孔开发度 + 性癖平均分
+            const caps = getBreakthroughCaps(v);
             const anchorScore = Math.round(dev.masterCurve.val * 0.55 + dev.top2OrganAvg * 0.25 + fetAvg * 0.20);
-            const hardMax100 = (dev.masterCurve.val >= 100 && dev.top2OrganAvg >= 95) ? 100 : 99;
+            const rawMax = (dev.masterCurve.val >= 100 && dev.top2OrganAvg >= 95) ? 100 : 99;
+            const hardMax100 = Math.min(caps.mentalCap, rawMax);
+            if (caps.organCap < 100 && v.身体) {
+                const minStaAllowed = 100 - caps.organCap; // 写实锁79%时，体力最低锁在21%(Lv.4双腿瘫软)，不进Lv.5/6脱臼废用
+                v.身体.体力 = Math.max(minStaAllowed, safeNum(v.身体.体力, 100));
+            }
 
             const maxLongTermCap = Math.min(hardMax100, anchorScore + 6);
             const minLongTermFloor = Math.max(0, anchorScore - 8);
@@ -1423,15 +1571,15 @@
             const curShame = Math.max(0, Math.min(100, safeNum(v.精神与心理.羞耻度, 100)));
             v.精神与心理.羞耻度 = Math.max(minShameFloor, Math.min(curShame, maxShameCap));
 
-            const shortTermCap = Math.min(100, Math.max(35, anchorScore + 25));
-            const shortTermFloor = Math.min(55, Math.round(anchorScore * 0.55));
-            v.核心数值.性欲程度 = Math.max(shortTermFloor, Math.min(Math.max(0, safeNum(v.核心数值.性欲程度)), shortTermCap));
-            v.精神与心理.快感累积 = Math.max(Math.round(shortTermFloor * 0.6), Math.min(Math.max(0, safeNum(v.精神与心理.快感累积)), shortTermCap));
+            const hasActiveStimulus = totalMl > 0 || (v.体内道具与权限?.体内道具 && v.体内道具与权限.体内道具 !== "无");
+            const shortTermCap = Math.min(100, Math.max(45, anchorScore + 35));
+            // 真实世界观：若体内无精液且无道具刺激，日常状态允许快感归零、性欲回落至低位；若有残留或道具，才维持微弱余韵下限
+            const lustFloor = hasActiveStimulus ? Math.min(35, Math.round(anchorScore * 0.35)) : Math.min(15, Math.round(anchorScore * 0.15));
+            const pleasFloor = hasActiveStimulus ? Math.min(25, Math.round(anchorScore * 0.25)) : 0;
+            v.核心数值.性欲程度 = Math.max(lustFloor, Math.min(Math.max(0, safeNum(v.核心数值.性欲程度)), shortTermCap));
+            v.精神与心理.快感累积 = Math.max(pleasFloor, Math.min(Math.max(0, safeNum(v.精神与心理.快感累积)), shortTermCap));
         }
 
-        // =========================================================================
-        // 💭 全局恶堕阶位心声校准器：确保全0时端庄纯洁，随恶堕阶位逐步放荡
-        // =========================================================================
         function getOverallCorruptionTier(v) {
             const corr = safeNum(v.核心数值?.淫乱恶堕, 0);
             const cock = safeNum(v.核心数值?.对肉棒好感度, 0);
@@ -1441,13 +1589,13 @@
             return tier6(avg, false);
         }
 
-        function pickStageThought(v, thoughtsArray) {
-            const t = getOverallCorruptionTier(v);
+        function pickStageThought(v, thoughtsArray, specificStageVal = null, isRev = false) {
+            const t = specificStageVal !== null ? tier6(specificStageVal, isRev) : getOverallCorruptionTier(v);
             return thoughtsArray[Math.min(t, thoughtsArray.length - 1)] || thoughtsArray[0];
         }
 
         // =========================================================================
-        // 🍆 恩客图鉴引擎（严格排除主角自己/原身旧名 + 支持手动删除恩客）
+        // 🍆 恩客图鉴引擎（严格排除主角自己/原身旧名/死物 + 支持删除恩客）
         // =========================================================================
         function extractClientsFromHistory(v, u, c) {
             const ctx = safeCtx();
@@ -1460,7 +1608,6 @@
             const oldSelfName = safeStr(v.档案?.原身旧名).trim();
             const curSelfName = safeStr(u).trim();
 
-            // 严格黑名单：过滤主角自己、纯数字、以及任何道具/文具(笔)/衣服/死物！
             const NON_HUMAN_REGEX = /^(?:\d+|主角|你|我|她|他|它|原身|前世|身体|少女|女人|女生|无|未知|旁白|系统|笔|钢笔|圆珠笔|铅笔|毛笔|画笔|马克笔|跳蛋|假阳具|按摩棒|贞操带|项圈|手铐|锁链|绳子|鞭子|皮鞭|蜡烛|口球|眼罩|衣服|上衣|内裤|底裤|胸罩|文胸|丝袜|黑丝|白丝|高跟鞋|鞋子|裙子|睡裙|床单|床垫|被子|枕头|纸巾|纸团|毛巾|花洒|水龙头|镜子|手机|相机|黄瓜|香蕉|瓶子|酒瓶|触手|道具|玩具)$/;
 
             const isInvalidClient = (candName) => {
@@ -1470,8 +1617,7 @@
                 if (blockedSet.has(n)) return true;
                 if (n === curSelfName || n === rawUser || (oldSelfName && n === oldSelfName)) return true;
                 if (NON_HUMAN_REGEX.test(n)) return true;
-                // 带有明显物品、穿戴、身体部位后缀的直接过滤
-                if (/(?:笔|棒|球|环|链|衣|裤|裙|袜|鞋|帽|巾|床|桌|椅|门|窗|灯|水|液|药|剂|器|具|穴|乳|胸|臀|腿|足|口|唇|手|指)$/.test(n) && !/(?:王哥|熟客|老客|男人|少爷|老板|大师|师兄|师尊|徒弟|老公|丈夫)/.test(n)) {
+                if (/(?:笔|棒|球|环|链|衣|裤|裙|袜|鞋|帽|巾|床|桌|椅|门|窗|灯|水|液|药|剂|器|具|穴|乳|胸|臀|腿|足|口|唇|手|指)$/.test(n) && !/(?:男人|少爷|老板|大师|师兄|师尊|徒弟|老公|丈夫|学长|同学|老师)/.test(n)) {
                     return true;
                 }
                 if (new RegExp(`(?:原名|原本是|前世是|从)\\s*${n}\\s*(?:变成|穿成|重塑|化作)`).test(fullText)) return true;
@@ -1480,12 +1626,13 @@
 
             const upsertClient = (name, roleTag, cockDesc, statusTag, contribPts, dnaShare, detailDesc, thoughtArr) => {
                 if (isInvalidClient(name)) return;
+                const cVal = Math.min(100, Math.max(5, contribPts));
                 clientMap.set(name, {
                     name, roleTag, cockDesc, statusTag,
-                    val: Math.min(100, Math.max(5, contribPts)),
+                    val: cVal,
                     dnaShare,
                     detailDesc,
-                    thoughtStr: Array.isArray(thoughtArr) ? pickStageThought(v, thoughtArr) : thoughtArr
+                    thoughtStr: Array.isArray(thoughtArr) ? pickStageThought(v, thoughtArr, cVal) : thoughtArr
                 });
             };
 
@@ -1499,82 +1646,20 @@
                     if (isInvalidClient(k)) return;
                     const descStr = typeof val === "object" ? JSON.stringify(val) : String(val);
                     upsertClient(
-                        k, "记录在册恩客", "雄性阳具", "已建立肉体关联",
+                        k, "专属调教恩客", "雄性阳具", "已建立肉体烙印",
                         Math.min(100, 30 + vagCnt * 2 + creampie * 3),
                         wombMl > 0 ? 50 : 0,
-                        `【🍆 恩客档案】：${k}\n【📊 详细记录】：${descStr}`,
+                        `【🍆 恩客档案】：${k}\n【📊 肉体崩坏改造记录】：${descStr}`,
                         [
                             `想到【${k}】，我心里还是保持着戒备与距离感。`,
                             `身体已经渐渐记住了【${k}】的气息，面对他时很难完全平静💦。`,
-                            `每次回想起与【${k}】的接触，身体深处就会泛起一丝酸麻感😳💦。`,
-                            `一闻到【${k}】的气味，身体就会不自觉地发软迎合🥵💦！`,
-                            `已经彻底离不开【${k}】的粗暴占有了🥵💦❤️！`,
-                            `啊嘿♡……【${k}】就是彻底支配我身心的唯一主宰呀🥵💦❤️❤️！`
+                            `每次回想起与【${k}】的接触，被撑开过的粘膜深处就会泛起一丝酸麻感😳💦。`,
+                            `一闻到【${k}】的气味，合不拢的肉穴就会不自觉地发软淌水🥵💦！`,
+                            `已经彻底被【${k}】操成他专属的形状了，离开他的粗暴玩弄就活不下去🥵💦❤️！`,
+                            `啊嘿♡……全身孔穴都已经被【${k}】彻底操烂改造成专属排泄便池啦🥵💦❤️❤️！`
                         ]
                     );
                 });
-            }
-
-            if (/熟客/.test(fullText) && !isInvalidClient("力气极大的熟客")) {
-                const hasSemen = (wombMl + vagMl) > 0;
-                upsertClient(
-                    "力气极大的熟客",
-                    "凶猛常客",
-                    "力道凶猛·单次泵精17ml+",
-                    hasSemen ? `刚内射灌满(${wombMl + vagMl}ml)` : "常客支配",
-                    Math.min(100, 48 + creampie * 2),
-                    hasSemen ? 100 : 35,
-                    `【🍆 特征】：抽插力道凶猛，偏爱掐捏大腿、掌掴臀部与无套内射。\n` +
-                    `【📊 记录】：刚将 ${wombMl || 15}ml 浓精泵入深处，体表留下掌印指痕。`,
-                    [
-                        `刚才那个客人力气太大了，我必须尽快把身体清理干净。`,
-                        `呼……那个熟客每次都这么粗鲁，现在腰腿还一阵阵发酸💦。`,
-                        `那个熟客力气惊人，现在每走一步路都还能感觉到体内的坠胀感😳💦。`,
-                        `虽然被那个熟客折腾得满身红痕，可身体却对那种强烈的充实感食髓知味了🥵💦！`,
-                        `好喜欢那个熟客凶猛粗暴的力道呀🥵💦❤️！`,
-                        `啊嘿♡……快让那个熟客再回来彻底占有人家吧🥵💦❤️❤️！`
-                    ]
-                );
-            }
-
-            if (/王哥/.test(fullText) && !isInvalidClient("隔壁王哥")) {
-                upsertClient(
-                    "隔壁王哥",
-                    "熟客老男人",
-                    "熟稔粗鲁·携友同玩",
-                    "今晚带朋友登门",
-                    42,
-                    0,
-                    `【🍆 恩客特征】：住在隔壁的熟客老男人，作风粗野直接，今晚约定带朋友一同前来。`,
-                    [
-                        `今晚隔壁王哥还要带人过来，我必须抓紧时间把房间和身体整理干净。`,
-                        `王哥这人一向粗鲁直接，今晚还带个朋友来，希望待会儿能顺利应付过去💦。`,
-                        `必须在王哥带朋友进门前把深处的残留洗干净，不然今晚就没法交代了😳💦。`,
-                        `一想到今晚王哥要带陌生朋友一起来，小腹深处就莫名有些发紧发热了🥵💦。`,
-                        `好期待今晚王哥带着朋友一起来前呼后拥地玩弄我呀🥵💦❤️！`,
-                        `啊嘿♡……快让王哥和他的朋友推门进来尽情享用我吧🥵💦❤️❤️！`
-                    ]
-                );
-            }
-
-            if (/朋友/.test(fullText) && /王哥/.test(fullText) && !isInvalidClient("王哥带来的朋友")) {
-                upsertClient(
-                    "王哥带来的朋友",
-                    "新客人",
-                    "未知尺寸·充满侵略感",
-                    "随王哥即将抵达",
-                    28,
-                    0,
-                    `【🍆 恩客特征】：由王哥引荐带入的陌生男性朋友，随时可能推门而入。`,
-                    [
-                        `面对即将到来的陌生客人，我心里难免有些紧绷不安。`,
-                        `不知道王哥带来的朋友是什么样的人，今晚同时应付两个人肯定很吃力💦。`,
-                        `一想到待会儿要在陌生男人面前展开身体，耳根还是有些发烫😳💦。`,
-                        `不知道王哥带来的朋友有多强壮呢，身体已经隐隐有些期待发麻了🥵💦。`,
-                        `快来用陌生的力道狠狠开拓我的身体吧🥵💦❤️！`,
-                        `啊嘿♡……无论是谁都快来排队享用这具身体吧🥵💦❤️❤️！`
-                    ]
-                );
             }
 
             return Array.from(clientMap.values());
@@ -1596,6 +1681,9 @@
             };
         }
 
+        // =========================================================================
+        // 🧬 性癖库：Lv.1 浅层记忆 ➡️ Lv.6 神经强迫症躯体畸变
+        // =========================================================================
         function buildFetishRichDesc(fetishObj, v, u) {
             const { name, origin, val, stage, countNow = 0, nextTarget = 20 } = fetishObj;
             const t = tier6(val, false);
@@ -1604,61 +1692,53 @@
             if (apiFet && (apiFet.desc || apiFet.thought)) {
                 return `【🧬 性癖】：「${name}」（${stage} · ${val}/100）\n` +
                        `【🔓 成因】：${apiFet.origin || origin}\n` +
-                       `【🔞 发作实况】：\n${apiFet.desc || "该性癖已在体内激活。"}\n` +
+                       `【🔞 发作与畸变实况】：\n${apiFet.desc || "该性癖已在体内激活。"}\n` +
                        `💭【${u}的实时心声】：“*${cleanThoughtText(apiFet.thought || "身体产生了一丝奇妙的反应……")}*”`;
             }
 
             const stageDescs = [
-                `【第一阶段·浅层记忆】（${val}/100）：「${name}」刚刚在${u}的肉体上留下最初痕迹（开发点 ${countNow}/${nextTarget}）。理智上仍保持克制或羞耻排斥，但被触碰过的粘膜已留下微弱的异物记忆。`,
-                `【第二阶段·条件反射】（${val}/100）：「${name}」已进入第二阶段（开发点 ${countNow}）。只要处于相似情境下，呼吸便会微乱发热，私处开始分泌少量润滑液。`,
-                `【第三阶段·食髓知味】（${val}/100）：「${name}」已深化至第三阶段（开发点 ${countNow}）。长时间未体验「${name}」时，身体深处会泛起明显的空虚酸痒，在过程中会本能地顺从配合。`,
-                `【第四阶段·深度沉溺】（${val}/100）：「${name}」已达第四阶段（开发点 ${countNow}）。相应部位敏感度大幅飙升，面对「${name}」时会主动迎合索取。`,
-                `【第五阶段·理智崩解】（${val}/100）：「${name}」已达第五阶段极限（开发点 ${countNow}）。羞耻防线在此性癖面前彻底瓦解，触发即伴随剧烈痉挛与潮吹失控。`,
-                `【👑 第六阶段·终极刻印】（100/100 MAX）：「${name}」已100%重塑神经快感回路（开发点 ${countNow}），稍微触发即引发连环绝顶！`
+                `【第一阶段·浅层记忆】（${val}/100）：「${name}」刚刚在${u}的肉体上留下最初痕迹（畸变点 ${countNow}/${nextTarget}）。理智上仍保持克制，但被触碰过的粘膜已留下微弱的异物记忆。`,
+                `【第二阶段·条件反射】（${val}/100）：「${name}」已进入第二阶段（畸变点 ${countNow}）。只要处于相似情境下，呼吸便会微乱发热，私处开始分泌少量润滑液。`,
+                `【第三阶段·食髓知味】（${val}/100）：「${name}」已深化至第三阶段（畸变点 ${countNow}）。长时间未体验「${name}」时，身体深处会泛起明显的空虚酸痒，在过程中会本能地顺从配合。`,
+                `【第四阶段·深度成瘾】（${val}/100）：「${name}」已达第四阶段（畸变点 ${countNow}）。相应部位神经回路被重塑，面对「${name}」时会丧失自控力地主动迎合索取。`,
+                `【第五阶段·戒断崩解】（${val}/100）：「${name}」已达第五阶段重度畸变（畸变点 ${countNow}）。一旦脱离「${name}」刺激便会产生剧烈躯体戒断抽搐，触发即伴随失禁与潮吹。`,
+                `【💀 第六阶段·神经强迫症彻底畸变】（100/100 MAX）：「${name}」已100%烧穿大脑皮层并造成不可逆的躯体强迫症畸变（畸变点 ${countNow}）！相关部位肌肉与神经24小时保持迎接「${name}」的病态抽搐造型，一旦强行阻止就会当场发狂自残、喷尿休克！`
             ];
 
             const stageThoughts = [
                 `虽然经历过「${name}」，但我绝不会因此堕落沉迷，必须努力压下身体里那点不自然的异样感。`,
-                `奇怪……为什么一遇到「${name}」的苗头，心跳就会变快、身体也开始微微发热发软呢😳💦？`,
+                `奇怪……为什么一遇到「${name}」的苗头，心跳就会变快、身体也开始微微发热发软呢💦？`,
                 `身体已经诚实地记住了「${name}」带来的酸麻快感，每当被这样对待时，都会忍不住顺从地迎合上去😳💦。`,
                 `哈啊……只要一触发「${name}」，整条脊椎骨都会窜过酥麻的电流，根本没办法抗拒这种深入骨髓的快感呀🥵💦！`,
-                `呜汪♡……已经彻底变成「${name}」的奴隶了，快用更粗暴下流的方式对我做「${name}」吧🥵💦❤️！`,
-                `啊嘿♡……「${name}」已经把我的脑髓彻底烧穿融化了，请让我一辈子泡在「${name}」的高潮地狱里吧🥵💦❤️❤️！`
+                `呜汪♡……已经彻底染上「${name}」的重度毒瘾了，不快点对我做「${name}」全身都要抽搐坏掉了🥵💦❤️！`,
+                `啊嘿♡……「${name}」已经把我的脑髓和骨头彻底烧穿改造成病态形状了，一旦停止「${name}」我就会当场发狂自残死掉呀🥵💦❤️❤️！`
             ];
 
             return `【🧬 性癖】：「${name}」（${stage} · ${val}/100）\n` +
                    `【🔓 成因】：${origin}\n` +
-                   `【🔞 发作实况】：\n${stageDescs[t]}\n` +
+                   `【🔞 发作与畸变实况】：\n${stageDescs[t]}\n` +
                    `💭【${u}的实时心声】：“*${stageThoughts[t]}*”`;
         }
 
-        function varsToYaml(userName, varsObj) {
-            const cleanCopy = { ...varsObj };
-            delete cleanCopy.按钮详情;
-            delete cleanCopy.性癖详情;
-            delete cleanCopy.自定义条目;
-            delete cleanCopy.已屏蔽恩客;
-            function serialize(obj, indent = 2) {
-                const pad = " ".repeat(indent); let out = "";
-                for (const [k, v] of Object.entries(obj || {})) {
-                    if (v === "" || v === "无" || v === 0) continue;
-                    if (Array.isArray(v)) {
-                        if (!v.length) continue;
-                        out += `${pad}${k}:\n`;
-                        for (const item of v) out += `${pad}  - ${item}\n`;
-                    } else if (v !== null && typeof v === "object") {
-                        const sub = serialize(v, indent + 2);
-                        if (sub) out += `${pad}${k}:\n` + sub;
-                    } else {
-                        out += `${pad}${k}: ${v}\n`;
-                    }
-                }
-                return out;
-            }
-            const bodyStr = serialize(cleanCopy, 2);
-            return `${userName}:\n` + (bodyStr || "  初始状态: 全0\n");
+        // =========================================================================
+        // 📉 精简 YAML 注入（节省 70% Token，彻底解决手机端正文字数少的问题）
+        // =========================================================================
+        function varsToCompactSummary(userName, v) {
+            const dev = computeAllOrganDevelopments(v);
+            const sp = v.体内精液存量 || {};
+            const c = v.计数 || {};
+            const mark = v.痕迹与标记 || {};
+            const prop = v.体内道具与权限 || {};
+            return `${userName}状态快照: 体力=${safeNum(v.身体?.体力, 100)}%, 恶堕=${safeNum(v.核心数值?.淫乱恶堕)}%, 好感=${safeNum(v.核心数值?.对肉棒好感度)}%, 性欲=${safeNum(v.核心数值?.性欲程度)}%, 羞耻=${safeNum(v.精神与心理?.羞耻度, 100)}%, 服从=${safeNum(v.精神与心理?.服从度)}%, 快感=${safeNum(v.精神与心理?.快感累积)}% | ` +
+                   `六孔崩坏度: 口=${dev.mouthObj.val}%, 乳=${dev.chestObj.val}%, 穴=${dev.vagObj.val}%, 宫=${dev.wombObj.val}%, 蒂尿=${dev.clitObj.val}%, 菊=${dev.analObj.val}% | ` +
+                   `体内储精: 宫腔=${safeNum(sp.子宫毫升)}ml, 阴道=${safeNum(sp.小穴毫升)}ml, 胃=${safeNum(sp.口内毫升)}ml, 肠=${safeNum(sp.屁眼毫升)}ml | ` +
+                   `累计总账: 小穴=${safeNum(c.性交?.小穴)}, 内射=${safeNum(c.射精?.内射)}, 口交=${safeNum(c.性交?.口)}, 吞精=${safeNum(c.精液摄入?.吞精次数)}, 肛交=${safeNum(c.性交?.屁眼)}, 高潮=${safeNum(c.高潮?.总数)}, 接客=${safeNum(c.交易?.接客卖身)} | ` +
+                   `肉改实况: 伤痕=${safeStr(mark.体表痕迹, "无")}, 淫纹=${safeStr(mark.淫纹与刻印, "无")}, 穿刺=${safeStr(mark.穿刺与环饰, "无")}, 体内道具=${safeStr(prop.体内道具, "无")}`;
         }
 
+        // =========================================================================
+        // 🔗 进阶优化点3：反向支配正文（升级为“不可逆器质崩坏描写铁律”）
+        // =========================================================================
         function buildReverseBodyEnforcementRules(u, v) {
             if (!userSettings.injectReversePrompt) return "";
             const dev = computeAllOrganDevelopments(v);
@@ -1670,33 +1750,42 @@
             const rules = [];
 
             if (dev.totalLedgerCount === 0 && totalMl === 0 && corr < 15) {
-                rules.push(`- 【🌸纯洁清白状态(恶堕${corr}%/羞耻${shame}%)】：当前主角(${u})所有性交与内射记录均为0，处于纯洁清白阶段。正文中若未发生实质性调教或侵犯，心理描写必须保持符合人设的端庄、清醒、矜持或正常害羞，严禁无故出现母狗、发骚、渴望肉棒等重口恶堕独白！`);
-                return `\n【🚨 状态栏1.0 正文一致性铁律】\n${rules.join("\n")}\n`;
+                rules.push(`- 【🌸完好清白状态(恶堕${corr}%/羞耻${shame}%)】：当前主角(${u})所有器官均处于第1阶段完好如初状态。正文中若未发生实质性侵犯，心理与生理描写必须保持端庄矜持，严禁无故出现母狗、发骚、器官外翻等恶堕描写！`);
+                return `\n【🚨 状态栏1.0 器质崩坏与正文一致性铁律】\n${rules.join("\n")}\n`;
             }
 
-            const vagT = dev.vagObj.tier;
-            if (vagT >= 4) {
-                rules.push(`- 【🌺小穴第${vagT + 1}阶段(${dev.vagObj.val}/100)】：正文中涉及下体或性交时，严禁描写“像处女一样紧涩疼痛”，必须体现阴唇外翻充血、极易拉丝泛滥、肉壁自动绞紧吸吮。`);
-            } else if (vagT >= 2) {
-                rules.push(`- 【🌺小穴第${vagT + 1}阶段(${dev.vagObj.val}/100·熟稔名器)】：下体已被充分开发，花唇微张易湿，肉壁会本能迎合抽插。`);
+            if (dev.vagObj.tier >= 4) {
+                rules.push(`- 【💀小穴第${dev.vagObj.tier + 1}阶段(${dev.vagObj.val}/100·重度器质崩坏)】：小穴已因过度使用而彻底松弛洞开、阴唇紫黑外翻且无法自然闭合！正文中严禁描写“紧致如处女”，走动时必须写出穴口合不拢漏精、咕啾吸气的重口崩坏细节！`);
+            } else if (dev.vagObj.tier >= 2) {
+                rules.push(`- 【🌺小穴第${dev.vagObj.tier + 1}阶段(${dev.vagObj.val}/100·外翻熟稔)】：花唇已被开发得肥厚外翻、极易泛滥拉丝，肉壁会本能迎合吞吸。`);
+            }
+
+            if (dev.wombObj.tier >= 4) {
+                rules.push(`- 【💀子宫第${dev.wombObj.tier + 1}阶段(${dev.wombObj.val}/100·宫颈重度脱垂)】：子宫韧带已被彻底撞松，紫红肿胀的宫颈口已顺着阴道向下严重脱垂甚至外翻至穴口边缘，随时处于张口索精状态！`);
+            }
+
+            if (dev.clitObj.tier >= 4) {
+                rules.push(`- 【💀尿道第${dev.clitObj.tier + 1}阶段(${dev.clitObj.val}/100·括约肌崩坏失禁)】：阴蒂恶性肥大勃起，尿道括约肌已严重松弛坏死，稍受刺激或高潮必定伴随失控漏尿与潮吹狂喷！`);
+            }
+
+            if (dev.analObj.tier >= 4) {
+                rules.push(`- 【💀后庭第${dev.analObj.tier + 1}阶段(${dev.analObj.val}/100·直肠翻肉脱肛)】：肛门括约肌已彻底松弛不合，鲜红的直肠粘膜向外翻出脱垂，无法锁住肠液与残精！`);
             }
 
             if (totalMl > 0) {
-                rules.push(`- 【🥛体内当前存留 ${totalMl}ml 浓精（宫腔${safeNum(sp.子宫毫升)}ml/阴道${safeNum(sp.小穴毫升)}ml）】：站立或走动时必须写出下腹坠胀感与白浊顺大腿内侧滴淌拉丝的物理细节。`);
+                rules.push(`- 【🥛体内当前存留 ${totalMl}ml 浓精（宫腔${safeNum(sp.子宫毫升)}ml/阴道${safeNum(sp.小穴毫升)}ml）】：站立或走动时必须写出下腹沉甸甸的坠胀感与白浊顺大腿内侧滴淌拉丝的物理细节。`);
             }
 
             if (corr >= 80 || shame <= 20) {
-                rules.push(`- 【🖤高阶恶堕(恶堕${corr}%/羞耻${shame}%/服从${obey}%)】：神态与肢体必须体现出已被调教透彻的顺从或主动索取，严禁变回清纯抗拒。`);
-            } else if (corr >= 40) {
-                rules.push(`- 【🖤风尘熟稔(恶堕${corr}%/服从${obey}%)】：身体对情事已习以为常、动作熟练顺从。`);
+                rules.push(`- 【🖤高阶脑崩坏(恶堕${corr}%/羞耻${shame}%/服从${obey}%)】：精神防线已彻底崩坏，神态与肢体必须体现出丧失廉耻的顺从或主动索取。`);
             }
 
             if (!rules.length) return "";
-            return `\n【🚨 状态栏1.0 正文一致性铁律】\n${rules.join("\n")}\n`;
+            return `\n【🚨 状态栏1.0 器质崩坏与正文一致性铁律】\n${rules.join("\n")}\n`;
         }
 
         function buildFullSystemPrompt(userName, currentVars) {
-            const currentYaml = varsToYaml(userName, currentVars);
+            const compactSnap = varsToCompactSummary(userName, currentVars);
             const diff = getDifficultyProfile();
             const reverseRules = buildReverseBodyEnforcementRules(userName, currentVars);
             const c = currentVars.计数 || {};
@@ -1708,22 +1797,21 @@
                 ? `\n【⚠️ 非处女人设校准】：当前总账全为0。若主角(${userName})在设定中已有性经验（如妓女/熟女等），请在本轮末尾的 ${openTag} 中用 _.set 将其历史累计次数与体内精液存量设为符合人设的非零数值。`
                 : "";
 
-            return `\n【当前角色状态变量（难度：${diff.mult}x｜身份：${detectRealCharacterIdentity(currentVars)}）】\n${currentYaml}` +
+            return `\n【⚠️ 正文字数与细节最高铁律】：你的回复重心是【小说正文】！正文描写必须极其细腻、慢节奏、充满五感与肉体特写（正文至少1000~1500字以上），严禁为了输出底部的状态变量而缩写剧情或提前结束正文！\n` +
+                   `【当前角色状态快照（难度：${diff.mult}x｜身份：${detectRealCharacterIdentity(currentVars)}）】\n${compactSnap}` +
                    autoInitRule +
                    reverseRules +
-                   `\n【🔥状态栏更新规范】\n` +
-                   `1. 严禁在正文中输出【状态栏】...【/状态栏】文本面板！\n` +
-                   `2. 每条回复正文结束后，在最末尾输出唯一一个 ${openTag}...${closeTag} 块更新本轮变化项：\n` +
+                   `\n【🔥状态变量后台静默更新规范】\n` +
+                   `1. 严禁在正文中输出【状态栏】文本面板或裸露的 _.set 代码！\n` +
+                   `2. 只有在完整写完充实的长篇正文（及选项/摘要）之后，在全篇最末尾输出唯一一个闭合的 ${openTag}...${closeTag} 块：\n` +
                    `${openTag}\n` +
                    `_.set('${userName}.计数.性交.小穴', ${safeNum(c.性交?.小穴)});\n` +
                    `_.set('${userName}.体内精液存量.子宫毫升', ${safeNum(currentVars.体内精液存量?.子宫毫升)});\n` +
                    `_.set('${userName}.体内精液存量.小穴毫升', ${safeNum(currentVars.体内精液存量?.小穴毫升)});\n` +
                    `_.set('${userName}.痕迹与标记.体表痕迹', '${safeStr(currentVars.痕迹与标记?.体表痕迹, "无")}');\n` +
-                   `_.set('${userName}.实况.当前衣装', '${safeStr(currentVars.实况?.当前衣装, "整洁衣物")}');\n` +
                    `_.set('${userName}.实况.当前姿势', '简短概括当前姿势');\n` +
-                   `_.set('${userName}.实况.内心独白', '符合当前恶堕阶位的第一人称心声');\n` +
-                   `${closeTag}\n` +
-                   `3. 严禁将恶堕度、好感度、服从度直接跳满100，每次仅允许微调 1~4 点！`;
+                   `_.set('${userName}.实况.内心独白', '符合当前崩坏阶位的第一人称心声');\n` +
+                   `${closeTag}`;
         }
 
         function fmtKey(rk, barTheme = "pleas", subBarCfg = null, hideBar = false, stagePctOverride = null) {
@@ -1736,15 +1824,15 @@
                 rawRatioStr = `${m[1]}/${m[2]}${m[3] || ""}`;
                 if (max > 0) pct = Math.max(0, Math.min(100, Math.round((cur / max) * 100)));
             } else {
-                const sm = { "第一阶段": 12, "第二阶段": 32, "第三阶段": 52, "第四阶段": 72, "第五阶段": 90, "第六阶段": 100 };
+                const sm = { "第一阶段": 0, "第二阶段": 28, "第三阶段": 48, "第四阶段": 68, "第五阶段": 88, "第六阶段": 100 };
                 for (const [k, v] of Object.entries(sm)) if (rawKeyStr.includes(k)) { pct = v; break; }
             }
 
             const badges = [];
             let cleanTitle = rawKeyStr
                 .replace(/「([^」]{1,45})」/g, (_, s) => {
-                    const isStage6 = s.includes("第六阶段") || s.includes("神格") || s.includes("永久洞开") || s.includes("100%");
-                    const isStage5 = !isStage6 && (s.includes("第五阶段") || s.includes("终极") || s.includes("便器") || s.includes("危险排卵"));
+                    const isStage6 = s.includes("第六阶段") || s.includes("彻底崩坏") || s.includes("畸变") || s.includes("100%");
+                    const isStage5 = !isStage6 && (s.includes("第五阶段") || s.includes("脱垂") || s.includes("脱肛") || s.includes("便器"));
                     const cls = isStage6 ? "st-stage6-badge" : (isStage5 ? "st-stage5-badge" : "");
                     const bBg = isStage5 ? "linear-gradient(90deg,#ff003c,#2b0012)" : tc.hi;
                     const bCol = (isStage6 || isStage5) ? "#fff" : tc.text;
@@ -1776,7 +1864,7 @@
             if (pct !== null && !hideBar && barTheme !== "none") {
                 const st = getThemedBarStyle(pct, barTheme);
                 const mainLabel = subBarCfg ? `${pct}%` : (rawRatioStr && rawRatioStr.includes("ml") ? rawRatioStr : `${pct}%`);
-                const barTitle = subBarCfg ? (subBarCfg.mainName || "🔥 阶位进度") : `Lv.${st.tier + 1} 进度`;
+                const barTitle = subBarCfg ? (subBarCfg.mainName || "💀 崩坏阶位") : `Lv.${st.tier + 1} 崩坏度`;
 
                 barHTML = `<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;width:100%;background:rgba(0,0,0,0.36);padding:6px 8px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);box-sizing:border-box;">
                     <div style="display:flex;flex-direction:column;gap:3px;width:100%;">
@@ -1807,7 +1895,7 @@
             }
 
             const finalPctForImg = stagePctOverride !== null ? stagePctOverride : pct;
-            return { keyHTML, barHTML, cleanTitle, pct: finalPctForImg };
+            return { keyHTML, barHTML, cleanTitle, pct: finalPctForImg, hasStageBar: (!hideBar && barTheme !== "none" && pct !== null) };
         }
 
         function extractDynamicContext(u, c) {
@@ -1863,91 +1951,94 @@
             return res;
         }
 
+        // =========================================================================
+        // 🧠 核心心理与躯体机能指标：Lv.1 完好如初 ➡️ Lv.6 彻底脑死/躯体废用畸变
+        // =========================================================================
         function getDynamicMetricDetail(type, v, u) {
             const ovr = v.按钮详情?.[type];
             const map = {
                 cockLove: {
                     val: safeNum(v.核心数值?.对肉棒好感度), rev: false,
-                    st: ["抗拒戒备", "被动适应", "食髓知味", "痴迷跪舔", "肉棒母犬", "终极肉套"],
+                    st: ["抗拒戒备", "粘膜适应", "空虚渴求", "跪舔崇拜", "断根戒断", "脑干阳具寄生"],
                     d: [
-                        `【🔬 阳具好感与神经反应（Lv.1 戒备期）】：${u}在意识上对雄性阳具保持着明显的警惕与排斥，本能地抗拒异物贴近与侵犯。\n💭【${u}的实时心声】：“*我必须离那种肮脏粗鲁的雄性东西远一点，绝不能让自己的清白受到半点玷污。*”`,
-                        `【🔬 阳具好感与神经反应（Lv.2 适应期）】：粘膜在接触中逐渐记住了阳具的轮廓与热度，抗拒心理开始被麻木与被动配合取代。\n💭【${u}的实时心声】：“*虽然心里还是觉得难为情，但身体似乎已经渐渐习惯了那种滚烫异物贴近时的温度了💦……*”`,
-                        `【🔬 阳具好感与神经反应（Lv.3 渴求期）】：肉体已在反复摩擦中食髓知味，空虚时内壁会本能地泛起酸痒与分泌润滑液。\n💭【${u}的实时心声】：“*小穴里面隐隐有些发空发痒，用手指根本比不上被滚烫肉棒塞满时的充实感呀😳💦……*”`,
-                        `【🔬 阳具好感与神经反应（Lv.4 崇拜期）】：沉溺于阳具带来的快感，见到勃起巨物便会呼吸急促、双腿发软。\n💭【${u}的实时心声】：“*浓烈的雄性气息一冲进鼻腔，下面就已经湿透了，好想快点用嘴和骚穴服侍大肉棒呀🥵💦！*”`,
-                        `【🔬 阳具好感与神经反应（Lv.5 母犬期）】：重度阳具成瘾，离开肉棒填塞便会产生强烈的空虚戒断反应。\n💭【${u}的实时心声】：“*呜汪♡……没有大肉棒塞着就活不下去了，求求快把我的嘴和骚穴当成泄欲肉套子尽情使用吧🥵💦❤️！*”`,
-                        `【👑 第六阶段·终极活体飞机杯（100% MAX）】：全身孔穴24小时处于恒温痉挛吸吮状态，化作只为榨取精液而存在的活体肉套！\n💭【${u}的实时心声】：“*啊嘿♡……100%变成大肉棒专属的终极飞机杯了，请一辈子焊死在我的子宫里不要拔出来吧🥵💦❤️❤️！*”`
+                        `【🔬 阳具好感与神经回路（Lv.1 完好戒备）】：${u}神经与理智完好，对雄性阳具保持着强烈的警惕与排斥，本能抗拒异物侵入。\n💭【${u}的实时心声】：“*我必须离那种粗鲁肮脏的雄性东西远一点，绝不能让自己的清白受到半点玷污。*”`,
+                        `【🔬 阳具好感与神经回路（Lv.2 粘膜适应）】：粘膜在反复摩擦中记住了阳具的轮廓与热度，排斥反应减退为麻木配合。\n💭【${u}的实时心声】：“*虽然心里还是觉得难为情，但身体粘膜似乎已经渐渐适应了那种滚烫异物的温度💦……*”`,
+                        `【🔬 阳具好感与神经回路（Lv.3 空虚渴求）】：阴道与口腔神经已在抽插中食髓知味，空虚时内壁会本能地泛起酸痒并分泌润滑液。\n💭【${u}的实时心声】：“*小穴里面隐隐有些发空发痒，用手指根本比不上被滚烫肉棒塞满时的充实感呀😳💦……*”`,
+                        `【🔬 阳具好感与神经回路（Lv.4 跪舔崇拜）】：大脑快感中枢已被阳具驯化，见到勃起巨物或闻到腥膻味便会双腿发软、唾液泛滥。\n💭【${u}的实时心声】：“*浓烈的雄性腥膻味一冲进鼻腔，下面就已经湿透了，好想快点跪下来用嘴和骚穴服侍大肉棒呀🥵💦！*”`,
+                        `【🔬 阳具好感与神经回路（Lv.5 断根戒断）】：重度阳具成瘾畸变，一旦体内超过半小时没有肉棒填塞，就会产生全身发抖、冷汗淋漓的剧烈戒断反应。\n💭【${u}的实时心声】：“*呜汪♡……没有大肉棒塞着全身骨头都像有蚂蚁在咬一样难受，求求快插进来救救发瘾的母狗吧🥵💦❤️！*”`,
+                        `【💀 第六阶段·脑干阳具寄生畸变（100% 彻底崩坏）】：大脑视觉与嗅觉中枢彻底崩坏畸变，眼中除了勃起肉棒外已无法识别任何人类面孔！全身孔穴24小时处于痉挛吸吮状态，一旦脱离肉棒超过一刻钟便会引发癫痫般翻白眼抽搐、疯狂抓烂自己私处的自残戒断症！\n💭【${u}的实时心声】：“*啊嘿♡……脑干里全都长满大肉棒的形状了，看不见别的了……不插着肉棒就会抽搐死掉的，请把肉棒焊死在我的烂肉洞里吧🥵💦❤️❤️！*”`
                     ]
                 },
                 lust: {
                     val: safeNum(v.核心数值?.性欲程度), rev: false,
-                    st: ["清心克制", "春情微燥", "欲火焚身", "重度发骚", "狂暴发情", "永动发情"],
+                    st: ["清心克制", "春情微燥", "欲火焚身", "重度发骚", "狂暴发情", "下丘脑发情烧毁"],
                     d: [
-                        `【🔬 情欲与荷尔蒙实况（Lv.1 平静期）】：气息平稳，心神清澈冷静，身体未受明显情欲燥热干扰。\n💭【${u}的实时心声】：“*现在心境很平静，身体也没有任何奇怪的燥热感，可以冷静思考接下来的事。*”`,
-                        `【🔬 情欲与荷尔蒙实况（Lv.2 微燥期）】：小腹深处升起一丝淡淡的温热感，皮肤敏感度有所提升。\n💭【${u}的实时心声】：“*唔……不知怎么身体稍微有些发热，连呼吸都变得比平时温热了一点💦。*”`,
-                        `【🔬 情欲与荷尔蒙实况（Lv.3 焚身期）】：情欲涌动，脸颊泛起潮红，乳尖发硬，私处分泌出湿润春水。\n💭【${u}的实时心声】：“*身体烫得厉害，两腿之间已经湿漉漉地黏在一起了，好想找个地方缓解这股燥热呀😳💦！*”`,
-                        `【🔬 情欲与荷尔蒙实况（Lv.4 发骚期）】：重度发情，双腿本能地交叠磨蹭着充血阴唇，眼神迷离拉丝。\n💭【${u}的实时心声】：“*哈啊……淫水根本止不住地往外淌，乳头硬得发痛，满脑子都想着被粗暴地按住灭火呀🥵💦！*”`,
-                        `【🔬 情欲与荷尔蒙实况（Lv.5 狂暴期）】：理智被情欲吞没，三穴不断涌出爱液，主动扭腰乞求交配。\n💭【${u}的实时心声】：“*啊啊♡……发情一秒钟都停不下来了，快过来把我按在床上狠狠干烂吧🥵💦❤️！*”`,
-                        `【👑 第六阶段·永动发情母畜（100% MAX）】：内分泌彻底改写为永不退潮的发情熔炉，连呼吸摩擦都会引发自发潮吹！\n💭【${u}的实时心声】：“*啊嘿♡……全身血液都变成滚烫春药了，请让我生生世世活在发情交配的高潮地狱里吧🥵💦❤️❤️！*”`
+                        `【🔬 情欲与内分泌实况（Lv.1 清心完好）】：下丘脑与内分泌系统完好平稳，心神清澈冷静，无任何异常情欲燥热。\n💭【${u}的实时心声】：“*现在心境很平静，身体没有任何奇怪的燥热感，可以冷静思考接下来的事。*”`,
+                        `【🔬 情欲与内分泌实况（Lv.2 春情微燥）】：体内雌激素微升，小腹深处泛起淡淡温热，皮肤敏感度有所提高。\n💭【${u}的实时心声】：“*唔……不知怎么身体稍微有些发热，连呼吸都变得比平时温热了一点💦。*”`,
+                        `【🔬 情欲与内分泌实况（Lv.3 欲火焚身）】：情欲翻涌，脸颊泛起潮红，乳尖发硬充血，私处不自觉分泌出湿润春水。\n💭【${u}的实时心声】：“*身体烫得厉害，两腿之间已经湿漉漉地黏在一起了，好想找个地方缓解这股燥热呀😳💦！*”`,
+                        `【🔬 情欲与内分泌实况（Lv.4 重度发骚）】：内分泌失控过载，双腿本能地交叠磨蹭着充血外翻的阴唇，眼神迷离拉丝。\n💭【${u}的实时心声】：“*哈啊……淫水根本止不住地往外淌，乳头硬得发痛，满脑子都想着被粗暴地按住灭火呀🥵💦！*”`,
+                        `【🔬 情欲与内分泌实况（Lv.5 狂暴发情）】：理智被滚烫情欲吞没，三穴不断涌出滚烫粘液，像发情期母兽般主动撅臀乞求交配。\n💭【${u}的实时心声】：“*啊啊♡……发情一秒钟都停不下来了，快过来把我按在地上狠狠干烂吧🥵💦❤️！*”`,
+                        `【💀 第六阶段·下丘脑发情烧毁畸变（100% 彻底崩坏）】：控制体温与欲望的下丘脑因长期极限催情而彻底烧毁坏死！体温常年高达40℃，全身毛孔与崩坏三穴无休止地向外渗出浓郁催情粘液，彻底丧失睡眠与正常进食本能，化作一具不交配到死就不会停歇的发情肉偶！\n💭【${u}的实时心声】：“*啊嘿♡……脑子里的发情开关彻底烧化坏死了，全身都在冒火喷水……不睡觉不吃饭也要永远挨操交配呀🥵💦❤️❤️！*”`
                     ]
                 },
                 corr: {
                     val: safeNum(v.核心数值?.淫乱恶堕), rev: false,
-                    st: ["纯洁自守", "风尘染尘", "食髓知味", "放荡娼妇", "公用精盆", "深渊便器"],
+                    st: ["完好清白", "初度染尘", "食髓知味", "放荡娼妇", "公用精盆", "彻底崩坏肉坑"],
                     d: [
-                        `【🔬 恶堕与道德底线（Lv.1 清白期）】：心底坚守着自尊与清白底线，举止端庄自持，绝不接受下流亵渎。\n💭【${u}的实时心声】：“*无论处境如何变化，我都绝不会放弃自己的尊严与底线。*”`,
-                        `【🔬 恶堕与道德底线（Lv.2 染尘期）】：在现实妥协或快感冲击下，矜持防线出现松动，学会了用顺从来应对局面。\n💭【${u}的实时心声】：“*虽然心里还是觉得有些屈辱，但似乎已经不像最开始那样剧烈抗拒了💦……*”`,
-                        `【🔬 恶堕与道德底线（Lv.3 放荡期）】：食髓知味，身体对情事已产生熟练的迎合本能，道德负罪感大幅消退。\n💭【${u}的实时心声】：“*身体早就习惯了男人的温度与粗鲁摆弄，甚至在被填满时会忍不住主动夹紧迎合呢😳💦。*”`,
-                        `【🔬 恶堕与道德底线（Lv.4 娼妇期）】：彻底接纳并享受放荡欢愉，以用肉体榨干男人为乐。\n💭【${u}的实时心声】：“*什么清白体面全都是多余的，哪有张开双腿享受肉棒抽插和内射来得快活呀🥵💦❤️！*”`,
-                        `【🔬 恶堕与道德底线（Lv.5 精盆期）】：尊严粉碎，将自己视作供男人发泄兽欲的公用排泄精盆。\n💭【${u}的实时心声】：“*呜汪♡……我就是一件只要张开腿就能随便插进来射精的公用精盆，请尽情使用我吧🥵💦❤️！*”`,
-                        `【👑 第六阶段·深渊肉便器（100% MAX）】：身心100%完成向终极活体肉便器的蜕变，以承受极端淫虐与灌精为唯一生存意义！\n💭【${u}的实时心声】：“*啊嘿♡……恶堕100%圆满达成啦！快来把人家的三穴操成永远合不拢的流精肉壶吧🥵💦❤️❤️！*”`
+                        `【🔬 道德人格与尊严实况（Lv.1 完好清白）】：人格与道德尊严完好无损，举止端庄自持，绝不接受任何下流亵渎。\n💭【${u}的实时心声】：“*无论处境如何变化，我都绝不会放弃自己的尊严与清白底线。*”`,
+                        `【🔬 道德人格与尊严实况（Lv.2 初度染尘）】：在现实妥协或肉体冲击下，矜持防线出现裂痕，学会了用被动顺从来应对局面。\n💭【${u}的实时心声】：“*虽然心里还是觉得有些屈辱，但似乎已经不像最开始那样剧烈抗拒了💦……*”`,
+                        `【🔬 道德人格与尊严实况（Lv.3 食髓知味）】：身体对情事已产生熟练的迎合肌肉记忆，道德负罪感大幅消退。\n💭【${u}的实时心声】：“*身体早就习惯了男人的温度与粗鲁摆弄，甚至在被填满时会忍不住主动夹紧迎合呢😳💦。*”`,
+                        `【🔬 道德人格与尊严实况（Lv.4 放荡娼妇）】：尊严防线坍塌，彻底接纳并享受放荡欢愉，以用肉体榨干男人为乐。\n💭【${u}的实时心声】：“*什么清白体面全都是多余的，哪有张开双腿享受肉棒抽插和内射来得快活呀🥵💦！*”`,
+                        `【🔬 道德人格与尊严实况（Lv.5 公用精盆）】：人格严重劣化，完全将自己视作供男人发泄兽欲的公用排泄精盆。\n💭【${u}的实时心声】：“*呜汪♡……我就是一件只要张开腿就能随便插进来射精的公用精盆，请尽情使用我吧🥵💦❤️！*”`,
+                        `【💀 第六阶段·人格粉碎排泄肉坑（100% 彻底崩坏）】：属于人类女性的自尊、道德与人格回路100%物理坏死清零！发自骨髓地认知自己只是一块连牲畜都不如的烂肉痰盂与排泄肉坑，唯一存在价值就是被粗暴捅穿、灌满浓精与秽物直至腐烂报废！\n💭【${u}的实时心声】：“*啊嘿♡……人类的人格已经彻底死掉啦，人家现在只是一块专门接精液和尿液的烂肉坑，请把臭肉洞彻底操烂报废吧🥵💦❤️❤️！*”`
                     ]
                 },
                 shame: {
                     val: safeNum(v.精神与心理?.羞耻度, 100), rev: true,
-                    st: ["羞愤自持", "耳根滚烫", "习以为常", "敞腿任看", "羞耻全灭", "失禁露出"],
+                    st: ["羞愤自持", "耳根滚烫", "习以为常", "敞腿任看", "羞耻全灭", "羞耻神经坏死"],
                     d: [
-                        `【🔬 羞耻防线实况（Lv.1 羞愤期）】：羞耻心极强，极度注重衣着得体与身体隐私，稍有走光便会羞愤遮掩。\n💭【${u}的实时心声】：“*必须注意整理好衣襟与姿态，绝不能让人看到丝毫不雅的模样。*”`,
-                        `【🔬 羞耻防线实况（Lv.2 滚烫期）】：在亲密接触或暴露下耳根滚烫、面红耳赤，遮挡动作变得有些迟疑无力。\n💭【${u}的实时心声】：“*脸颊烫得厉害……被人用那种灼热的视线盯着看，连手脚都不知道该往哪儿放了😳💦。*”`,
-                        `【🔬 羞耻防线实况（Lv.3 钝化期）】：羞耻感已被磨平大半，赤裸身体或清理私处时已能保持平静麻木。\n💭【${u}的实时心声】：“*光着身子走动或者清理私处，现在的我早已经习以为常，不会再像以前那样大惊小怪了💦。*”`,
-                        `【🔬 羞耻防线实况（Lv.4 敞腿期）】：廉耻心荡然无存，被人视奸私处时反而会兴奋得分泌爱液。\n💭【${u}的实时心声】：“*就算现在被人撞见我一丝不挂的下流模样，我也会直接敞开双腿让他看个够哟🥵💦！*”`,
-                        `【🔬 羞耻防线实况（Lv.5 暴露期）】：将暴露视为强烈催情剂，渴望在明亮处或众人目光下展示淫态。\n💭【${u}的实时心声】：“*啊啊♡……快让所有人都来看看这具刚被玩弄过、还在往外漏水的骚身体吧🥵💦❤️！*”`,
-                        `【👑 第六阶段·当众失禁露出狂（0/100 MAX）】：羞耻心彻底归零，在围观与镜头下当众潮吹失禁即可直接引发脑髓绝顶！\n💭【${u}的实时心声】：“*啊嘿♡……在所有人围观下当众潮吹漏尿失禁，就是全宇宙最棒的绝顶春药呀🥵💦❤️❤️！*”`
+                        `【🔬 羞耻神经防线（Lv.1 完好自持）】：羞耻心完好极强，极度注重衣着得体与身体隐私，稍有走光便会羞愤遮掩。\n💭【${u}的实时心声】：“*必须注意整理好衣襟与姿态，绝不能让人看到丝毫不雅的模样。*”`,
+                        `【🔬 羞耻神经防线（Lv.2 耳根滚烫）】：在亲密接触或暴露下耳根滚烫、面红耳赤，遮挡动作变得有些迟疑无力。\n💭【${u}的实时心声】：“*脸颊烫得厉害……被人用那种灼热的视线盯着看，连手脚都不知道该往哪儿放了😳💦。*”`,
+                        `【🔬 羞耻神经防线（Lv.3 习以为常）】：羞耻感已被磨平大半，赤裸身体或清理私处时已能保持平静麻木。\n💭【${u}的实时心声】：“*光着身子走动或者清理私处，现在的我早已经习以为常，不会再像以前那样大惊小怪了💦。*”`,
+                        `【🔬 羞耻神经防线（Lv.4 敞腿任看）】：廉耻心瓦解，被人视奸红肿私处时非但不遮掩，反而会兴奋得分泌爱液。\n💭【${u}的实时心声】：“*就算现在被人撞见我一丝不挂的下流模样，我也会直接敞开双腿让他看个够哟🥵💦！*”`,
+                        `【🔬 羞耻神经防线（Lv.5 羞耻全灭）】：羞耻回路逆转为强烈催情剂，极度渴望在众人围观与镜头下展示外翻烂穴。\n💭【${u}的实时心声】：“*啊啊♡……快让所有人都来看看这具刚被玩弄过、还在往外漏精滴尿的骚身体吧🥵💦❤️！*”`,
+                        `【💀 第六阶段·羞耻神经彻底坏死（0/100 彻底崩坏）】：大脑掌管廉耻的神经区域100%萎缩坏死！彻底丧失遮羞概念，只有在大庭广众之下掰开外翻脱垂的烂肉洞、当众潮吹喷尿甚至排泄失禁时，才能刺激麻木的脑干产生绝顶快感！\n💭【${u}的实时心声】：“*啊嘿♡……羞耻是什么早就忘光啦！快把聚光灯打在人家合不拢的脱垂烂穴上，看母猪当众喷尿失禁高潮吧🥵💦❤️❤️！*”`
                     ]
                 },
                 obey: {
                     val: safeNum(v.精神与心理?.服从度), rev: false,
-                    st: ["孤高自主", "被动妥协", "温顺配合", "摇尾乞怜", "绝对盲从", "巴甫洛夫肉奴"],
+                    st: ["孤高自主", "被动妥协", "温顺配合", "摇尾乞怜", "绝对盲从", "前额叶切除木偶"],
                     d: [
-                        `【🔬 意志与服从实况（Lv.1 自主期）】：意志独立坚定，保有强烈的自我主见与防备心，绝不轻易屈服于他人命令。\n💭【${u}的实时心声】：“*我的身体与意志只属于我自己，任何人都休想随便摆布我。*”`,
-                        `【🔬 意志与服从实况（Lv.2 妥协期）】：在局势压迫下学会了低头妥协，面对要求会选择被动配合。\n💭【${u}的实时心声】：“*人在屋檐下不得不低头……眼下还是先顺从配合，不要激怒对方为好💦。*”`,
-                        `【🔬 意志与服从实况（Lv.3 温顺期）】：已形成温顺配合的肌肉记忆，面对男人的折腾与善后清理都十分熟练听话。\n💭【${u}的实时心声】：“*乖乖听话把事情做好、把身体收拾干净准备接下来的安排，身体已经完全习惯顺从了😳💦。*”`,
-                        `【🔬 意志与服从实况（Lv.4 乞怜期）】：被彻底驯服，面对粗暴对待毫无怨言，甚至会主动塌腰迎合。\n💭【${u}的实时心声】：“*只要一声令下，无论让我摆出什么羞人的姿势伺候，我都会乖乖听话照做的🥵💦！*”`,
-                        `【🔬 意志与服从实况（Lv.5 盲从期）】：丧失拒绝能力，将服从男人的一切下流玩法视为天职。\n💭【${u}的实时心声】：“*呜汪♡……只要主人们高兴，要把我怎么捆起来玩弄、怎么轮流内射都可以呀🥵💦❤️！*”`,
-                        `【👑 第六阶段·巴甫洛夫绝对肉奴（100% MAX）】：自主意志100%抹除，化作一听见指令或脚步声便自动跪趴掰穴失禁迎客的肉偶！\n💭【${u}的实时心声】：“*啊嘿♡……服从度100%刻进骨髓里了，一听到开门声身体就自动跪趴掰穴喷水等操啦🥵💦❤️❤️！*”`
+                        `【🔬 自由意志与服从实况（Lv.1 完好自主）】：自我意志独立坚定，保有强烈的防备心与反抗意识，绝不轻易屈服。\n💭【${u}的实时心声】：“*我的身体与意志只属于我自己，任何人都休想随便摆布我。*”`,
+                        `【🔬 自由意志与服从实况（Lv.2 被动妥协）】：在局势压迫下学会了低头妥协，面对要求会选择被动配合。\n💭【${u}的实时心声】：“*人在屋檐下不得不低头……眼下还是先顺从配合，不要激怒对方为好💦。*”`,
+                        `【🔬 自由意志与服从实况（Lv.3 温顺配合）】：已形成温顺配合的肌肉记忆，面对男人的折腾与善后清理都十分熟练听话。\n💭【${u}的实时心声】：“*乖乖听话把事情做好、把身体收拾干净准备接下来的安排，身体已经完全习惯顺从了😳💦。*”`,
+                        `【🔬 自由意志与服从实况（Lv.4 摇尾乞怜）】：反抗意志被彻底驯服，面对粗暴虐待毫无怨言，甚至会主动塌腰撅臀讨好。\n💭【${u}的实时心声】：“*只要一声令下，无论让我摆出什么屈辱的姿势伺候，我都会乖乖听话照做的🥵💦！*”`,
+                        `【🔬 自由意志与服从实况（Lv.5 绝对盲从）】：完全丧失拒绝能力，将服从男人的一切残酷改造与下流玩法视为唯一本能。\n💭【${u}的实时心声】：“*呜汪♡……只要主人们高兴，要把我怎么捆起来改造、怎么轮流内射都可以呀🥵💦❤️！*”`,
+                        `【💀 第六阶段·前额叶切除级肉偶（100% 彻底崩坏）】：掌管独立思考与反抗的大脑前额叶功能100%报废坏死，如同被实施了脑白质切除术！彻底丧失人类复杂语言组织能力，只会流着口水发出“啊嘿、呜汪”的单音节喘息，哪怕命令她自己掰烂私处或吞食秽物也会条件反射般立即执行！\n💭【${u}的实时心声】：“*啊嘿……呜汪♡……脑子空空的不会思考了，听见声音就自动掰开烂穴喷水等插……主人让怎么弄坏就怎么弄坏呀🥵💦❤️❤️！*”`
                     ]
                 },
                 pleas: {
                     val: safeNum(v.精神与心理?.快感累积), rev: false,
-                    st: ["神思清明", "尾椎微麻", "趾尖蜷缩", "濒临绝顶", "潮吹失神", "脑髓熔断"],
+                    st: ["神思清明", "尾椎微麻", "趾尖蜷缩", "濒临绝顶", "潮吹失神", "多巴胺烧穿熔断"],
                     d: [
-                        `【🔬 快感蓄积实况（Lv.1 平静期）】：神经处于平稳状态，体内无异常快感电流或情事余韵残留。\n💭【${u}的实时心声】：“*呼吸平稳，身体没有任何异常的酸麻或失控感。*”`,
-                        `【🔬 快感蓄积实况（Lv.2 微麻期）】：敏感带残留着微弱的酥麻与酸胀余温，走动或触碰时会泛起涟漪。\n💭【${u}的实时心声】：“*呼……身体深处还残留着一点微妙的酸麻感，稍微动一下还是能感觉到粘膜温热的触感💦。*”`,
-                        `【🔬 快感蓄积实况（Lv.3 攀升期）】：酥麻电流顺着尾椎骨向上攀升，呼吸急促，脚趾本能地微微蜷缩。\n💭【${u}的实时心声】：“*唔嗯……酥麻感一波接一波往上涌，连脚趾头都忍不住蜷缩起来了😳💦！*”`,
-                        `【🔬 快感蓄积实况（Lv.4 临界期）】：快感蓄积至临界点，括约肌剧烈收缩，随时可能泄身绝顶。\n💭【${u}的实时心声】：“*要、要去了！小肚子和深处全都绷紧到极限了，再刺激一下就会当场高潮出来的呀🥵💦！*”`,
-                        `【🔬 快感蓄积实况（Lv.5 过载期）】：连续绝顶过载，大脑空白，伴随剧烈痉挛与潮吹喷涌。\n💭【${u}的实时心声】：“*啊啊——去了♡！！全身骨头都爽得融化成水了，潮吹根本停不下来呀🥵💦❤️！*”`,
-                        `【👑 第六阶段·脑髓高潮熔断（100% MAX）】：过量多巴胺将大脑皮层彻底烧穿，陷入无限连环绝顶与失禁狂喷状态！\n💭【${u}的实时心声】：“*啊嘿♡——100%脑髓高潮熔断啦！！请让我直接爽死在这场永不停歇的潮吹风暴里吧🥵💦❤️❤️！*”`
+                        `【🔬 神经快感与脑负荷（Lv.1 完好清明）】：神经系统处于平稳正常状态，体内无异常快感电流残留。\n💭【${u}的实时心声】：“*呼吸平稳，身体没有任何异常的酸麻或失控感。*”`,
+                        `【🔬 神经快感与脑负荷（Lv.2 尾椎微麻）】：敏感带残留着微弱的酥麻与酸胀余温，走动或触碰时会泛起涟漪。\n💭【${u}的实时心声】：“*呼……身体深处还残留着一点微妙的酸麻感，稍微动一下还是能感觉到粘膜温热的触感💦。*”`,
+                        `【🔬 神经快感与脑负荷（Lv.3 趾尖蜷缩）】：酥麻电流顺着尾椎骨向上攀升，呼吸急促，脚趾本能地微微蜷缩。\n💭【${u}的实时心声】：“*唔嗯……酥麻感一波接一波往上涌，连脚趾头都忍不住蜷缩起来了😳💦！*”`,
+                        `【🔬 神经快感与脑负荷（Lv.4 濒临绝顶）】：快感蓄积至临界点，全身括约肌剧烈痉挛收缩，随时可能泄身绝顶。\n💭【${u}的实时心声】：“*要、要去了！小肚子和深处全都绷紧到极限了，再刺激一下就会当场高潮出来的呀🥵💦！*”`,
+                        `【🔬 神经快感与脑负荷（Lv.5 潮吹失神）】：连续高潮过载导致大脑一片空白，伴随剧烈抽搐与失控潮吹喷涌。\n💭【${u}的实时心声】：“*啊啊——去了♡！！全身骨头都爽得融化成水了，潮吹根本停不下来呀🥵💦❤️！*”`,
+                        `【💀 第六阶段·多巴胺受体烧穿熔断（100% 彻底崩坏）】：过量极限高潮将大脑多巴胺受体彻底烧穿坏死！双眼黑眼球永久性向上翻白无法复位，舌头麻痹歪斜吐出嘴外，全身神经陷入永不停止的帕金森式痉挛绝顶与失禁狂喷状态！\n💭【${u}的实时心声】：“*啊嘿♡——咕嘿嘿！！脑髓彻底烧穿短路啦，眼珠翻不回来、全身一秒钟不停地抽搐喷尿高潮到死呀🥵💦❤️❤️！*”`
                     ]
                 },
                 sta: {
                     val: safeNum(v.身体?.体力, 100), rev: true,
-                    st: ["精力充沛", "腰腿微酸", "双腿打颤", "濒临虚脱", "极限透支", "彻底失神"],
+                    st: ["亭亭玉立", "腰腿酸软", "膝软外八不合", "双腿痉挛瘫软", "髋骨脱臼爬行", "四肢废用肉垫"],
                     d: [
-                        `【🔬 体力与肌肉耐受（Lv.1 充沛期）】：体力充沛（${safeNum(v.身体?.体力, 100)}/100），气息匀称，四肢行动自如。\n💭【${u}的实时心声】：“*目前精力很充沛，四肢百骸都充满力气。*”`,
-                        `【🔬 体力与肌肉耐受（Lv.2 微酸期）】：略带倦意，额角见汗，腰腹与双腿肌肉有些酸软沉重。\n💭【${u}的实时心声】：“*稍微出了一身薄汗，腰和腿都有点酸沉沉的，需要稍微缓一缓💦。*”`,
-                        `【🔬 体力与肌肉耐受（Lv.3 打颤期）】：体力消耗过半，发丝汗湿，膝盖微微打颤，步伐略显虚浮。\n💭【${u}的实时心声】：“*膝盖一直在微微打颤，直起身子时都晃了一下，可得赶紧把该做的事处理完才行💦。*”`,
-                        `【🔬 体力与肌肉耐受（Lv.4 虚脱期）】：体力濒临枯竭，全身软绵绵提不起力气，连站稳都十分勉强。\n💭【${u}的实时心声】：“*哈啊……浑身上下一点力气都使不出来了，双腿软得连并拢都做不到🥵💦……*”`,
-                        `【🔬 体力与肌肉耐受（Lv.5 透支期）】：体力极限透支，眼皮沉重模糊，彻底沦为任人摆布的软肉。\n💭【${u}的实时心声】：“*唔……连一根手指头都动不了了，只能瘫软着任凭摆布了🥵💦❤️……*”`,
-                        `【👑 第六阶段·体力0%失神肉泥（0/100 MAX）】：体力彻底耗尽清零，陷入半休克失神状态，唯有所属器官仍在凭本能抽搐！\n💭【${u}的实时心声】：“*……（体力耗尽彻底失神中，仅剩身体本能还在无意识地抽搐迎合）🥵💦❤️❤️*”`
+                        `【🔬 躯体骨骼与运动机能（Lv.1 完好充沛）】：体力充沛（${safeNum(v.身体?.体力, 100)}/100），骨骼肌肉完好，身姿挺拔，行动自如。\n💭【${u}的实时心声】：“*目前精力很充沛，四肢百骸都充满力气，姿态端正稳健。*”`,
+                        `【🔬 躯体骨骼与运动机能（Lv.2 腰腿酸软）】：略带倦意，额角见汗，腰腹与双腿肌肉有些酸软沉重。\n💭【${u}的实时心声】：“*稍微出了一身薄汗，腰和腿都有点酸沉沉的，需要稍微缓一缓💦。*”`,
+                        `【🔬 躯体骨骼与运动机能（Lv.3 膝软外八不合）】：长期张腿承受冲击导致大腿内收肌拉伤松弛，膝盖打颤，走路时双腿自然呈外八字无法完全并拢。\n💭【${u}的实时心声】：“*膝盖一直在发抖，大腿根部的肌肉酸软得根本并拢不了，走起路来姿势怪怪的😳💦。*”`,
+                        `【🔬 躯体骨骼与运动机能（Lv.4 双腿痉挛瘫软）】：体力濒临枯竭，腰椎酸痛无力，双腿不时发生神经性抽搐，连独自站稳都极为勉强。\n💭【${u}的实时心声】：“*哈啊……浑身上下一点力气都使不出来了，双腿软得只能敞开着瘫倒下来🥵💦……*”`,
+                        `【🔬 躯体骨骼与运动机能（Lv.5 髋骨脱臼母犬爬行）】：盆骨与双侧髋关节被粗暴抽插撞得习惯性半脱臼变形！彻底丧失直立行走能力，只能塌下脊背、高撅屁股像母狗一样四肢着地爬行。\n💭【${u}的实时心声】：“*呜汪♡……胯骨早就被撞脱臼站不起来了，只能像母狗一样撅着烂屁股在地上爬着等肉棒插进来呀🥵💦❤️！*”`,
+                        `【💀 第六阶段·四肢废用痉挛肉垫（0/100 彻底崩坏）】：运动神经与四肢肌肉因长期捆绑与极限摧残而彻底废用萎缩，脊椎与盆骨永久性畸形固定为贴地M字大开腿撅臀角度！彻底化作一团无法自主翻身移动、只会抽搐翻白眼吐白沫的活体肉便器坐垫！\n💭【${u}的实时心声】：“*啊嘿♡……手脚彻底废掉动不了啦，骨头已经长死成M字开腿撅屁股的肉垫形状了，请直接踩在肉块上排泄内射吧🥵💦❤️❤️！*”`
                     ]
                 }
             };
@@ -1968,7 +2059,7 @@
         }
 
         // =========================================================================
-        // 📋 构建 9 大精简干练板块（按钮名精简 + 全心声严格对齐恶堕阶位）
+        // 📋 构建 9 大板块（严格区分「无阶段展示项」与「Lv.1完好➡️Lv.6彻底崩坏畸变项」）
         // =========================================================================
         function buildFullFallbackCategories(u, c, v) {
             calibrateMentalMetrics(v);
@@ -2006,25 +2097,21 @@
             const milkCnt = safeNum(cnt.泌乳?.喷乳次数), milkMl = safeNum(cnt.泌乳?.累计毫升), mastCnt = safeNum(cnt.自慰);
 
             let mouthMl = safeNum(sp.口内毫升), vagMl = safeNum(sp.小穴毫升), wombMl = safeNum(sp.子宫毫升), analMl = safeNum(sp.屁眼毫升);
-            if (wombMl === 0 && creampie > 0 && /内射|灌满|精液.*滴|精液.*渗|白浊/.test(live.womb + live.vag)) {
-                wombMl = 15; vagMl = 2;
-            }
             const totalMl = mouthMl + vagMl + wombMl + analMl;
             const caps = calcHoleCapacities(v);
 
             const corr = safeNum(v.核心数值?.淫乱恶堕), lust = safeNum(v.核心数值?.性欲程度), pleas = safeNum(v.精神与心理?.快感累积);
             const isPureZero = (dev.totalLedgerCount === 0 && totalMl === 0 && corr < 15);
 
-            const vagWidth = (1.5 + Math.min(5.0, (vagCnt / diff.mult) * 0.05)).toFixed(1);
-            const vagClose = Math.max(5, Math.round(100 - (vagCnt / diff.mult) * 0.7 - ((wombMl + vagMl) > 0 ? 18 : 0)));
-            const clitSize = (4.0 + Math.min(10.0, (orgasmCnt / diff.mult) * 0.08 + pleas * 0.03)).toFixed(1);
-            const peeVal = isPureZero ? 5 : Math.min(100, Math.round(10 + lust * 0.35 + pleas * 0.35 + leakCnt * 7));
+            const vagWidth = (1.5 + Math.min(8.5, (vagCnt / diff.mult) * 0.08)).toFixed(1);
+            const vagClose = Math.max(0, Math.round(100 - dev.vagObj.val * 0.95 - ((wombMl + vagMl) > 0 ? 15 : 0)));
+            const clitSize = (4.0 + Math.min(22.0, (orgasmCnt / diff.mult) * 0.15 + dev.clitObj.val * 0.18)).toFixed(1);
+            const peeVal = isPureZero ? 0 : Math.min(100, Math.round(dev.clitObj.val * 0.6 + lust * 0.2 + pleas * 0.2 + leakCnt * 6));
             const wetLevel = isPureZero ? 0 : Math.min(100, Math.round(lust * 0.65 + pleas * 0.55 + ((wombMl + vagMl) > 0 ? 30 : 0)));
             const fallVal = safeNum(v.精神与心理?.沦陷度), brkVal = safeNum(v.精神与心理?.人格崩解度), hypnoVal = safeNum(extPsy.催眠深度);
             const drugVal = safeNum(v.精神与心理?.媚药精液毒瘾);
             const fallMax = Math.max(fallVal, brkVal, hypnoVal), fallTier = tier6(fallMax, false);
-            const tallyStrokes = creampie + vagCnt, tallyFull = Math.floor(tallyStrokes / 5);
-            const sensMult = (1.0 + corr * 0.06 + pleas * 0.04 + (vagCnt > 0 ? 1.0 : 0)).toFixed(1);
+            const sensMult = (1.0 + corr * 0.06 + dev.all6OrganAvg * 0.05 + (vagCnt > 0 ? 1.0 : 0)).toFixed(1);
 
             const mouthDev = dev.mouthObj.val;
             const chestDev = dev.chestObj.val;
@@ -2033,40 +2120,110 @@
             const clitDev  = dev.clitObj.val;
             const analDev  = dev.analObj.val;
 
-            const tallyDev = tallyStrokes > 0 ? calcStage6Score(tallyStrokes, 0.85, diff.mult, tallyStrokes >= 150 * diff.mult).val : 0;
-            const tattooDev = (mark.淫纹与刻印 && mark.淫纹与刻印 !== "无") ? Math.max(45, corr) : (isPureZero ? 0 : Math.round(corr * 0.6));
-            const pierceDev = (mark.穿刺与环饰 && mark.穿刺与环饰 !== "无") ? Math.max(55, corr) : (isPureZero ? 0 : Math.round(corr * 0.5));
-            const propDev = (prop.体内道具 && prop.体内道具 !== "无") ? Math.max(50, pleas) : (totalMl > 0 ? 35 : 0);
+            // =========================================================================
+            // 🚫 彻底斩断肉改与受孕的虚假联动 Bug：未发生对应改造则严格锁死为 0%（第一阶段）！
+            // =========================================================================
+            // 1. 正字涂鸦与伤痕：区分【可洗掉的墨水/浅层红印 (Lv.1~3，可逆浮动)】与【永久刺青/烙铁/刀刻 (Lv.4~6，不可逆锁死)】
+            const rawScarStr = `${safeStr(mark.体表痕迹)} ${safeStr(mark.公开涂鸦字迹)}`;
+            const isPermScar = /刺青|纹身|烙铁|烙印|烫伤|刀刻|烂肉|深可见骨/.test(rawScarStr);
+            const hasScarsOrTally = (mark.体表痕迹 && mark.体表痕迹 !== "无") || (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无") || safeNum(mark.鞭痕与掌印) > 0;
+            // 严禁纯靠做爱次数凭空长出正字！只有真的有涂鸦/鞭痕时才计算笔画
+            const tallyStrokes = hasScarsOrTally ? (safeNum(mark.鞭痕与掌印) * 4 + (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无" ? Math.max(5, creampie + vagCnt) : 0)) : 0;
+            const tallyFull = Math.floor(tallyStrokes / 5);
+            let rawScarDev = 0;
+            if (hasScarsOrTally) {
+                rawScarDev = isPermScar
+                    ? Math.max(62, calcStage6Score(tallyStrokes + 80, 1.0, diff.mult, /烂肉|刀刻/.test(rawScarStr)).val)
+                    : Math.min(58, Math.max(22, 20 + tallyFull * 6 + safeNum(mark.鞭痕与掌印) * 3));
+            }
+            const tallyDev = isPermScar
+                ? lockIrreversible(v, "mod_scar", rawScarDev)
+                : Math.max(hasScarsOrTally ? rawScarDev : 0, safeNum(v.历史最高崩坏度?.mod_scar) >= 60 ? v.历史最高崩坏度.mod_scar : 0);
 
-            const mouthStg = `${stageNameFromVal(mouthDev)}•${["洁净初唇", "唾液敏化", "深喉适应", "吞精肉壶", "奉仕口器", "食道生殖化"][tier6(mouthDev)]}`;
-            const chestStg = `${stageNameFromVal(chestDev)}•${["娇嫩处乳", "乳尖充血", "揉捏变形", "母畜喷乳", "泌乳奶袋", "永动奶牛"][tier6(chestDev)]}`;
-            const vagStg   = `${stageNameFromVal(vagDev)}•${["紧致初鲍", "初破微张", "熟稔名器", "大开肉壶", "漏精便器", "永久洞开"][tier6(vagDev)]}`;
-            const wombStg  = `${stageNameFromVal(wombDev)}•${["紧闭处子", "宫口微酸", "锁精苗床", "宫口微张", "宫颈脱垂", "受精圣杯"][tier6(wombDev)]}`;
-            const clitStg  = `${stageNameFromVal(clitDev)}•${["包皮隐没", "充血勃起", "敏感酸豆", "括约肌松弛", "失禁漏尿", "永动潮吹"][tier6(clitDev)]}`;
-            const analStg  = `${stageNameFromVal(analDev)}•${["紧闭菊蕾", "异物适应", "括约肌软化", "后庭大开", "直肠储精", "排泄肉腔"][tier6(analDev)]}`;
+            // 2. 淫纹烙印：区分【浅层纹身贴/催情浮现 (Lv.1~2，可消退)】与【永久烙印/魔纹异化 (Lv.3~6，不可逆)】
+            const rawTattooStr = safeStr(mark.淫纹与刻印);
+            const isPermTattoo = /永久|烙印|刺青|漆黑刻印|荧光|异化|触须|魔腹|腐蚀/.test(rawTattooStr);
+            const hasTattoo = Boolean(mark.淫纹与刻印 && mark.淫纹与刻印 !== "无" && !/无外显|未刻|光洁/.test(rawTattooStr));
+            const rawTattooDev = hasTattoo ? (isPermTattoo ? Math.max(45, Math.min(100, Math.round(40 + corr * 0.6))) : Math.min(39, Math.max(22, Math.round(20 + lust * 0.2)))) : 0;
+            const tattooDev = isPermTattoo
+                ? lockIrreversible(v, "mod_tattoo", rawTattooDev)
+                : Math.max(hasTattoo ? rawTattooDev : 0, safeNum(v.历史最高崩坏度?.mod_tattoo) >= 45 ? v.历史最高崩坏度.mod_tattoo : 0);
+
+            // 3. 穿刺环饰：区分【普通银环/重坠 (Lv.1~3，摘下即恢复)】与【铁丝缝合/撕裂嵌合 (Lv.4~6，不可逆)】
+            const rawPierceStr = safeStr(mark.穿刺与环饰);
+            const isPermPierce = /铁牢|缝合|锁死|撕裂|钢筋|嵌合|生锈/.test(rawPierceStr);
+            const hasPierce = Boolean(mark.穿刺与环饰 && mark.穿刺与环饰 !== "无" && !/无穿刺|未穿刺/.test(rawPierceStr));
+            const rawPierceDev = hasPierce ? (isPermPierce ? Math.max(62, Math.min(100, Math.round(55 + corr * 0.45))) : Math.min(58, Math.max(25, Math.round(25 + corr * 0.3)))) : 0;
+            const pierceDev = isPermPierce
+                ? lockIrreversible(v, "mod_pierce", rawPierceDev)
+                : Math.max(hasPierce ? rawPierceDev : 0, safeNum(v.历史最高崩坏度?.mod_pierce) >= 60 ? v.历史最高崩坏度.mod_pierce : 0);
+
+            // 4. 体内道具：普通跳蛋/尾塞(Lv.1~3)拔出即归零；只有机械改造焊死(Lv.4+)才不可逆锁死
+            const rawPropStr = safeStr(prop.体内道具);
+            const isPermProp = /机械|电缆|触手|铆钉|焊死|核心|齿轮/.test(rawPropStr);
+            const hasProp = Boolean(prop.体内道具 && prop.体内道具 !== "无" && !/无填塞|无道具|存留.*浓精/.test(rawPropStr));
+            let rawPropDev = 0;
+            if (hasProp) {
+                rawPropDev = isPermProp
+                    ? Math.max(65, Math.min(100, Math.round(60 + corr * 0.4)))
+                    : Math.min(58, Math.max(25, Math.round(25 + pleas * 0.3)));
+            }
+            const propDev = isPermProp
+                ? lockIrreversible(v, "mod_prop", rawPropDev)
+                : Math.max(hasProp ? rawPropDev : 0, safeNum(v.历史最高崩坏度?.mod_prop) >= 60 ? v.历史最高崩坏度.mod_prop : 0);
+            // 苗床与受孕四大器质崩坏度（严格基于实际内射、吞精、灌精与怀孕产卵）
+            const rawOvulDev = (creampie + drugVal + forceOrgCnt) > 0
+                ? calcStage6Score(creampie * 1.1 + drugVal * 0.8 + forceOrgCnt * 1.2, 1.0, diff.mult, creampie >= 90 * diff.mult).val
+                : 0;
+            const ovulStageVal = lockIrreversible(v, "preg_ovul", rawOvulDev);
+
+            const rawXrayDev = (creampie + wombMl + safeNum(preg.生产产卵次数)) > 0
+                ? Math.min(100, Math.round(wombDev * 0.75 + (wombMl > 0 ? 22 : 0) + safeNum(preg.生产产卵次数) * 15))
+                : 0;
+            const xrayStageVal = lockIrreversible(v, "preg_xray", rawXrayDev);
+
+            const rawDnaDev = (creampie + swallowCnt + gangCnt + beastCnt) > 0
+                ? calcStage6Score(creampie * 1.2 + swallowCnt * 0.9 + gangCnt * 2.5 + beastCnt * 4, 1.0, diff.mult, (creampie + swallowCnt) >= 120 * diff.mult).val
+                : 0;
+            const dnaStageVal = lockIrreversible(v, "preg_dna", rawDnaDev);
+
+            const bellySwellPct = Math.min(100, Math.round(safeNum(preg.怀孕进度) + (totalMl / Math.max(60, caps.wombMax)) * 65));
+            const rawPregDev = (preg.子宫怀孕 || totalMl > 0 || safeNum(preg.生产产卵次数) > 0 || creampie > 10)
+                ? Math.min(100, Math.max(bellySwellPct, Math.round(safeNum(preg.生产产卵次数) * 28 + (creampie / diff.mult) * 0.8)))
+                : 0;
+            const pregStageVal = lockIrreversible(v, "preg_belly", rawPregDev);
+
+            const bodyTotalCorrupt = Math.round(dev.all6OrganAvg * 0.6 + (tallyDev + tattooDev + pierceDev + propDev) * 0.1);
+
+            const mouthStg = `${stageNameFromVal(mouthDev)}•${["洁净初唇", "唇肿涎溢", "咽喉松弛", "颚骨半脱臼", "食道肉壶化", "口腔排泄器畸变"][tier6(mouthDev)]}`;
+            const chestStg = `${stageNameFromVal(chestDev)}•${["娇嫩处乳", "乳尖肥大", "乳晕黑紫扩张", "乳腺失控漏奶", "下垂巨乳奶袋", "崩坏泌乳肉囊"][tier6(chestDev)]}`;
+            const vagStg   = `${stageNameFromVal(vagDev)}•${["紧致初鲍", "初破红肿", "外翻黑木耳", "括约肌松弛洞开", "肉壁脱垂漏精壶", "彻底崩坏烂肉洞"][tier6(vagDev)]}`;
+            const wombStg  = `${stageNameFromVal(wombDev)}•${["紧闭处子", "宫口充血微松", "宫口扩张锁精", "宫腔肥大下坠", "宫颈重度脱垂", "外翻脱垂死肉苗床"][tier6(wombDev)]}`;
+            const clitStg  = `${stageNameFromVal(clitDev)}•${["包皮隐没", "充血外露", "阴蒂肥大勃起", "尿道扩张漏尿", "阴蒂肉棒化失禁", "括约肌坏死漏尿狂"][tier6(clitDev)]}`;
+            const analStg  = `${stageNameFromVal(analDev)}•${["紧闭菊蕾", "裂伤红肿", "褶皱磨平松弛", "后庭空洞不合", "直肠翻肉轻度脱肛", "重度脱肛崩坏排泄腔"][tier6(analDev)]}`;
+
+           const scarStg   = `${stageNameFromVal(tallyDev)}•${["白皙无瑕", "初次记数", "淫语密布", "刺青入骨", "烙铁烫印", "烂肉记事本"][tier6(tallyDev)]}`;
+            const tattooStg = `${stageNameFromVal(tattooDev)}•${["平坦白腹", "初显魔纹", "漆黑刻印", "发情荧光", "肉体异化", "恶堕魔腹"][tier6(tattooDev)]}`;
+            const pierceStg = `${stageNameFromVal(pierceDev)}•${["天然无饰", "初上银环", "重金属坠", "密集铁牢", "皮肉撕裂", "金属嵌合体"][tier6(pierceDev)]}`;
+            const propStg   = `${stageNameFromVal(propDev)}•${["空荡纯净", "微露拉环", "巨物撑扩", "机械群交", "内脏异形化", "永久机械肉壶"][tier6(propDev)]}`;
 
             const milkCap = Math.round(100 + milkCnt * 15);
             const curMilkMl = milkCnt > 0 ? Math.min(milkCap, Math.round(25 + lust * 0.8 + pleas * 0.5)) : 0;
 
             const fertProb = safeNum(preg.受孕概率, wombMl > 0 ? 75 : (creampie > 0 ? 40 : (isPureZero ? 0 : 15)));
-            const ovulStageVal = isPureZero ? 5 : Math.min(100, Math.round(15 + lust * 0.4 + (creampie > 0 ? 25 : 0) + (wombMl > 0 ? 35 : 0)));
-            const xrayStageVal = (creampie + wombMl) > 0 ? Math.min(100, Math.round(wombDev * 0.7 + (wombMl > 0 ? 30 : 0))) : 0;
-            const dnaStageVal  = (creampie + swallowCnt + gangCnt) > 0 ? calcStage6Score(creampie + swallowCnt + gangCnt * 3, 1.0, diff.mult, creampie >= 100 * diff.mult).val : (totalMl > 0 ? 25 : 0);
-            const bellySwellPct = Math.min(100, Math.round(safeNum(preg.怀孕进度) + (totalMl / Math.max(100, caps.wombMax)) * 60));
-            const pregStageVal = preg.子宫怀孕 ? Math.max(65, safeNum(preg.怀孕进度)) : (totalMl > 0 ? Math.min(60, bellySwellPct + 15) : 0);
-
             const cycLabel = isPureZero ? (preg.生理周期阶段 || "正常生理期") : (preg.生理周期阶段 === "正常生理期" && wombMl > 0 ? "危险排卵期" : (preg.生理周期阶段 || "危险排卵期"));
-            const ovulStg = `${stageNameFromVal(ovulStageVal)}•${cycLabel}`;
-            const xrayStg = `${stageNameFromVal(xrayStageVal)}•${["无精虫侵入", "精虫游入", "精虫围攻卵子", "高危着床临界", "受精着床中", "100%受精苗床"][tier6(xrayStageVal)]}`;
-            const dnaStg  = `${stageNameFromVal(dnaStageVal)}•${totalMl > 0 ? `浓精基因标记` : "无外来DNA"}`;
-            const pregStg = `${stageNameFromVal(pregStageVal)}•${preg.子宫怀孕 ? "孕肚着床" : (totalMl > 0 ? "精液坠胀" : "平坦小腹")}`;
+
+            const ovulStg = `${stageNameFromVal(ovulStageVal)}•${["平静安宁", "初潮萌动", "异常催促", "排卵失控", "异种卵生", "永久下崽机器"][tier6(ovulStageVal)]}`;
+            const xrayStg = `${stageNameFromVal(xrayStageVal)}•${["无暇孤卵", "精群围攻", "破膜着床", "多重受孕", "异种寄生", "腐肉苗床"][tier6(xrayStageVal)]}`;
+            const dnaStg  = `${stageNameFromVal(dnaStageVal)}•${["无暇无浊", "体外喷溅", "内射满溢", "全身精涂", "肌体吸精", "白浊黏液怪"][tier6(dnaStageVal)]}`;
+            const pregStg = `${stageNameFromVal(pregStageVal)}•${["平坦马甲线", "微凸孕相", "显怀大肚", "胎动破肚", "下垂肉囊", "透明异种孵化巢"][tier6(pregStageVal)]}`;
             const totalCapAll = caps.mouthMax + caps.vagMax + caps.wombMax + caps.analMax;
 
-            const marketRank = corr >= 100 ? "EX神格·终极便器" : corr >= 80 ? "SSS级·公用便器" : corr >= 50 ? "A级·风俗名器" : hookerCnt > 0 ? "B级·暗娼熟肉" : "S级·纯洁无瑕";
-            const marketPrice = prof.风月挂牌身价 || (hookerCnt > 0 ? `单次皮肉资 ${Math.max(100, 500 - corr * 4)} 元（已接客 ${hookerCnt} 次）` : `无价之宝（清白之身，尚未涉足风尘交易）`);
+            const marketRank = corr >= 100 ? "EX神格·崩坏便器" : corr >= 80 ? "SSS级·公用便器" : corr >= 50 ? "A级·风俗名器" : hookerCnt > 0 ? "B级·暗娼熟肉" : "S级·纯洁无瑕";
+            const marketPrice = prof.风月挂牌身价 || (hookerCnt > 0 ? `单次皮肉资 ${Math.max(50, 500 - corr * 4)} 元（已接客 ${hookerCnt} 次）` : `无价之宝（清白之身，尚未涉足风尘交易）`);
 
-            const fmtOvr = (key, defObj, defThoughtArr) => {
-                const defaultThought = Array.isArray(defThoughtArr) ? pickStageThought(v, defThoughtArr) : defThoughtArr;
+            const fmtOvr = (key, defObj, defThoughtArr, specificStageVal = null, isRev = false) => {
+                const defaultThought = Array.isArray(defThoughtArr) ? pickStageThought(v, defThoughtArr, specificStageVal, isRev) : defThoughtArr;
                 if (ovr[key] && (ovr[key].desc || ovr[key].thought)) {
                     return `${ovr[key].desc || defObj}\n💭【${u}的实时心声】：“*${cleanThoughtText(ovr[key].thought || defaultThought)}*”`;
                 }
@@ -2077,9 +2234,9 @@
                 `我叫${u}，无论周围处境如何变化，我都必须保持冷静清醒，守护好自己的尊严与清白。`,
                 `呼……身体稍微有些发热发软，我得尽快调整好呼吸与状态，应付接下来的局面💦。`,
                 `身体深处还残留着难以忽视的酸胀感与湿热感，必须抓紧时间清理收拾干净，准备应对接下来的事😳💦。`,
-                `哈啊……小肚子里沉甸甸地往下坠，被开发过的熟稔身体越来越敏感易湿了，稍微动一下就让人腿软呢🥵💦！`,
-                `呜汪♡……身体从里到外都已经变成贪恋肉棒与浓精的形状了，真想快点被粗暴地按在床上狠狠灌满呀🥵💦❤️！`,
-                `啊嘿♡……脑髓和子宫都已经彻底融化在绝顶高潮里了，请尽情使用${u}这具神格级肉便器吧🥵💦❤️❤️！`
+                `哈啊……小肚子里沉甸甸地往下坠，被开发过的熟稔身体越来越松软易湿了，稍微动一下就让人腿软呢🥵💦！`,
+                `呜汪♡……身体从里到外都已经被操成了贪恋肉棒与浓精的崩坏形状，真想快点被粗暴地按在床上狠狠灌满呀🥵💦❤️！`,
+                `啊嘿♡……脑髓和全身孔穴都已经100%崩坏畸变成流着浓精和骚尿的活体排泄肉坑了，请把${u}彻底操烂报废吧🥵💦❤️❤️！`
             ]);
             const curThought = cleanThoughtText(ovr.内心独白?.thought || rt.内心独白 || live.thought || defaultMonologue);
             const curPose = rt.当前姿势 || live.pose || (isPureZero ? `${u}身姿端正，神色平静自然。` : `${u}正调整着呼吸与姿态。`);
@@ -2104,8 +2261,8 @@
             const unlockedFetishes = computeUnlockedFetishes(v);
             const fetishItems = unlockedFetishes.length > 0
                 ? unlockedFetishes.map(fObj => mk(`fetish_${fObj.name}`, `🧬 ${fObj.name}：${fObj.val}/100「${fObj.stage}」`, buildFetishRichDesc(fObj, v, u), "corr"))
-                : [mk("fetish_none", `🔒 暂无性癖「清白未解锁」`,
-                    `【性癖状态】：\n当前所有性交、高潮、内射与露出记录均为 0，尚未染上任何后天淫乱性癖。\n💭【${u}的实时心声】：“*我现在的身心依然保持着原本的纯净，没有任何奇怪下流的癖好。*”`, "none", null, true, 0)];
+                : [mk("fetish_none", `🔒 暂无性癖「完好未染」`,
+                    `【性癖状态】：\n当前所有性交、高潮、内射与受虐记录均为 0，尚未产生任何神经强迫或后天性癖畸变。\n💭【${u}的实时心声】：“*我现在的身心依然保持着原本的纯净完好，没有任何奇怪下流的癖好。*”`, "none", null, true, 0)];
 
             const clientList = extractClientsFromHistory(v, u, c);
             const clientItems = clientList.length > 0
@@ -2114,16 +2271,16 @@
                     `🍆 ${cl.name}：${cl.val}/100「${cl.roleTag}•${cl.statusTag}」`,
                     `${cl.detailDesc}\n💭【${u}的实时心声】：“*${cleanThoughtText(cl.thoughtStr)}*”`,
                     "cockLove",
-                    cl.dnaShare > 0 ? { mainName: "🍆 支配度", label: "🧬 宫内DNA", theme: "semen", pct: cl.dnaShare, text: `${cl.dnaShare}%` } : null,
+                    cl.dnaShare > 0 ? { mainName: "🍆 调教崩坏度", label: "🧬 宫内DNA", theme: "semen", pct: cl.dnaShare, text: `${cl.dnaShare}%` } : null,
                     false,
                     null,
                     { isClient: true, clientName: cl.name }
                 ))
-                : [mk("client_none", `🔒 暂无恩客记录「清白之身」`,
+                : [mk("client_none", `🔒 暂无恩客记录「完好清白」`,
                     `【恩客图鉴】：\n当前尚未与任何男性建立实质性的肉体支配或接客记录。\n💭【${u}的实时心声】：“*我还没有被任何男人占有过，自然也没有所谓的恩客记录。*”`, "none", null, true, 0)];
 
             const baseCategories = [
-                // 1. 档案与风评
+                // 1. 档案与风评（仅「肉体畸变总览」与「姿势与躯体机能」有阶段条，其余4项为无阶段纯展示）
                 {
                     title: "档案与风评", icon: "👩", summary: `${u} (${realId}) · 敏感${sensMult}x`,
                     items: [
@@ -2138,36 +2295,37 @@
                                     `作为「${u}」，虽然眼前的处境让人有些紧绷为难，但我还是得努力维持住基本的体面💦。`,
                                     `我已经彻底习惯了「${u}」这个身份和这具敏感度 ${sensMult} 倍的身体，每天都要为了应付男人们而奔波劳碌呢😳💦。`,
                                     `现在的我就是「${u}」，这具敏感易湿的熟肉身体早就离不开男人的玩弄与支配了🥵💦！`,
-                                    `只要听到有人叫我「${u}」，我的骚穴就会条件反射地涌出热流，随时准备张开双腿迎接恩客的肉棒🥵💦❤️！`,
-                                    `啊嘿♡……「${u}」就是天生为了给所有男人当泄欲肉便器而存在的母猪呀🥵💦❤️❤️！`
-                                ]), "none", null, true, corr),
-                        mk("肉体外貌", `🌸 肉体外貌：「敏感${sensMult}倍•${stageNameFromVal(corr)}」`,
+                                    `只要听到有人叫我「${u}」，我合不拢的骚穴就会条件反射地涌出热流，随时准备张开双腿迎接恩客的肉棒🥵💦❤️！`,
+                                    `啊嘿♡……「${u}」就是天生为了给所有男人当泄欲排泄肉坑而存在的崩坏母猪呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
+                        mk("肉体外貌", `🌸 肉体敏感与畸变总览：${bodyTotalCorrupt}/100「敏感${sensMult}倍•${stageNameFromVal(bodyTotalCorrupt)}」`,
                             fmtOvr("肉体外貌",
-                                `【🔬 外貌特征与体表实况】：\n` +
+                                `【🔬 全身器质崩坏度与外貌实况：${bodyTotalCorrupt}/100】：\n` +
                                 `• 躯体实况：${prof.肉体外貌实况 || live.bodyDesc}\n` +
-                                `• 敏感倍率：常人的 ${sensMult} 倍 ｜ 体表痕迹：${mark.体表痕迹 !== "无" ? mark.体表痕迹 : (isPureZero ? "肌肤白皙光洁，无任何受虐红痕或污迹" : "肌肤泛着薄汗与情事留下的红痕")}。`,
+                                `• 神经敏感倍率：常人的 ${sensMult} 倍 ｜ 全身六孔平均崩坏度：${dev.all6OrganAvg}%\n` +
+                                `• 阶段演进：${["【Lv.1 完好无瑕】全身器官紧致粉嫩，未经摧残", "【Lv.2 轻度充血】局部粘膜红肿微张，留有浅淡情事痕迹", "【Lv.3 熟稔外翻】私处色素沉淀外翻，身体曲线熟透诱人", "【Lv.4 器质松弛】多处括约肌松弛合不拢，常年挂着体液", "【Lv.5 重度脱垂】生殖与排泄腔严重脱垂外翻，彻底母畜化", "【💀 Lv.6 彻底崩坏畸变】全身孔穴永久洞开腐熟，彻底沦为非人泄欲肉块"][tier6(bodyTotalCorrupt)]}`,
                                 [
-                                    `这具身体肌肤细腻、曲线分明，我应当好好爱惜保护自己，绝不让人轻易亵渎。`,
-                                    `不知是不是错觉，总觉得现在的皮肤变得比以前敏感了不少，稍微吹点凉风都会起鸡皮疙瘩💦。`,
-                                    `看着镜子里这具留着薄汗与红痕的身体，每一寸皮肤都敏感到极点，连冷水扑在脸上都压不住体内的微热😳💦。`,
-                                    `我这具丰满白腻的身体早就被开发得熟透了，不管是被掐捏还是掌掴都会泛起诱人的潮红🥵💦！`,
-                                    `好喜欢看自己这副满身巴掌印、掐痕和精斑的下流身体呀，完全就是一件极品泄欲尤物呢🥵💦❤️！`,
-                                    `啊嘿♡……全身每一寸肉都已经改造成一碰就喷水的神格级淫肉啦🥵💦❤️❤️！`
-                                ]), "none", null, true, corr),
-                        mk("表里风评", `🎭 表里风评：「${prof.表里风评与称号 || (corr >= 60 ? "风尘暗娼•熟客精盆" : (isPureZero ? "清白端庄•品行自持" : "表面平静•暗藏反差"))}」`,
+                                    `这具身体肌肤细腻、完好无瑕，我应当好好爱惜保护自己，绝不让人轻易亵渎。`,
+                                    `不知是不是错觉，总觉得现在的皮肤和粘膜变得比以前敏感了不少，稍微吹点凉风都会起鸡皮疙瘩💦。`,
+                                    `看着镜子里这具留着薄汗与红痕、私处微张的身体，每一寸皮肤都敏感到极点，连冷水扑在脸上都压不住体内的微热😳💦。`,
+                                    `我这具丰满白腻的身体早就被开发得松软熟透了，不管是被掐捏还是掌掴都会泛起诱人的潮红并往外漏水🥵💦！`,
+                                    `好喜欢看自己这副满身巴掌印、穴口外翻脱垂合不拢的下流母畜身体呀，完全就是一件极品泄欲肉具呢🥵💦❤️！`,
+                                    `啊嘿♡……全身上下每一个器官都已经100%崩坏畸变成流着脓精和骚尿的烂肉块啦🥵💦❤️❤️！`
+                                ], bodyTotalCorrupt), "corr"),
+                        mk("表里风评", `🎭 表里风评：「${prof.表里风评与称号 || (corr >= 60 ? "名声崩坏•难以自持" : (isPureZero ? "清白端庄•品行自持" : "表面平静•暗藏反差"))}」`,
                             fmtOvr("表里风评",
                                 `【🔬 表里风评与把柄威胁】：\n` +
-                                `• 当前称号：【${corr >= 100 ? "深渊肉便器" : corr >= 80 ? "百人斩便器" : corr >= 50 ? "暗娼名器" : vagCnt > 0 ? "失守尤物" : "清白佳人"}】\n` +
-                                `• 风评实况：${prof.表里风评与称号 || (hookerCnt > 0 ? `在熟客口中是皮白肉嫩、耐操顺从的优质暗娼。` : `外界风评端庄清白，尚无不良流言传出。`)}\n` +
-                                `• 致命把柄：${prof.致命把柄与威胁 !== "无" ? prof.致命把柄与威胁 : (hookerCnt > 0 ? "暗中从事皮肉接客交易，随时面临被熟客带人轮玩的风险" : "无任何把柄落入他人之手")}`,
+                                `• 当前称号：【${corr >= 100 ? "深度沦陷" : corr >= 80 ? "彻底失守" : corr >= 50 ? "习以为常" : vagCnt > 0 ? "初尝禁果" : "清白自持"}】\n` +
+                                `• 风评实况：${prof.表里风评与称号 || (hookerCnt > 0 ? `存在私密交易记录，声誉已受影响。` : `外界风评正常端庄，尚无异常流言传出。`)}\n` +
+                                `• 致命把柄：${prof.致命把柄与威胁 !== "无" ? prof.致命把柄与威胁 : "暂无已知把柄落入他人之手"}`,
                                 [
                                     `我的名声与清白容不得半点污点，行事必须光明磊落、谨言慎行。`,
                                     `但愿那些略显尴尬的私密接触不会被外人知晓，我必须守住表面的风评💦。`,
                                     `在知情的熟客眼里，我早就不是什么高不可攀的女人，而是可以花钱享用的风尘女子了😳💦。`,
                                     `反正名声和把柄早就落在男人们手里了，还不如乖乖张开双腿享受当一个荡妇的快乐呢🥵💦！`,
                                     `嘻嘻♡……最好让所有男人都知道我是个给钱就能无套内射的下贱娼妇，排着队过来操我吧🥵💦❤️！`,
-                                    `啊嘿♡……请把人家的淫乱事迹传遍天下，让全世界的肉棒都来享用这具公用便器吧🥵💦❤️❤️！`
-                                ]), "none", null, true, corr),
+                                    `啊嘿♡……请把人家的崩坏事迹传遍天下，让全世界的男人都来往这具臭肉坑里排泄射精吧🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("挂牌身价", `🏷️ 挂牌身价：「${marketRank}」`,
                             fmtOvr("挂牌身价",
                                 `【🔬 风月估值与身价评级】：\n` +
@@ -2179,233 +2337,325 @@
                                     `看着桌上的零钞，我已经渐渐习惯了靠出卖这具身体来换取生活所需的生活😳💦。`,
                                     `只要给几张零钞就能随便玩弄内射我这具熟透的名器身体，客人们可真是赚大了呀🥵💦！`,
                                     `哪怕不给钱倒贴都没关系♡，只要能用粗大肉棒把我的子宫灌满浓精就是最好的报酬了🥵💦❤️！`,
-                                    `啊嘿♡……免费共享的0元公用肉便器挂牌营业中，欢迎随时插进来排泄射精呀🥵💦❤️❤️！`
-                                ]), "none", null, true, corr),
+                                    `啊嘿♡……倒贴钱求操的0元公用排泄便池挂牌营业中，欢迎随时插进来排泄射精呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("内心独白", `💬 内心独白：「实时心声」`,
                             fmtOvr("内心独白",
                                 `【⚡ 当前敏感带与规矩日程】：\n` +
-                                `• 敏感带：${extPsy.当前敏感点 || (isPureZero ? "耳根、脖颈与腰侧" : "阴唇、阴蒂、宫颈口与锁骨")}\n` +
+                                `• 敏感带：${extPsy.当前敏感点 || (isPureZero ? "耳根、脖颈与腰侧" : "外翻阴唇、肿大阴蒂、脱垂宫颈口与乳尖")}\n` +
                                 `• 当前日程：${v.调教进度?.规矩与日程 || (isPureZero ? "保持警惕，正常推进日常事务" : "尽快清理体内残留，准备应对接下来的互动")}。`,
-                                curThought), "none", null, true, corr),
-                        mk("当前姿势", `🧍 姿势与体力：${staM.val}/100「${staM.stage}」`,
+                                curThought), "none", null, true, 0),
+                        mk("当前姿势", `🧍 姿势与躯体机能：${staM.val}/100「${staM.stage}」`,
                             fmtOvr("当前姿势",
-                                `【🔬 当前姿态与体力实况】：\n` +
+                                `【🔬 当前姿态与躯体骨骼机能崩坏实况】：\n` +
                                 `• 实时姿态：${curPose}\n` +
                                 `${staM.desc.split("💭")[0]}`,
                                 [
-                                    `保持端正自然的姿态，目前体力充沛，足以应对接下来的各种情况。`,
+                                    `保持端正自然的姿态，目前体力充沛，骨骼肌肉完好，足以应对接下来的各种情况。`,
                                     `稍微有些劳累出汗，我得扶稳站好，尽快平复呼吸恢复体力💦。`,
-                                    `双腿有些发软打颤，但为了接下来的安排，还是得强撑着把床单换好、把身体清理干净😳💦。`,
-                                    `腰和腿都酸软得厉害，连站着都在微微摇晃，要是这时候再被男人按住可就彻底没力气反抗了🥵💦！`,
-                                    `浑身软绵绵地敞开着双腿，连一根手指都不想动，只想躺下来张开骚穴任由男人摆布抽插🥵💦❤️！`,
-                                    `啊嘿♡……体力耗尽瘫成一滩只会吐白沫喷水的烂肉了，随便你们怎么轮奸内射吧🥵💦❤️❤️！`
-                                ]), "sta")
+                                    `大腿内侧肌肉被撑得酸软无力，膝盖打颤合不拢腿，但还是得强撑着把床单换好、把身体清理干净😳💦。`,
+                                    `腰椎和双腿都酸软痉挛得厉害，连站着都在摇晃，要是这时候再被男人按住可就彻底瘫软了🥵💦！`,
+                                    `胯骨早就被撞得习惯性半脱臼了，根本站不起来，只能像母狗一样四肢着地撅着屁股爬行等操🥵💦❤️！`,
+                                    `啊嘿♡……四肢彻底废用萎缩、脊椎塌陷长死成M字开腿撅臀的活体肉垫了，请直接踩在烂肉上内射吧🥵💦❤️❤️！`
+                                ], staM.val, true), "sta")
                     ]
                 },
-                // 2. 恶堕与脑改
+                // 2. 恶堕与脑改（全部8项均为 Lv.1 完好 ➡️ Lv.6 脑实质与神经彻底崩坏畸变）
                 {
                     title: "恶堕与脑改", icon: "🔥", summary: `好感${cockM.val}% · 性欲${lustM.val}% · 恶堕${corrM.val}% · 羞耻${shameM.val}%`,
                     items: [
-                        mk("cockLove", `💗 阳具好感：${cockM.val}/100「${cockM.stage}」`, cockM.desc, "cockLove"),
-                        mk("lust", `🔥 性欲发情：${lustM.val}/100「${lustM.stage}」`, lustM.desc, "lust"),
-                        mk("corr", `🖤 淫乱恶堕：${corrM.val}/100「${corrM.stage}」`, corrM.desc, "corr"),
+                        mk("cockLove", `💗 阳具烙印：${cockM.val}/100「${cockM.stage}」`, cockM.desc, "cockLove"),
+                        mk("lust", `🔥 发情中枢：${lustM.val}/100「${lustM.stage}」`, lustM.desc, "lust"),
+                        mk("corr", `🖤 人格崩坏：${corrM.val}/100「${corrM.stage}」`, corrM.desc, "corr"),
                         mk("shame", `😳 羞耻防线：${shameM.val}/100「${shameM.stage}」`, shameM.desc, "shame"),
-                        mk("obey", `🙇 奴性服从：${obeyM.val}/100「${obeyM.stage}」`, obeyM.desc, "obey"),
-                        mk("pleas", `💓 快感累积：${pleasM.val}/100「${pleasM.stage}」`, pleasM.desc, "pleas"),
-                        mk("精神沦陷", `🌀 精神沦陷：${fallMax}/100「沦陷${fallVal}%•崩解${brkVal}%•催眠${hypnoVal}%」`,
+                        mk("obey", `🙇 意志切除：${obeyM.val}/100「${obeyM.stage}」`, obeyM.desc, "obey"),
+                        mk("pleas", `💓 脑髓熔断：${pleasM.val}/100「${pleasM.stage}」`, pleasM.desc, "pleas"),
+                        mk("精神沦陷", `🌀 脑实质沦陷：${fallMax}/100「${["理智完好", "浅层恍惚", "催眠暗示", "常识改写", "人格碎裂", "脑海绵化痴呆"][fallTier]}」`,
                             fmtOvr("精神沦陷",
-                                `【🔬 精神防线与常识改写（第${fallTier + 1}阶段）】：\n` +
+                                `【🔬 脑实质与认知崩坏（第${fallTier + 1}阶段 · ${fallMax}/100）】：\n` +
                                 `• 精神沦陷度：${fallVal}/100 ｜ 人格崩解度：${brkVal}/100 ｜ 意识清醒度：${safeNum(v.精神与心理?.意识清醒度, 100)}/100 ｜ 催眠深度：${hypnoVal}/100。\n` +
-                                `• 常识状态：${prop.常识改写状态 && prop.常识改写状态 !== "无" ? prop.常识改写状态 : (corr >= 60 ? "已将顺从接客、被内射后清理备战内化为日常本能" : "神智与常识清醒正常")}`,
+                                `• 阶段演进：${[
+                                    "【Lv.1 理智完好】大脑认知与三观完好清醒，无任何洗脑或精神损伤。",
+                                    "【Lv.2 浅层恍惚】在疲劳或冲击下偶尔出现精神恍惚，防线微松。",
+                                    "【Lv.3 催眠暗示】潜意识被种下顺从暗示，眼神平静麻木如死水。",
+                                    "【Lv.4 常识改写】正常人类是非观被扭曲，将挨操接客视作理所当然的日常。",
+                                    "【Lv.5 人格碎裂】原有自我认知支离破碎，在剧烈快感下频繁出现阿嘿颜失神与语言退化。",
+                                    "【💀 Lv.6 脑实质海绵化痴呆（彻底崩坏）】大脑皮层因长期极限催眠与精液毒素浸泡而彻底萎缩海绵化！智商退化至婴儿以下，彻底丧失人类语言与记忆，化作一团只会流着哈喇子张嘴讨精的脑死痴呆母猪！"
+                                ][fallTier]}`,
                                 [
                                     `我的头脑非常清醒，三观与自我认知坚不可摧，绝不会被轻易动摇。`,
                                     `随着经历的事情变多，脑海里偶尔会闪过一丝恍惚与疲惫，但核心理智依然还在💦。`,
                                     `眼神已经变得像死水一样平静麻木了，顺应着现在的处境听话行事，比无谓的挣扎要轻松得多😳💦。`,
                                     `只要一闻到男人的气息，脑子就会变得晕乎乎的，根本不想再去思考什么尊严和道理了🥵💦！`,
-                                    `人格和常识都已经被彻底改写成了只知道张腿接精的母猪逻辑，被男人支配真的太幸福了🥵💦❤️！`,
-                                    `啊嘿♡……大脑皮层已经被催眠和精液彻底洗白融化了，嘴角流着哈喇子彻底变成脑死母猪啦🥵💦❤️❤️！`
-                                ]), "hypno"),
-                        mk("媚药毒瘾", `🧪 媚药与精液瘾：${drugVal}/100「${drugVal >= 100 ? "精液毒虫" : drugVal >= 60 ? "断精发狂" : drugVal >= 20 ? "体液依恋" : "纯净无毒"}」`,
+                                    `人格和常识都已经被彻底改写成了只知道张腿接精的母猪逻辑，连话都说不利索了🥵💦❤️！`,
+                                    `啊嘿……阿巴阿巴♡……脑子彻底变成装满精液的浆糊海绵啦，除了张开烂嘴流口水等插以外什么都不会了呀🥵💦❤️❤️！`
+                                ], fallMax), "hypno"),
+                        mk("媚药毒瘾", `🧪 脑脊液毒瘾：${drugVal}/100「${["纯净无毒", "微醺依恋", "药力发热", "精液戒断", "断精发狂", "脑脊液毒化母猪"][tier6(drugVal)]}」`,
                             fmtOvr("媚药毒瘾",
-                                `【🔬 媚药残留与精液成瘾实况】：\n` +
-                                `• 毒瘾指数：${drugVal}/100 ｜ 药物状态：${v.调教进度?.媚药与发情毒 || "无外源化学媚药"}\n` +
-                                `• 阿嘿颜失神：${safeNum(v.精神与心理?.语言退化阿嘿颜)}/100（累计失神 ${ahegaoCnt} 次）。`,
+                                `【🔬 媚药侵蚀与脑脊液毒瘾（Lv.${tier6(drugVal) + 1} · ${drugVal}/100）】：\n` +
+                                `• 毒瘾崩坏度：${drugVal}/100 ｜ 药物状态：${v.调教进度?.媚药与发情毒 || "无外源化学媚药"}\n` +
+                                `• 阶段演进：${[
+                                    "【Lv.1 纯净无毒】血液与神经系统干净纯粹，无任何催情毒素或体液依赖。",
+                                    "【Lv.2 微醺依恋】吸入雄性费洛蒙或微弱催情气味后会产生轻微眩晕与发热。",
+                                    "【Lv.3 药力发热】神经对雄性精液激素产生初步成瘾，清理残精时会感到莫名空虚。",
+                                    "【Lv.4 精液戒断】重度体液成瘾，一旦体内精液排空便会出现心慌腿软、小腹痉挛的戒断症状。",
+                                    "【Lv.5 断精发狂】毒素深入骨髓，超过一天不吞精或不被内射就会双眼充血、四肢抽搐发狂。",
+                                    "【💀 Lv.6 脑脊液毒化母猪（彻底崩坏）】高浓度媚药与腐熟精液毒素已彻底渗透血脑屏障、将脑脊液完全毒化！全身神经24小时浸泡在剧毒催情液中，口鼻不断溢出白沫，不靠持续灌注浓精续命就会当场休克暴毙！"
+                                ][tier6(drugVal)]}`,
                                 [
                                     `我的体内干净纯粹，没有任何催情药物或奇怪体液的残留与依赖。`,
                                     `屋里浑浊的气味吸进肺里让人有些头晕胸闷，必须保持呼吸平稳💦。`,
                                     `身体似乎已经渐渐习惯了雄性精液的热度与气味，清理出来的时候竟然有一丝微妙的空虚感😳💦。`,
-                                    `太久没有被滚烫的浓精灌进子宫里，小肚子深处就像犯了瘾一样空虚发痒呢🥵💦！`,
-                                    `身体已经彻底染上男人的精液毒瘾了♡！一天不喝精液、不被内射灌满就会浑身发抖发狂呀🥵💦❤️！`,
-                                    `啊嘿♡……100%变成靠雄性精液续命的精液毒虫了，快把滚烫白浆直接射进我的脑髓和胃袋里吧🥵💦❤️❤️！`
-                                ]), "drug")
+                                    `太久没有被滚烫的浓精灌进子宫里，小肚子深处就像犯了毒瘾一样空虚发痒呢🥵💦！`,
+                                    `身体已经彻底染上男人的精液毒瘾了♡！一天不喝精液、不被内射灌满就会浑身抽搐发狂呀🥵💦❤️！`,
+                                    `啊嘿♡……连脑脊液和骨髓都被媚药和浓精彻底腌透毒化了，快把滚烫白浆直接灌进毒虫母猪的脑子里续命吧🥵💦❤️❤️！`
+                                ], drugVal), "drug")
                     ]
                 },
                 // 3. 下流性癖库
                 {
                     title: "下流性癖库", icon: "🧬",
-                    summary: unlockedFetishes.length > 0 ? `已开启 ${unlockedFetishes.length} 项` : `暂无性癖`,
+                    summary: unlockedFetishes.length > 0 ? `已畸变 ${unlockedFetishes.length} 项` : `完好未染`,
                     items: fetishItems
                 },
-                // 4. 六孔与储精（按钮名称已精简）
+                // 4. 六孔与储精（标杆级 Lv.1 完好如初 ➡️ Lv.6 彻底器质崩坏畸变）
                 {
-                    title: "六孔与储精", icon: "🌸", summary: `总储精${totalMl}ml · 六孔开发实况`,
+                    title: "六孔与储精", icon: "🌸", summary: `总储精${totalMl}ml · 六孔崩坏实况`,
                     items: [
                         mk("骚口实况", `👄 骚口：${mouthDev}/100「${mouthStg}」`,
                             fmtOvr("骚口实况",
-                                `【🔬 口腔与咽喉开发：${mouthDev}/100（${mouthStg}｜口交${mouthCnt}次·吞精${swallowCnt}次）】：\n` +
+                                `【🔬 口腔与咽喉器质崩坏度：${mouthDev}/100（${mouthStg}｜口交${mouthCnt}次·吞精${swallowCnt}次）】：\n` +
                                 `• 💧 胃袋储精：${mouthMl}ml / ${caps.mouthMax}ml（累计吞精 ${swallowMl}ml）\n` +
-                                `• 👅 口腔实况：${rt.骚口实况 || live.mouth || (isPureZero ? "双唇粉嫩洁净，呼吸清甜，从未含入过任何雄性不洁之物。" : "嘴角残留着一抹干涸的透明涎痕，唇瓣微红湿润。")}`,
+                                `• 👅 阶段崩坏实况：${[
+                                    "【Lv.1 洁净初唇】双唇粉嫩紧致，咽反射完好正常，从未含入过雄性污物。",
+                                    "【Lv.2 唇肿涎溢】唇瓣被摩擦得微肿充血，嘴角残留着干涸的透明涎痕。",
+                                    "【Lv.3 咽喉松弛】咽反射被反复深喉顶撞至消失，喉管习惯性微张，极易分泌粘稠口水。",
+                                    "【Lv.4 颚骨半脱臼】下颚韧带被粗大肉棒撑松，嘴唇无法长时间闭合，腥咸口水常年顺下巴滴淌。",
+                                    "【Lv.5 食道肉壶化】食道粘膜被调教出层叠吸吮肉褶，胃袋被撑大改造成专门消化浓精的储精囊。",
+                                    "【💀 Lv.6 口腔排泄器畸变（彻底崩坏）】下颚关节永久性脱臼洞开无法合拢，舌头麻痹外吐，喉管与食道彻底畸变为不经咀嚼直接灌入浓精与黄尿的漏斗状排泄肉洞！"
+                                ][tier6(mouthDev)]}\n` +
+                                `• 📍 当前细节：${rt.骚口实况 || live.mouth || "唇瓣微张喘息。"}`,
                                 [
                                     `我的双唇与口腔干净清爽，绝不会去触碰或含入任何肮脏不洁的东西。`,
                                     `嘴唇稍微有些发干发麻，掬起一捧冷水漱了漱口，努力平复下呼吸💦。`,
-                                    `刚才激烈喘息时流在嘴角的口水干了都还没来得及擦掉，咽喉深处还残留着一丝酸胀感😳💦。`,
-                                    `舌头和嗓子眼早就记住了大肉棒的形状和腥咸味，一看到男人的下身就会不自觉地分泌口水呢🥵💦！`,
-                                    `好想用这张骚嘴深喉吞下滚烫的大肉棒，把射出来的浓精咕咚咕咚全都咽进胃袋里呀🥵💦❤️！`,
-                                    `啊嘿♡……人家的嘴和食道已经100%改造成专门吃精液的奉仕口器了，快把浓精射进喉咙最深处吧🥵💦❤️❤️！`
-                                ]),
+                                    `刚才激烈喘息时流在嘴角的口水干了都还没来得及擦掉，被撑开过的咽喉深处还残留着一丝酸胀感😳💦。`,
+                                    `下巴酸得合不拢嘴，舌头和松弛的嗓子眼早就记住了大肉棒的形状，口水不自觉地直往下淌呢🥵💦！`,
+                                    `食道和胃袋都已经变成装精液的肉壶了，快用大肉棒捅穿我的喉咙把浓精直接射进胃里吧🥵💦❤️！`,
+                                    `啊嘿♡……下巴彻底脱臼合不上了，人家的烂嘴和食道已经100%畸变成直通胃袋的排泄漏斗了，请直接往嗓子眼里灌精撒尿吧🥵💦❤️❤️！`
+                                ], mouthDev),
                             "mouth",
-                            { mainName: "👄 口穴阶位", label: "🥛 胃袋储精", theme: "semen", pct: Math.round((mouthMl / Math.max(1, caps.mouthMax)) * 100), text: `${mouthMl}/${caps.mouthMax}ml` }
+                            { mainName: "👄 口器崩坏度", label: "🥛 胃袋储精", theme: "semen", pct: Math.round((mouthMl / Math.max(1, caps.mouthMax)) * 100), text: `${mouthMl}/${caps.mouthMax}ml` }
                         ),
                         mk("胸部实况", `🍒 丰乳：${chestDev}/100「${chestStg}」`,
                             fmtOvr("胸部实况",
-                                `【🔬 丰乳与乳腺开发：${chestDev}/100（${chestStg}｜乳交${titCnt}次·喷乳${milkCnt}次）】：\n` +
+                                `【🔬 乳房与乳腺器质崩坏度：${chestDev}/100（${chestStg}｜乳交${titCnt}次·喷乳${milkCnt}次）】：\n` +
                                 `• 🍼 乳腺蓄乳：${curMilkMl}ml / ${milkCap}ml（累计泌乳 ${milkMl}ml）\n` +
-                                `• 🍒 胸部实况：${rt.胸部实况 || live.chest || (isPureZero ? "双峰饱满挺拔，肌肤白皙无瑕，妥善包裹在衣物内衬之中。" : "胸口随着呼吸微微起伏，锁骨与乳肉上留着显眼的痕迹，乳尖微微充血挺立。")}`,
+                                `• 🍒 阶段崩坏实况：${[
+                                    "【Lv.1 娇嫩处乳】双峰挺拔紧致，乳晕粉嫩小巧，乳腺未受催发。",
+                                    "【Lv.2 乳尖肥大】乳头被反复吸吮掐捏得充血肿大，长期保持硬挺凸起状态。",
+                                    "【Lv.3 乳晕黑紫扩张】乳肉被粗暴揉捏得松软变形，乳晕色素沉淀扩大变深，乳腺管开始发胀。",
+                                    "【Lv.4 乳腺失控漏奶】乳腺管被强行催通撑大，乳孔括约肌松弛，稍受挤压或高潮便自动往外飙奶。",
+                                    "【Lv.5 下垂巨乳奶袋】乳房因过度泌乳与拉扯而硕大下垂，表面浮现青紫血管，24小时滴淌甜腻母乳。",
+                                    "【💀 Lv.6 崩坏泌乳肉囊（彻底崩坏）】双乳彻底丧失弹性，畸变为一对垂坠至肚脐的紫黑巨大泌乳肉囊！肿大如拇指的烂熟乳头孔洞大开，稍一晃动便如坏掉的水管般失禁狂喷混着血丝的腥甜浊乳！"
+                                ][tier6(chestDev)]}\n` +
+                                `• 📍 当前细节：${rt.胸部实况 || live.chest || "双峰随呼吸微微起伏。"}`,
                                 [
-                                    `胸前的衣襟整理得十分妥当，没有任何走光或失礼的地方。`,
-                                    `呼吸稍微有些急促，胸口起伏间能感觉到布料摩擦过肌肤的微热触感💦。`,
-                                    `看着镜子里光裸起伏的胸口和锁骨上的红咬痕，微凉的空气一激，乳尖就有些发麻发硬了😳💦。`,
-                                    `这对丰满的乳房早就被男人的大手揉捏得熟透了，乳头一被触碰就会充血挺立起来🥵💦！`,
-                                    `奶子又胀又麻好难受呀♡，快用力揉捏吸吮我的乳头、再用这对大乳房夹住肉棒乳交吧🥵💦❤️！`,
-                                    `啊嘿♡……已经成为24小时狂喷甜母乳的终极奶牛母畜了，请一边吸奶一边把子宫射满吧🥵💦❤️❤️！`
-                                ]),
+                                    `胸前的衣襟整理得十分妥当，双峰紧致完好，没有任何走光或失礼的地方。`,
+                                    `呼吸稍微有些急促，乳尖被磨得有些充血发硬，贴着空气微微发麻💦。`,
+                                    `看着镜子里光裸起伏的胸口和变大变深的乳晕，微凉的空气一激，肿大的乳头就又硬又痛😳💦。`,
+                                    `这对松软的乳房早就被揉捏变形了，乳腺胀得厉害，稍微碰一下乳头就会控制不住往外渗奶水🥵💦！`,
+                                    `硕大下垂的奶袋子又胀又麻好难受呀♡，快用力抓烂我的黑紫乳晕、把母畜的骚奶吸干吧🥵💦❤️！`,
+                                    `啊嘿♡……一对烂奶子已经彻底崩坏成垂到肚子上的紫黑泌乳肉袋了，乳孔24小时合不拢地在往外狂喷浊乳呀🥵💦❤️❤️！`
+                                ], chestDev),
                             "chest",
-                            { mainName: "🍒 淫乳阶位", label: "🍼 乳腺蓄乳", theme: "milk", pct: Math.round((curMilkMl / Math.max(1, milkCap)) * 100), text: `${curMilkMl}/${milkCap}ml` }
+                            { mainName: "🍒 乳腺崩坏度", label: "🍼 乳腺蓄乳", theme: "milk", pct: Math.round((curMilkMl / Math.max(1, milkCap)) * 100), text: `${curMilkMl}/${milkCap}ml` }
                         ),
                         mk("小穴实况", `🌺 小穴：${vagDev}/100「${vagStg}」`,
                             fmtOvr("小穴实况",
-                                `【🔬 小穴与肉壁开发：${vagDev}/100（${vagStg}｜贯穿${vagCnt}次·内射${creampie}次·孔径${vagWidth}cm·闭合${vagClose}%）】：\n` +
+                                `【🔬 小穴与阴唇器质崩坏度：${vagDev}/100（${vagStg}｜贯穿${vagCnt}次·内射${creampie}次·孔径${vagWidth}cm·闭合${vagClose}%）】：\n` +
                                 `• 💧 阴道储精：${vagMl}ml / ${caps.vagMax}ml\n` +
-                                `• 🌺 小穴实况：${rt.小穴实况 || live.vag || (isPureZero ? "两瓣花唇紧密闭合，干爽洁净，处女膜完好无损，未经任何异物侵入。" : "外阴软肉红肿微张，熟练的内壁极易分泌爱液，走动或探入清理时层叠肉壁会本能收缩。")}`,
+                                `• 🌺 阶段崩坏实况：${[
+                                    "【Lv.1 紧致初鲍】两瓣花唇粉嫩紧闭，处女膜完好无损，干爽洁净。",
+                                    "【Lv.2 初破红肿】处女膜破裂，外阴软肉充血红肿，闭合处出现细微缝隙。",
+                                    "【Lv.3 外翻黑木耳】大小阴唇被反复抽插拉扯得肥厚外翻、色素沉淀发暗，熟稔内壁极易泛滥拉丝。",
+                                    "【Lv.4 括约肌松弛洞开】阴道口被撑松至两指宽无法自然合拢，走动时空气与白浊进出发出咕啾水声。",
+                                    "【Lv.5 肉壁脱垂漏精壶】阴道内壁红肿充血的肉褶向外翻出穴口，彻底丧失锁精能力，白浊随时顺大腿淌下。",
+                                    "【💀 Lv.6 彻底崩坏烂肉洞（彻底崩坏）】肥厚阴唇烂熟外翻如紫黑烂花，阴道括约肌100%断裂报废，穴口永久性扩张洞开达拳头粗细！内壁红肉重度向外脱垂翻出，彻底畸变为一个可以直接看清内部宫颈、永不闭合的崩坏烂肉空洞！"
+                                ][tier6(vagDev)]}\n` +
+                                `• 📍 当前细节：${rt.小穴实况 || live.vag || "花唇微张。"}`,
                                 [
-                                    `下半身干爽整洁，私密处被衣物完好地保护着，没有任何异样。`,
-                                    `两腿之间稍微有些温热潮湿，走路时能感觉到一丝轻微的摩擦不适感💦。`,
-                                    `被开发过的花唇有些红肿外翻，纸团都兜不住里面溢出的白浊，手指探入清理时肉壁还在本能地缠绕收缩呢😳💦。`,
-                                    `下面那条熟稔的名器肉道又湿又软，走一步路就吧唧一声往外漏白线，空虚得直想再吃一根大肉棒🥵💦！`,
-                                    `骚逼已经彻底变成合不拢的漏精肉壶了♡，只要闻到男人味就会自己淌水张开等操呀🥵💦❤️！`,
-                                    `啊嘿♡……永久洞开的满级名器肉便器随时恭候任何大肉棒毫无阻碍地一插到底内射灌精呀🥵💦❤️❤️！`
-                                ]),
+                                    `下半身干爽整洁，私密处紧致完好，没有任何异样。`,
+                                    `两腿之间有些红肿温热，走路时摩擦到充血的软肉会传来一丝酸痛感💦。`,
+                                    `被开发过度的花唇已经红肿外翻合不拢了，纸团都兜不住里面溢出的白浊，手指探入清理时熟稔的肉壁还在本能地收缩缠绕😳💦。`,
+                                    `下面那个松弛外翻的黑木耳肉洞已经合不拢了，走一步路就咕啾一声往外漏白浆，空虚得直想再塞根大肉棒进去🥵💦！`,
+                                    `骚逼已经彻底被操成内壁外翻的漏精肉壶了♡，根本锁不住半滴精液，快用拳头和巨根继续扩宽它吧🥵💦❤️！`,
+                                    `啊嘿♡……小穴已经100%彻底崩坏成合不拢的拳头大烂肉洞啦！里面的鲜红肉壁全都翻到外面来了，随时恭候任何东西直接捅进来呀🥵💦❤️❤️！`
+                                ], vagDev),
                             "vag",
-                            { mainName: "🌺 名器阶位", label: "🥛 穴内储精", theme: "semen", pct: Math.round((vagMl / Math.max(1, caps.vagMax)) * 100), text: `${vagMl}/${caps.vagMax}ml` }
+                            { mainName: "🌺 小穴崩坏度", label: "🥛 穴内储精", theme: "semen", pct: Math.round((vagMl / Math.max(1, caps.vagMax)) * 100), text: `${vagMl}/${caps.vagMax}ml` }
                         ),
                         mk("子宫实况", `🫀 子宫：${wombDev}/100「${wombStg}」`,
                             fmtOvr("子宫实况",
-                                `【🔬 子宫与宫颈口开发：${wombDev}/100（${wombStg}｜内射${creampie}次）】：\n` +
+                                `【🔬 子宫与宫颈口器质崩坏度：${wombDev}/100（${wombStg}｜内射${creampie}次）】：\n` +
                                 `• 💧 宫腔储精：${wombMl}ml / ${caps.wombMax}ml\n` +
-                                `• 🫀 子宫实况：${rt.子宫实况 || live.womb || (isPureZero ? "小腹平坦紧致，宫颈口紧密闭合，深处纯净无瑕。" : `宫腔深处正灌着 ${wombMl}ml 浓精，下腹传来沉甸甸的坠胀感，微张的宫口正缓缓向外溢流白浊。`)}`,
+                                `• 🫀 阶段崩坏实况：${[
+                                    "【Lv.1 紧闭处子】宫颈口紧密闭合如针尖，小腹平坦纯净，未经精液侵入。",
+                                    "【Lv.2 宫口充血微松】宫颈被龟头反复顶撞得红肿酸软，出现细微松动。",
+                                    "【Lv.3 宫口扩张锁精】宫颈口被撞开变形，形成主动吞吸浓精的软肉环，灌精后下腹沉重坠胀。",
+                                    "【Lv.4 宫腔肥大下坠】长期超量内射导致子宫壁被撑薄扩张，宫颈口常年微张无法闭合，弯腰即漏精。",
+                                    "【Lv.5 宫颈重度脱垂】固定子宫的韧带被彻底撞断松弛，紫红肿胀的宫颈口顺着阴道大幅度向下脱垂至穴口边缘！",
+                                    "【💀 Lv.6 外翻脱垂死肉苗床（彻底崩坏）】整个紫黑色的宫颈口已彻底掉出阴道口外暴露在空气中！子宫丧失一切正常收缩机能，完全畸变为一个下垂松垮的死肉储精皮袋，稍微按压小腹就会从外翻在体外的宫口里喷出腐熟浓精！"
+                                ][tier6(wombDev)]}\n` +
+                                `• 📍 当前细节：${rt.子宫实况 || live.womb || "小腹微沉。"}`,
                                 [
-                                    `小腹平坦温暖，身体内部没有任何沉重或不适的感觉。`,
-                                    `小肚子深处稍微有些发酸发沉，像是运动过度后的轻微坠胀感💦。`,
-                                    `小腹里被灌进了满满的浓精，沉甸甸地往下坠，弯腰的时候又挤出一股热流，必须赶紧把最深处的残精洗出来😳💦。`,
-                                    `子宫口已经被撞得又软又松了，里面灌满滚烫浓精沉甸甸的感觉既让人安心又让人发麻上瘾呢🥵💦！`,
-                                    `我的子宫就是专门用来装男人精液的锁精苗床呀♡，快把龟头顶进宫颈口里毫无保留地内射灌满吧🥵💦❤️！`,
-                                    `啊嘿♡……宫颈口已经彻底脱垂成24小时张嘴讨精的受精圣杯了，请把人家的肚子灌成大肚精盆吧🥵💦❤️❤️！`
-                                ]),
+                                    `小腹平坦温暖，子宫紧闭纯净，身体内部没有任何沉重或不适的感觉。`,
+                                    `小肚子最深处稍微有些发酸发沉，像是被顶撞过后的轻微坠胀感💦。`,
+                                    `宫腔深处被灌进了满满的滚烫浓精，沉甸甸地往下坠，弯腰换床单时微张的宫口又挤出一股白浊，得赶紧洗出来才行😳💦。`,
+                                    `子宫口已经被撞得又软又松合不拢了，小肚子里坠着一团浓精沉甸甸的感觉既酸麻又让人上瘾呢🥵💦！`,
+                                    `子宫韧带都被撞松脱垂到穴口边上了♡，只要一掰开阴唇就能直接看到张着嘴讨精的紫红宫颈口呀🥵💦❤️！`,
+                                    `啊嘿♡……子宫口已经100%彻底脱垂掉到阴道外面来啦！直接暴露在空气里一抽一缩地喷着陈年老精，请直接把龟头塞进外翻的宫口里射穿吧🥵💦❤️❤️！`
+                                ], wombDev),
                             "womb",
-                            { mainName: "🫀 宫口阶位", label: "🥛 宫腔锁精", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }
+                            { mainName: "🫀 宫颈崩坏度", label: "🥛 宫腔锁精", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }
                         ),
                         mk("阴蒂尿道", `💧 阴蒂与尿道：${clitDev}/100「${clitStg}」`,
                             fmtOvr("阴蒂尿道",
-                                `【🔬 阴蒂与尿道括约肌：${clitDev}/100（${clitStg}｜高潮${orgasmCnt}次·失禁${leakCnt}次·阴蒂${clitSize}mm）】：\n` +
-                                `• 💦 尿意失控度：${peeVal}/100\n` +
-                                `• ⚡ 实况：${rt.阴蒂尿道实况 || (isPureZero ? "阴蒂隐没于娇嫩包皮之下，尿道括约肌紧致受控。" : `被磨过的阴蒂（${clitSize}mm）与红肿阴唇在走动间相互挤压，带来阵阵酥麻酸痛。`)}`,
+                                `【🔬 阴蒂与尿道括约肌崩坏度：${clitDev}/100（${clitStg}｜高潮${orgasmCnt}次·失禁${leakCnt}次·阴蒂${clitSize}mm）】：\n` +
+                                `• 💦 尿道失禁度：${peeVal}/100\n` +
+                                `• ⚡ 阶段崩坏实况：${[
+                                    "【Lv.1 包皮隐没】阴蒂小巧粉嫩隐没于包皮下，尿道括约肌紧致完好。",
+                                    "【Lv.2 充血外露】阴蒂充血勃起剥离包皮，走动摩擦时带来阵阵酥麻酸痛。",
+                                    "【Lv.3 阴蒂肥大勃起】阴蒂因反复高潮刺激而异常肥大凸起如花生米，尿道口开始发酸微松。",
+                                    "【Lv.4 尿道扩张漏尿】尿道括约肌受损松弛，稍有强烈快感或弯腰用力便会控制不住漏出温热骚尿。",
+                                    "【Lv.5 阴蒂肉棒化失禁】阴蒂恶性肥大肿胀如小拇指般永不消退，尿道口扩张松弛，每次高潮必定伴随大股喷尿失禁。",
+                                    "【💀 Lv.6 括约肌坏死漏尿狂（彻底崩坏）】阴蒂畸变肿大至2厘米以上且表皮糜烂过敏，尿道括约肌100%彻底坏死报废！膀胱完全丧失蓄水功能，24小时不分昼夜地顺着大腿根往外滴淌腥臊黄尿，彻底沦为走到哪尿到哪的失禁漏尿肉具！"
+                                ][tier6(clitDev)]}\n` +
+                                `• 📍 当前细节：${rt.阴蒂尿道实况 || "私处神经微颤。"}`,
                                 [
-                                    `全身括约肌完全受控，没有任何失态或不适的迹象。`,
-                                    `迈步走动的时候，私密处偶尔会传来一丝微弱的摩擦酥麻感💦。`,
-                                    `被反复磨过的阴蒂和红肿阴唇在走路时相互挤压，每走一步都带来一阵无法忽视的酥麻与酸痛😳💦。`,
-                                    `阴蒂已经充血肿大得一碰就过电了，连带着下面的尿道口都酸软发麻，稍微高潮一下就快要喷水了🥵💦！`,
-                                    `只要掐住我肥大的阴蒂用力一搓，我就会像坏掉的水龙头一样狂喷潮吹和骚尿失禁呀🥵💦❤️！`,
-                                    `啊嘿♡……尿道括约肌已经100%崩坏成永动潮吹喷泉了，请一边看母狗喷尿一边狠狠干我吧🥵💦❤️❤️！`
-                                ]),
+                                    `全身括约肌完全受控，私处完好自然，没有任何失态或不适的迹象。`,
+                                    `迈步走动的时候，充血的阴蒂偶尔会传来一丝微弱的摩擦酥麻感💦。`,
+                                    `被反复磨过的阴蒂（${clitSize}mm）和红肿阴唇在走路时相互挤压，每走一步都带来无法忽视的酥麻与酸痛😳💦。`,
+                                    `阴蒂已经肿大得像颗小豆子一样缩不回去了，连下面的尿道口都松弛发麻，稍微高潮一下就会漏出尿来🥵💦！`,
+                                    `阴蒂已经畸变肿大成小肉棒的样子了，尿道括约肌也坏掉了，只要一被插就会哗啦啦地狂喷骚尿失禁呀🥵💦❤️！`,
+                                    `啊嘿♡……尿道括约肌已经100%彻底坏死报废啦！完全憋不住半滴尿，24小时都在滴滴答答往地上漏骚尿，风吹一下烂阴蒂就会喷尿绝顶呀🥵💦❤️❤️！`
+                                ], clitDev),
                             "clit",
-                            { mainName: "⚡ 敏化阶位", label: "💦 失禁尿意", theme: "pee", pct: peeVal, text: `尿意 ${peeVal}%` }
+                            { mainName: "⚡ 尿道崩坏度", label: "💦 失禁漏尿", theme: "pee", pct: peeVal, text: `失禁度 ${peeVal}%` }
                         ),
                         mk("屁眼实况", `🕳️ 屁眼：${analDev}/100「${analStg}」`,
                             fmtOvr("屁眼实况",
-                                `【🔬 后庭与直肠开发：${analDev}/100（${analStg}｜肛交${analCnt}次）】：\n` +
+                                `【🔬 后庭与直肠器质崩坏度：${analDev}/100（${analStg}｜肛交${analCnt}次）】：\n` +
                                 `• 💧 直肠储精：${analMl}ml / ${caps.analMax}ml\n` +
-                                `• 🍑 后庭实况：${rt.屁眼实况 || live.anal || (isPureZero ? "臀部曲线圆润紧致，后庭紧闭洁净。" : "饱满臀肉上交错着几道暗红掌印，臀缝间被流淌下来的体液浸得湿润。")}`,
+                                `• 🍑 阶段崩坏实况：${[
+                                    "【Lv.1 紧闭菊蕾】臀部圆润紧致，后庭菊花褶皱紧密闭合，未经异物侵入。",
+                                    "【Lv.2 裂伤红肿】臀肉带有掌印或菊口轻微充血红肿，残留异物摩擦感。",
+                                    "【Lv.3 褶皱磨平松弛】肛门括约肌被撑松软化，菊花褶皱被磨平，闭合速度明显变慢。",
+                                    "【Lv.4 后庭空洞不合】括约肌弹性严重受损，拔出后仍保持圆洞状久久无法收缩，肠液与残精外漏。",
+                                    "【Lv.5 直肠翻肉轻度脱肛】直肠内壁鲜红粘膜被粗暴抽插带出肛门外形成一圈翻肉（轻度脱肛），丧失排泄控制力。",
+                                    "【💀 Lv.6 重度脱肛崩坏排泄腔（彻底崩坏）】肛门内外括约肌100%断裂坏死，大段鲜红糜烂的直肠肉管如盛开的烂玫瑰般永久性翻出肛门外5厘米无法塞回！彻底丧失排便控制，精液、肠液与污物24小时毫无阻拦地从大开的脱肛肉洞中漏出！"
+                                ][tier6(analDev)]}\n` +
+                                `• 📍 当前细节：${rt.屁眼实况 || live.anal || "臀线紧绷。"}`,
                                 [
-                                    `裙摆下的腰臀姿态端正，没有任何失礼之处。`,
+                                    `裙摆下的腰臀姿态端正，后庭紧闭洁净，没有任何失礼之处。`,
                                     `臀部肌肉稍微有些酸紧，走路时需要刻意稳住重心💦。`,
                                     `臀肉上被扇出的几道暗红掌印还火辣辣地发烫，连臀缝都被前面淌下来的白浊弄得湿漉漉的😳💦。`,
-                                    `不仅屁股蛋上全是巴掌印，连后面的菊穴都因为前面的高潮跟着一收一缩地发痒呢🥵💦！`,
-                                    `连后面排泄用的屁眼和直肠都已经变成男人的第二个储精肉穴了，快从后面也狠狠捅进来内射吧🥵💦❤️！`,
-                                    `啊嘿♡……后庭直肠已经100%改造成合不拢的排泄生殖腔了，请把两根大肉棒同时塞进前后两穴里吧🥵💦❤️❤️！`
-                                ]),
+                                    `后面的括约肌已经被撑松了，褶皱平平的合不拢，走动时连里面的肠液都在往外渗呢🥵💦！`,
+                                    `屁眼已经被操得往外翻出鲜红的直肠肉了♡，彻底变成关不上门的第二个储精排泄洞了呀🥵💦❤️！`,
+                                    `啊嘿♡……屁眼括约肌彻底断掉重度脱肛啦！一大截鲜红烂直肠永远翻在屁股外面收不回去，一边漏着精液和污物一边等大肉棒捅穿呀🥵💦❤️❤️！`
+                                ], analDev),
                             "anal",
-                            { mainName: "🕳️ 后庭阶位", label: "🥛 直肠储精", theme: "semen", pct: Math.round((analMl / Math.max(1, caps.analMax)) * 100), text: `${analMl}/${caps.analMax}ml` }
+                            { mainName: "🕳️ 后庭崩坏度", label: "🥛 直肠储精", theme: "semen", pct: Math.round((analMl / Math.max(1, caps.analMax)) * 100), text: `${analMl}/${caps.analMax}ml` }
                         )
                     ]
                 },
-                // 5. 肉改与道具
+                // 5. 肉改与道具（100%对齐图片：烙铁刀刻正字 / 深渊腐蚀魔腹 / 铁丝缝合生锈嵌合 / 机械底座融合）
                 {
-                    title: "肉改与道具", icon: "⛓️", summary: `正字x${tallyFull} · 痕迹 · 穿刺 · 道具`,
+                    title: "肉改与道具", icon: "⛓️", summary: `伤痕${tallyDev}% · 淫纹${tattooDev}% · 穿刺${pierceDev}% · 腔改${propDev}%`,
                     items: [
-                        mk("正字涂鸦", `✍️ 体表痕迹与正字：${tallyDev}/100「${tallyFull}个正字(${tallyStrokes}划)」`,
+                        mk("正字涂鸦", `🩹 正字涂鸦与烙痕：${tallyDev}/100「${scarStg}」`,
                             fmtOvr("正字涂鸦",
-                                `【🔬 体表虐痕与正字记账】：\n` +
-                                `• 累计贯穿与内射：${tallyStrokes} 划（折合 ${tallyFull} 个「正」字零 ${tallyStrokes % 5} 笔）\n` +
-                                `• 体表痕迹：${mark.体表痕迹 !== "无" ? mark.体表痕迹 : (isPureZero ? "肌肤光洁完好，无任何掌印、指痕或涂鸦" : "臀肉暗红掌印、大腿内侧指痕与锁骨咬痕")}\n` +
-                                `• 涂鸦字迹：${mark.公开涂鸦字迹 || "无"}。`,
+                                `【🔬 正字涂鸦与皮肉刻痕畸变度：${tallyDev}/100（${scarStg}｜正字${tallyFull}个/${tallyStrokes}划）】：\n` +
+                                `• 当前痕迹：${mark.体表痕迹 !== "无" ? mark.体表痕迹 : "无任何墨迹或伤疤"} ｜ 涂鸦：${mark.公开涂鸦字迹 || "无"}\n` +
+                                `• 阶段演进（图文同步）：${[
+                                    "【Lv.1 白皙无瑕 (0%)】腹部与大腿内侧肌肤白皙光滑，无任何墨水涂鸦或伤痕。",
+                                    "【Lv.2 初次记数】白皙大腿内侧与下腹被黑色马克笔歪歪扭扭画上一两个『正』字，墨迹随汗水微晕。",
+                                    "【Lv.3 淫语密布】下半身肌肤密密麻麻画满红黑交织的『正』字与侮辱性下流词汇，汗水糊开墨迹。",
+                                    "【Lv.4 刺青入骨】涂鸦被纹身针永久刺入真皮！密集的黑色正字刺青周围皮肉红肿发炎，永远无法洗脱。",
+                                    "【Lv.5 烙铁烫印】不再使用墨水，而是用烧红的烙铁直接在皮肉上烫出焦黑的『正』字疤痕，周围布满红肿水泡与增生。",
+                                    "【💀 Lv.6 烂肉记事本（彻底崩坏）】全身再无一块好肉！旧的焦黑烙印与新的深可见骨刀刻『正』字层层叠叠交织，皮开肉绽、血肉模糊结痂，整具躯体彻底沦为令人作呕的活体烂肉记事本！"
+                                ][tier6(tallyDev)]}`,
                                 [
-                                    `全身肌肤光洁如初，没有任何被人留下的粗暴痕迹或污迹。`,
-                                    `皮肤上留下了一点微微泛红的压痕，希望能快点消退下去💦。`,
-                                    `看着镜子里臀部上的暗红掌印、大腿内侧的指痕和锁骨咬痕，全都是刚才情事留下的直白印记😳💦。`,
-                                    `白净皮肤上交错的巴掌印和青紫掐痕看上去真是既凌乱又色情，稍微摸一下都会想起刚才被粗暴按住的快感🥵💦！`,
-                                    `快用马克笔在我的小肚子和大腿上写满记录挨操次数的『正』字和下流辱骂吧，这是母狗最自豪的勋章呀🥵💦❤️！`,
-                                    `啊嘿♡……全身上下每一寸皮肤都画满了正字和公用便器涂鸦，彻底变成一件活体涂鸦肉具啦🥵💦❤️❤️！`
-                                ]), "corr"),
-                        mk("淫纹烙印", `🔮 淫纹烙印：${tattooDev}/100「${mark.淫纹与刻印 !== "无" ? mark.淫纹与刻印 : "无外显淫纹"}」`,
+                                    `全身肌肤光洁如初，没有任何被人画上的屈辱字迹或伤痕。`,
+                                    `大腿根部和肚皮上被人用黑马克笔画上了记录次数的正字，擦都擦不掉，好屈辱💦……`,
+                                    `肚子和大腿上密密麻麻全都是红黑交错的正字和下流辱骂，一出汗墨水就糊在皮肤上，看着就让人腿软😳💦。`,
+                                    `那些屈辱的正字已经被纹身针生生刺进肉里变成永久刺青了，红肿发炎的皮肤一碰就又痛又麻🥵💦！`,
+                                    `啊啊♡！烧红的烙铁直接烫在肚皮上滋滋冒烟，焦黑的正字烫疤把痛觉神经都烫成高潮开关了呀🥵💦❤️！`,
+                                    `啊嘿♡……全身皮肉都被刀子刻满了层层叠叠的血肉正字！流着脓血结痂的烂肉记事本就是母猪最棒的勋章呀🥵💦❤️❤️！`
+                                ], tallyDev), "corr"),
+                        mk("淫纹烙印", `🔮 淫纹烙印与魔蚀：${tattooDev}/100「${tattooStg}」`,
                             fmtOvr("淫纹烙印",
-                                `【🔬 淫纹与锁精反应】：\n` +
-                                `• 淫纹状态：${mark.淫纹与刻印 !== "无" ? mark.淫纹与刻印 : "小腹表面无发光淫纹"}`,
+                                `【🔬 淫纹烙印与深渊腐蚀畸变度：${tattooDev}/100（${tattooStg}）】：\n` +
+                                `• 当前淫纹状态：${hasTattoo ? mark.淫纹与刻印 : "小腹平坦光洁，未刻任何淫纹（0% 未改造）"}\n` +
+                                `• 阶段演进（图文同步）：${[
+                                    "【Lv.1 平坦白腹 (0%)】下腹部皮肤白皙平坦，没有任何印记或魔纹。",
+                                    "【Lv.2 初显魔纹】随着情欲唤醒，白皙小腹下隐约浮现出浅粉色的对称魅魔淫纹。",
+                                    "【Lv.3 漆黑刻印】下腹部被永久烙上漆黑如墨的复杂淫纹，粗壮线条深深刻入皮肉之中。",
+                                    "【Lv.4 发情荧光】极度发情时漆黑淫纹亮起淫靡的紫红色高亮荧光，纹路周围血管突起如呼吸般搏动。",
+                                    "【Lv.5 肉体异化】平面淫纹异化为凸出皮肤表面的暗红色肉质触须纹路，如活体寄生虫般扎根小腹蠕动。",
+                                    "【💀 Lv.6 恶堕魔腹（彻底崩坏）】下腹部的淫纹已彻底吞噬宿主皮肉，化作一片紫黑色、深可见骨的腐蚀性深渊魔痕！肚皮皮肉翻卷溃烂、散发着浓烈恶堕瘴气，彻底丧失人类肌肤形态！"
+                                ][tier6(tattooDev)]}`,
                                 [
-                                    `小腹肌肤白净平坦，没有任何奇怪的纹路或烙印。`,
-                                    `小腹深处偶尔会泛起一丝微热，但体表一切正常💦。`,
-                                    `虽然肚皮表面没有刻上淫纹，但被灌满浓精的小腹沉甸甸地发烫，内壁早就形成了自动迎合的本能😳💦。`,
-                                    `小肚子烫得像刻了看不见的催情淫纹一样，只要有东西探进来就会本能地死死缠绕吸吮🥵💦！`,
-                                    `小腹上的淫纹一发烫发光，子宫就会疯了一样往下脱垂讨要滚烫浓精呀🥵💦❤️！`,
-                                    `啊嘿♡……神格级魅魔淫纹已经24小时焊死在子宫上了，一辈子都是只会发情接精的母畜啦🥵💦❤️❤️！`
-                                ]), "hypno"),
-                        mk("穿刺环饰", `💍 穿刺环饰：${pierceDev}/100「${mark.穿刺与环饰 !== "无" ? mark.穿刺与环饰 : "无穿刺"}」`,
+                                    `小腹肌肤白净平坦，完好如初，没有任何奇怪的纹路或烙印。`,
+                                    `小腹皮肤下面隐约浮现出了浅粉色的奇怪纹路，稍微一热就会发麻💦。`,
+                                    `漆黑如墨的淫纹已经深深烙进小腹肉里了，怎么洗都洗不掉😳💦。`,
+                                    `小肚子上的淫纹亮起了紫红色的发情荧光！连周围的血管都鼓起来一跳一跳地催我找男人交配🥵💦！`,
+                                    `淫纹已经变成凸起蠕动的暗红肉须长在肚皮上了♡，一直在往子宫里钻着讨要精液呀🥵💦❤️！`,
+                                    `啊嘿♡……整个小肚子都被紫黑色的深渊淫纹腐蚀烂穿啦！皮肉翻卷着冒出恶堕黑气，彻底变成深渊魔物母猪啦🥵💦❤️❤️！`
+                                ], tattooDev), "hypno"),
+                        mk("穿刺环饰", `💍 穿刺铁牢与嵌合：${pierceDev}/100「${pierceStg}」`,
                             fmtOvr("穿刺环饰",
-                                `【🔬 敏感带穿刺实况】：\n` +
-                                `• 穿刺状态：${mark.穿刺与环饰 !== "无" ? mark.穿刺与环饰 : "全身敏感带未穿刺金属环饰"}`,
+                                `【🔬 穿刺环饰与金属嵌合畸变度：${pierceDev}/100（${pierceStg}）】：\n` +
+                                `• 当前穿刺状态：${hasPierce ? mark.穿刺与环饰 : "敏感带天然无饰，无任何金属穿刺（0% 未改造）"}\n` +
+                                `• 阶段演进（图文同步）：${[
+                                    "【Lv.1 天然无饰 (0%)】乳头与阴唇娇嫩完好，没有任何金属穿刺异物。",
+                                    "【Lv.2 初上银环】乳头或小阴唇初次打孔挂上精致小巧的银环，穿刺点微微泛红刺痛。",
+                                    "【Lv.3 重金属坠】细环换成粗大金属环并悬挂沉重金属坠与锁链，将乳头与阴唇向下拉扯得红肿变形。",
+                                    "【Lv.4 密集铁牢】私处与胸部被密密麻麻的铁环穿透，粗铁丝将阴唇与乳肉边缘强行穿引『缝合锁死』，皮肉紧绷起皱。",
+                                    "【Lv.5 皮肉撕裂】暴力拉扯锁链导致穿刺孔洞被活活撕裂成豁开的血口，粗大工业级钢筋直接贯穿化脓肉块。",
+                                    "【💀 Lv.6 金属嵌合体（彻底崩坏）】肉体与生锈刑具完全嵌合长死在一起！紫黑色的坏死烂肉吞噬了生锈的齿轮、尖刺与铁环，创口永远无法愈合、不断渗出脓血，彻底沦为生锈铁器与烂肉融合的怪物！"
+                                ][tier6(pierceDev)]}`,
                                 [
-                                    `身体各处完好自然，没有穿戴任何异样的环饰。`,
-                                    `敏感部位稍微有些充血发热，摩擦到衣物时会有些许异样感💦。`,
-                                    `虽然没有戴金属环，但红肿外翻的阴唇和充血阴蒂在迈步时相互挤压，每一步都酸麻得厉害😳💦。`,
-                                    `光是赤裸走动摩擦着肿大的乳头和阴蒂就已经这么爽了，要是再戴上金属环肯定会受不了的🥵💦！`,
-                                    `快在我的乳头、阴蒂和肥厚阴唇上全都打满沉甸甸的金属环，用铁链牵着母狗散步吧🥵💦❤️！`,
-                                    `啊嘿♡……全身敏感点都钉死了通电母畜环，每走一步路都在被电击高潮喷水呀🥵💦❤️❤️！`
-                                ]), "clit"),
-                        mk("体内道具", `🎛️ 体内填塞与权限：${propDev}/100「${prop.体内道具 !== "无" ? prop.体内道具 : (totalMl > 0 ? `存留${totalMl}ml浓精` : "无填塞")}」`,
+                                    `身体各处完好自然，没有穿戴任何异样的金属穿刺环饰。`,
+                                    `乳头和阴唇刚被打穿戴上小银环，穿孔的地方又红又肿，稍微碰到就刺痛发麻💦。`,
+                                    `挂在敏感处的粗铁环和重锤沉甸甸地往下坠，把乳头和阴唇都拉扯得红肿变形了😳💦。`,
+                                    `阴唇和乳房都被密密麻麻的铁环和铁丝缝合锁死了，稍微动一下全身皮肉都在被铁丝拉扯着发痛发爽🥵💦！`,
+                                    `铁链把穿刺孔活活扯裂成豁开的血洞了♡！粗大的工业钢筋直接插穿化脓的烂肉，又痛又让人高潮呀🥵💦❤️！`,
+                                    `啊嘿♡……生锈的铁环齿轮已经和紫黑色的坏死烂肉彻底长在一起嵌合不分啦！伤口24小时流着脓血，变成铁锈烂肉怪物啦🥵💦❤️❤️！`
+                                ], pierceDev), "clit"),
+                        mk("体内道具", `🎛️ 机械填塞与肉壶化：${propDev}/100「${propStg}」`,
                             fmtOvr("体内道具",
-                                `【🔬 体内填塞物与权限】：\n` +
-                                `• 体内填塞：${prop.体内道具 && prop.体内道具 !== "无" ? prop.体内道具 : (totalMl > 0 ? `宫腔与甬道存留 ${totalMl}ml 浓精` : "体内无任何异物或液体残留")}\n` +
-                                `• 权限控制：${prop.排泄与高潮权限 || "自主控制"}。`,
+                                `【🔬 体内道具与赛博机械融合畸变度：${propDev}/100（${propStg}）】：\n` +
+                                `• 当前体内道具：${hasProp ? prop.体内道具 : "穴口空荡干爽，未塞入任何道具（0% 未改造）"}\n` +
+                                `• 权限控制：${prop.排泄与高潮权限 || "自主控制"}\n` +
+                                `• 阶段演进（图文同步）：${[
+                                    "【Lv.1 空荡纯净 (0%)】前后穴口干爽紧闭，体内没有塞入任何道具。",
+                                    "【Lv.2 微露拉环】体内塞入小巧跳蛋或尾塞，穴口外仅露出一根细拉线或小巧塞底，渗出少许润滑液。",
+                                    "【Lv.3 巨物撑扩】体内常驻粗大发光电动假阳具，肉壁被极限撑开至发白，底座指示灯闪烁，淫水狂流。",
+                                    "【Lv.4 机械群交】前后穴同时被多根粗暴的金属机械触手与粗大电缆死死塞爆，白浊顺着交错管线外溢。",
+                                    "【Lv.5 内脏异形化】内视下巨大的带刺机械核心在子宫与直肠内高速旋转刮擦，内壁鲜血淋漓、被撑得薄如蝉翼。",
+                                    "【💀 Lv.6 永久机械肉壶（彻底崩坏）】道具与肉体永久焊死融合！阴道与肛门外围被一圈用铆钉直接打入骨盆的冰冷工业金属底座锁死，空洞内部直接露出旋转的机械绞肉齿轮，彻底沦为赛博排泄肉壶！"
+                                ][tier6(propDev)]}`,
                                 [
-                                    `身体内部清爽洁净，一切行动与意志皆由我自己掌控。`,
-                                    `体内稍微有些异样感，我必须尽快调理好自己的状态💦。`,
-                                    `为了应付接下来的局面，不得不把两根手指并拢探进泥泞的甬道里清理最深处的残精😳💦。`,
-                                    `肚子里塞满浓精、再用自己的手指插进湿滑穴口抠挖的感觉，真是既羞人又让人腰眼发麻呀🥵💦！`,
-                                    `求求在我体内24小时塞满最大功率的跳蛋和灌肠贞操塞，连高潮和排泄的权限都彻底没收吧🥵💦❤️！`,
-                                    `啊嘿♡……身体里面永远塞满了浓精和震动道具，彻底变成没有半点自主权的自动高潮肉壶啦🥵💦❤️❤️！`
-                                ]), "pleas")
+                                    `身体内部清爽洁净，未塞入任何异物道具，一切机能皆由我自己掌控。`,
+                                    `穴口里塞着的小跳蛋只露出一根细线在外面，走动时在里面嗡嗡震动得好难受💦。`,
+                                    `粗大发光的电动假阳具把穴口撑得发白合不拢，底座一闪一闪地把里面的淫水全都搅出来了😳💦。`,
+                                    `前后两个穴全都被冷冰冰的金属机械触手和粗电缆塞爆了，连一根手指的缝隙都没有啦🥵💦！`,
+                                    `带刺的机械核心在子宫和直肠里高速旋转刮擦♡，内脏壁都被撑得像纸一样薄、一边流血一边失禁高潮呀🥵💦❤️！`,
+                                    `啊嘿♡……骨盆和烂肉已经被铆钉焊死在冰冷的金属底座上啦！里面全都是转动的机械绞肉齿轮，彻底变成永久固定的赛博机械肉便器啦🥵💦❤️❤️！`
+                                ], propDev), "pleas")
                     ]
                 },
-                // 6. 全身穿搭（按钮名已精简）
+                // 6. 全身穿搭（全部 8 项严格设为无阶段、无进度条纯展示类！）
                 {
                     title: "全身穿搭", icon: "👗", summary: `状态:${wearStateTag}`,
                     items: [
@@ -2420,8 +2670,8 @@
                                     `被汗水浸湿的头发黏在脸颊上，掬起一捧冷水扑在脸上，看着镜中自己平静如死水的眼神😳💦。`,
                                     `嘴角还挂着没擦干净的口水印子，眼神迷离拉丝，一看就是刚被男人粗暴疼爱过的发情模样呢🥵💦！`,
                                     `快给我戴上流口水的开口球和母猪耳标，让我的脸上永远挂着翻白眼吐舌头的阿嘿颜吧🥵💦❤️！`,
-                                    `啊嘿♡……爱心眼翻到天上去回不来了，满脸精斑和哈喇子就是肉便器最美的妆容呀🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……眼珠子彻底翻白回不来了，满脸精斑、黄尿和哈喇子就是崩坏肉便器最美的妆容呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_颈部", `⛓️ 脖颈与锁骨「${neckTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_颈部",
                                 `【🔬 脖颈与锁骨实况】：\n` +
@@ -2433,8 +2683,8 @@
                                     `右侧锁骨上还印着刚才被咬出来的殷红咬痕，在灯光下显得格外刺眼直白😳💦。`,
                                     `锁骨上的红咬痕一碰就又酸又麻，就像是被男人在脖子上盖了所有权印章一样让人腿软呢🥵💦！`,
                                     `好想在脖子上锁上带铁链和铭牌的母狗电击项圈，被男人拽着铁链按在地上深喉呀🥵💦❤️！`,
-                                    `啊嘿♡……脖子上的项圈就是人家的命根子，一被勒紧脖子下面就会当场高潮喷尿呀🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……脖子已经被生锈铁链勒出深可见骨的黑紫肉槽了，一拽铁链下面就会当场喷尿休克呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_胸罩", `👙 胸衣与内衬「${braTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_胸罩",
                                 `【🔬 胸部穿戴实况】：\n` +
@@ -2446,8 +2696,8 @@
                                     `胸前一丝不挂地暴露在微凉的空气里，随着每一次呼吸微微起伏😳💦。`,
                                     `根本不需要穿什么胸罩内衬，光着一对饱满晃动的大奶子和硬挺乳头才方便男人随时揉捏吸吮呀🥵💦！`,
                                     `就算穿内衣也只配穿把乳头完全勒出来展示的开洞情趣胸罩，随时供主人们抓奶玩弄🥵💦❤️！`,
-                                    `啊嘿♡……一对大奶子永远赤裸晃动着往外狂喷白母乳，根本不需要任何布料遮挡呀🥵💦❤️❤️！`
-                                ]), "none", null, true, chestDev),
+                                    `啊嘿♡……一对垂到肚子上的紫黑烂奶袋永远赤裸晃荡着往外狂喷血乳，再也不需要任何布料遮挡啦🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_上衣", `👚 上衣与外衫「${topTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_上衣",
                                 `【🔬 上身衣着实况】：\n` +
@@ -2459,12 +2709,12 @@
                                     `光着贴满薄汗的后背把脏床单换了下来，等清理完身体还得翻出件薄睡裙套上应付今晚的客人😳💦。`,
                                     `就算穿上那件极薄的黑色吊带睡裙也是真空透视的，只要男人一伸手就能直接掀开揉肉呀🥵💦！`,
                                     `母狗根本不需要穿正经上衣，光着身子或者套一件一撕就碎的情趣薄纱才是最配我的穿搭🥵💦❤️！`,
-                                    `啊嘿♡……一辈子全裸展示满身正字和精斑，就是深渊肉便器的终极礼服呀🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……一辈子全裸展示满身溃烂烙印和正字刻痕，就是崩坏肉便器的终极礼服呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_内裤", `🩲 底裤与私处「${pantyTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_内裤",
                                 `【🔬 底裤与私密遮护】：\n` +
-                                `• 当前状态：${pantyTxt}（湿润度：${wetLevel}%）\n` +
+                                `• 当前状态：${pantyTxt}（体液泥泞度：${wetLevel}%）\n` +
                                 `• 细节：${live.pantyWear || (isPureZero ? "底裤干爽洁净，严密贴合地保护着私密幽谷。" : "浸满白浊的纸团已丢入垃圾桶，此时下身赤裸，外阴红肿微张。")}`,
                                 [
                                     `贴身底裤干爽舒适，没有任何异样感。`,
@@ -2472,8 +2722,8 @@
                                     `刚才捂在腿心的纸团早就被白浊浸透丢掉了，现在下面完全光着，得赶紧把深处的残精洗出来😳💦。`,
                                     `内裤只要穿上不到一分钟就会被我自己淌出来的淫水泡透拉丝，还不如直接真空光着屁股呢🥵💦！`,
                                     `我这种随时漏精淌水的公用骚逼只配穿把外翻阴唇勒出来的开裆丁字裤，方便大肉棒随时插进来🥵💦❤️！`,
-                                    `啊嘿♡……这辈子再也不穿内裤了，让永久洞开的骚穴和屁眼24小时敞开着滴精喷尿吧🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……这辈子再也不穿内裤了，让外翻脱垂的烂肉洞和脱肛直肠24小时敞开着滴精漏尿吧🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_下装", `🍑 裙裤与臀部「${botTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_下装",
                                 `【🔬 下装与臀部实况】：\n` +
@@ -2485,8 +2735,8 @@
                                     `光溜溜的臀肉上还印着几道边缘泛青的暗红掌印，弯腰铺床单时后臀一阵阵火辣辣地发酸😳💦。`,
                                     `饱满的屁股蛋上全是男人扇出来的红巴掌印，稍微晃一下腰臀就透着一股欠操的风骚味呢🥵💦！`,
                                     `只要把屁股高高撅起来摇晃，男人们就会像发疯一样扑上来拍打我的臀肉、从后面狠狠插进来🥵💦❤️！`,
-                                    `啊嘿♡……浑圆的大屁股就是专门用来给男人们当肉垫拍打撞击的泄欲靶子呀🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……塌腰撅起印满畜生烙印的烂屁股，把脱垂的宫口和直肠完全亮出来供人排泄吧🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_丝袜", `🧦 丝袜与双腿「${sockTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_丝袜",
                                 `【🔬 腿部与丝袜实况】：\n` +
@@ -2498,8 +2748,8 @@
                                     `大腿内侧全是被粗暴掐出来的指痕，粘稠的白浊顺着大腿根滑落，每走一步都带着细微的水声😳💦。`,
                                     `两条白花花的大腿内侧全是被男人掐出来的青紫指印和拉丝的白浆，双腿软得连并拢都做不到啦🥵💦！`,
                                     `好想穿上被撕开裆部的油亮黑丝或者吊带袜，把两条长腿大张成M字形架在男人肩膀上挨操呀🥵💦❤️！`,
-                                    `啊嘿♡……两条大腿永远呈180度大张着流满白浊和骚尿，再也合不拢啦🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel),
+                                    `啊嘿♡……髋骨早就脱臼长死成180度M字大开腿啦，两条大腿上永远流满腥臭黄尿和腐熟白浊呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("穿搭_鞋子", `👠 鞋履与玉足「${shoeTxt.slice(0, 14)}」`,
                             fmtOvr("穿搭_鞋子",
                                 `【🔬 鞋履与足部实况】：\n` +
@@ -2511,85 +2761,115 @@
                                     `刚才擦掉了脚背上飞溅的污迹，结果弯腰塞床单角时，体内的浓精又滴答两声落在了赤裸的脚趾前😳💦。`,
                                     `光着脚丫踩在滴了精液的地板上，每当快感涌上来时十根脚趾头都会不受控制地蜷缩起来呢🥵💦！`,
                                     `快让我穿上最骚的细高跟鞋，或者直接用沾满精液的脚趾头夹住大肉棒为您足交奉侍吧🥵💦❤️！`,
-                                    `啊嘿♡……从脚趾缝到脚底板全都沾满了滑腻的浓精，连脚丫子都变成肉棒专属的泄欲玩具啦🥵💦❤️❤️！`
-                                ]), "none", null, true, wetLevel)
+                                    `啊嘿♡……萎缩废用的脚趾头永远痉挛蜷缩在自己喷出的尿洼和精液池里，连动都动不了啦🥵💦❤️❤️！`
+                                ]), "none", null, true, 0)
                     ]
                 },
-                // 7. 苗床与受孕
+                // 7. 苗床与受孕（100%对齐图片：鱼子酱排卵·深渊卵管 / 异种触手受精·食肉胎盘 / 毛孔吸精·白浊史莱姆 / 破肚胎动·透明异种孵化巢）
                 {
-                    title: "苗床与受孕", icon: "🤰", summary: `${cycLabel} · 受孕率${fertProb}%`,
+                    title: "苗床与受孕", icon: "🤰", summary: `${cycLabel} · 苗床崩坏${pregStageVal}%`,
                     items: [
-                        mk("排卵周期", `🥚 排卵周期：${ovulStageVal}/100「${ovulStg}」`,
+                        mk("排卵周期", `🥚 卵巢异变与下崽化：${ovulStageVal}/100「${ovulStg}」`,
                             fmtOvr("排卵周期",
-                                `【🔬 生理周期与受孕风险】：\n` +
-                                `• 当前阶段：${cycLabel} ｜ 单发受孕率：${fertProb}%\n` +
-                                `• 卵子状态：${preg.卵子状态 || (isPureZero ? "正常周期内，无任何受精风险" : "成熟卵子待受精，无套内射极易中招")}`,
+                                `【🔬 卵巢排卵与深渊下崽通道畸变度：${ovulStageVal}/100（${ovulStg}）】：\n` +
+                                `• 当前周期阶段：${cycLabel} ｜ 单发受孕率：${fertProb}%\n` +
+                                `• 阶段崩坏实况（图文同步）：${[
+                                    "【Lv.1 平静安宁 (0%)】内视下粉嫩的卵巢安静休眠，未排卵，内部环境纯净安详。",
+                                    "【Lv.2 初潮萌动】正常排卵期，卵巢微微充血发红，单颗圆润晶莹的成熟卵子破卵而出。",
+                                    "【Lv.3 异常催促】受药物与发情刺激，卵巢红肿如葡萄串，同时强行排出三四颗卵子，输卵管剧烈蠕动。",
+                                    "【Lv.4 排卵失控】卵巢肿大如紫红肉瘤并破开无数小孔，像喷射鱼子酱般疯狂涌出数百颗透明卵子填满输卵管！",
+                                    "【Lv.5 异种卵生】卵巢结构完全魔化异变，直接产出肉眼可见、布满粗大血丝与魔纹的肉质异形巨卵！",
+                                    "【💀 Lv.6 永久下崽机器（彻底崩坏）】卵巢本身已彻底融化坏死，输卵管尽头变异为连接异界深渊的烂肉黑洞！24小时不间断地向子宫涌入漆黑恶臭的魔物腐卵泡，彻底沦为非人下崽通道！"
+                                ][tier6(ovulStageVal)]}`,
                                 [
-                                    `身体处于正常的生理周期内，洁身自好的我没有任何受孕风险。`,
-                                    `算算日子这两天身体稍微有些敏感，必须更加小心保护自己才行💦。`,
-                                    `偏偏在容易受孕的时期被灌进了满满的浓精，必须赶紧把最深处的残精洗出来，不然就麻烦了😳💦。`,
-                                    `明明知道现在是危险排卵期，可被男人滚烫浓精内射进子宫的瞬间，小肚子还是爽得一阵阵痉挛收缩🥵💦！`,
-                                    `就喜欢在危险排卵期被男人无套内射灌满♡！快把我的卵子射穿，让我怀上主人的种吧🥵💦❤️！`,
-                                    `啊嘿♡……卵巢已经变成24小时疯狂排卵的受精机器了，无论谁射进来都会百发百中怀上孽种呀🥵💦❤️❤️！`
-                                ]),
+                                    `身体处于正常的生理周期内，卵巢安静平稳，没有任何异常排卵迹象。`,
+                                    `算算日子现在正好排出一颗成熟的卵子，身体稍微有些敏感发热，必须小心保护自己💦。`,
+                                    `小肚子两侧又酸又烫，被催熟的卵巢居然一次排出了好几颗卵子，这下只要被内射就肯定会怀上了😳💦。`,
+                                    `卵巢已经彻底失控了！像喷鱼子酱一样往输卵管里狂喷几百颗卵子，整个小腹都被卵泡塞得满满当当🥵💦！`,
+                                    `呜汪♡……变异的卵巢里面长出带血丝的异种大肉卵了，把输卵管撑得好痛好爽呀🥵💦❤️！`,
+                                    `啊嘿♡……卵巢已经彻底融化变成连接深渊的黑泥产卵洞啦！24小时都在往子宫里狂涌恶臭的黑泥魔物卵，变成永动下崽机器啦🥵💦❤️❤️！`
+                                ], ovulStageVal),
                             "lust",
-                            { mainName: "🥚 排卵阶位", label: "🎯 受孕概率", theme: "pleas", pct: fertProb, text: `受孕率 ${fertProb}%` }
+                            { mainName: "🥚 卵巢崩坏度", label: "🎯 受孕概率", theme: "pleas", pct: fertProb, text: `受孕率 ${fertProb}%` }
                         ),
-                        mk("受精断面", `🔬 受精断面：${xrayStageVal}/100「${xrayStg}」`,
+                        mk("受精断面", `🔬 受精断面与胎盘魔化：${xrayStageVal}/100「${xrayStg}」`,
                             fmtOvr("受精断面",
-                                `【🔬 宫腔内视断面】：\n` +
+                                `【🔬 受精着床与食肉胎盘畸变度：${xrayStageVal}/100（${xrayStg}）】：\n` +
                                 `• 💧 宫腔储精：${wombMl}ml / ${caps.wombMax}ml\n` +
-                                `• 🔬 断面实况：${wombMl > 0 ? `宫腔内充盈着 ${wombMl}ml 高活性精浆，大量精虫正顺着内壁游向输卵管围攻卵子！` : "当前宫腔内无活性精虫存留。"}`,
+                                `• 🔬 阶段崩坏实况（图文同步）：${[
+                                    "【Lv.1 无暇孤卵 (0%)】干净的宫腔内仅有一颗晶莹剔透的卵子安静悬浮，无任何精子入侵。",
+                                    "【Lv.2 精群围攻】内射发生，成千上万活跃的白色精子包围中央卵子，拼命钻击卵膜。",
+                                    "【Lv.3 破膜着床】粗壮精子钻透卵膜，受精卵发出红光并长出细小血管，深深扎根着床进肥厚的子宫内膜。",
+                                    "【Lv.4 多重受孕】宫腔化作乳白精液海，数十颗卵子同时受精，密密麻麻扎根在子宫壁上疯狂汲取母体营养。",
+                                    "【Lv.5 异种寄生】漆黑带刺的触手状魔物精虫粗暴撕裂卵子、注入黑色毒液，使胚胎瞬间发生恐怖魔化畸变！",
+                                    "【💀 Lv.6 腐肉苗床（彻底崩坏）】已不再需要精卵结合！整个子宫内膜彻底变异为一张巨大蠕动的食肉胎盘，吞噬一切注入的黑泥与精液，直接从血肉内壁上孵化出令人作呕的烂肉瘤球！"
+                                ][tier6(xrayStageVal)]}`,
                                 [
-                                    `子宫内部纯净安宁，从未被任何外来精液侵入过。`,
-                                    `小腹深处平安无事，没有外来体液残留💦。`,
-                                    `感觉到肚子里那 ${wombMl}ml 温热的浓精还留在深处，必须赶紧用手指或温水冲洗出来才安心😳💦。`,
-                                    `一想到肚子里那团滚烫浓精里的成千上万条精虫正在围攻我的卵子，小腹深处就既害怕又兴奋得发抖🥵💦！`,
-                                    `好想透过X光断面亲眼看着大肉棒顶开子宫口、把浓稠白浆直接喷在卵子上的色情画面呀🥵💦❤️！`,
-                                    `啊嘿♡……子宫腔和输卵管里24小时都泡满了高浓度精虫，卵子已经被围攻得彻底沦陷受精啦🥵💦❤️❤️！`
-                                ]),
+                                    `子宫内部纯净安宁，从未被任何外来精子侵入过。`,
+                                    `感觉到成千上万条滚烫的精子正在肚子里围攻我的卵子，必须赶紧洗出来才行💦！`,
+                                    `糟了……最粗壮的精子已经钻破卵膜扎根着床在子宫壁上了，小肚子深处传来一阵受孕的酸麻红光😳💦。`,
+                                    `精液海里几十颗卵子全都被同时受精着床了！密密麻麻的胚胎趴在子宫壁上吸我的血肉营养，好胀好麻🥵💦！`,
+                                    `漆黑带刺的怪物触手精虫把卵子撕裂灌进黑毒了♡，肚子里怀上畸变的怪物孽种了呀🥵💦❤️！`,
+                                    `啊嘿♡……子宫内膜已经彻底变成吃肉的蠕动怪物胎盘啦！不用受精也能直接从烂肉壁上往外吐出恶心的血肉瘤球，变成生化腐肉苗床啦🥵💦❤️❤️！`
+                                ], xrayStageVal),
                             "womb",
-                            { mainName: "🔬 断面阶位", label: "🥛 精虫密度", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }
+                            { mainName: "🔬 胎盘畸变度", label: "🥛 精虫密度", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }
                         ),
-                        mk("精液归属", `🧬 精液归属：${dnaStageVal}/100「${dnaStg}」`,
+                        mk("精液归属", `🧬 肌体吸精与白浊同化：${dnaStageVal}/100「${dnaStg}」`,
                             fmtOvr("精液归属",
-                                `【🔬 体内精液DNA归属】：\n` +
+                                `【🔬 肌体吸精与白浊史莱姆同化度：${dnaStageVal}/100（${dnaStg}）】：\n` +
                                 `• 💧 四穴总储精：${totalMl}ml（宫腔${wombMl}ml / 阴道${vagMl}ml / 口胃${mouthMl}ml / 直肠${analMl}ml）\n` +
-                                `• 🧬 归属明细：${totalMl > 0 ? (preg.宫内精液归属 !== "无" ? preg.宫内精液归属 : `当前存留着上一名恩客泵入的 ${totalMl}ml 浓精。`) : "无任何外来雄性精液残留"}。`,
+                                `• 🧬 精液来源：${totalMl > 0 ? (preg.宫内精液归属 !== "无" ? preg.宫内精液归属 : `存留着恩客泵入的 ${totalMl}ml 浓精`) : "当前无游离精液"}\n` +
+                                `• 阶段崩坏实况（图文同步）：${[
+                                    "【Lv.1 无暇无浊 (0%)】大腿与下腹干爽洁净，毫无白浊精液沾染。",
+                                    "【Lv.2 体外喷溅】大腿根部与下腹零星溅落着几缕乳白精液，顺着白皙肌肤缓缓滑落。",
+                                    "【Lv.3 内射满溢】浓稠精液完全填满阴道，并从微张的红肿穴口中大量涌出、在双腿间拉出长丝。",
+                                    "【Lv.4 全身精涂】全身每一寸皮肤都被厚厚的半干涸精液泥浆包裹糊满，结出层层白痂，腥臭扑鼻。",
+                                    "【Lv.5 肌体吸精】皮肤发生海绵化吸精异变！全身毛孔张开直接将表面精液吸入皮下组织，使皮肤下浮现出恶心的乳白色精斑与白血管！",
+                                    "【💀 Lv.6 白浊黏液怪（彻底崩坏）】肉体细胞彻底被精液同化替换！下半身皮肉已经半融化，像烂泥一样与无尽的白浊精液融合成一体，彻底畸变为一滩不断向外渗水的白浊烂肉史莱姆！"
+                                ][tier6(dnaStageVal)]}`,
                                 [
-                                    `我的身体里干干净净，没有任何男人的精液残留。`,
-                                    `体内没有残留外来液体，只要清理干净就能保持清爽💦。`,
-                                    `现在肚子里还留着刚才那个客人射进来的 ${totalMl}ml 精液，要是不赶在下一波客人来之前洗掉就糟了😳💦。`,
-                                    `子宫里装满男人滚烫精液DNA的感觉真让人上瘾，走一步路都在往外滴着属于他的白浊呢🥵💦！`,
-                                    `快把不同男人的精液全都射进我的子宫里搅拌在一起，让我变成装满百家精液的公共精盆吧🥵💦❤️！`,
-                                    `啊嘿♡……全身上下每一个细胞都被男人们的浓精DNA彻底染透腌入味啦🥵💦❤️❤️！`
-                                ]),
+                                    `我的身体干干净净，没有任何男人的精液沾染。`,
+                                    `大腿根和肚皮上溅到了几滴粘糊糊的热精液，得赶紧用纸巾擦掉💦。`,
+                                    `射进来的精液太多了，根本兜不住，正从红肿合不拢的穴口里一缕接一缕地往外溢流拉丝😳💦。`,
+                                    `全身上下都被男人们射出的浓厚精液像泥浆一样糊满结痂了，连原本的肤色都看不见了🥵💦！`,
+                                    `皮肤上的毛孔全都张开像海绵一样主动把精液吸进肉里去了♡！皮下全都浮现出恶心的白斑和白血管了呀🥵💦❤️！`,
+                                    `啊嘿♡……下半身的肉已经彻底被精液同化融化啦！双腿和私处全都化作一滩咕嘟咕嘟冒泡的白浊烂肉史莱姆，跟精液彻底融为一体啦🥵💦❤️❤️！`
+                                ], dnaStageVal),
                             "drug",
-                            { mainName: "🧬 染透阶位", label: "🥛 四穴总精", theme: "semen", pct: Math.round((totalMl / Math.max(1, totalCapAll)) * 100), text: `合计 ${totalMl}ml` }
+                            { mainName: "🧬 白浊同化度", label: "🥛 四穴总精", theme: "semen", pct: Math.round((totalMl / Math.max(1, totalCapAll)) * 100), text: `合计 ${totalMl}ml` }
                         ),
-                        mk("孕肚进度", `🤰 孕肚与苗床：${pregStageVal}/100「${pregStg}」`,
+                        mk("孕肚进度", `🤰 破肚胎动与透明孵化巢：${pregStageVal}/100「${pregStg}」`,
                             fmtOvr("孕肚进度",
-                                `【🔬 小腹坠胀与孕育进度】：\n` +
-                                `• 🤰 小腹充盈度：${bellySwellPct}%（受孕状态：${preg.子宫怀孕 ? `已着床 ${safeNum(preg.怀孕进度)}%` : (totalMl > 0 ? `未着床，因存留 ${wombMl}ml 浓精而产生明显坠胀感` : "平坦如初")}）`,
+                                `【🔬 孕肚膨隆与透明异种孵化巢畸变度：${pregStageVal}/100（${pregStg}）】：\n` +
+                                `• 🤰 当前腹围膨隆度：${bellySwellPct}%（产卵/生产：${safeNum(preg.生产产卵次数)} 次）\n` +
+                                `• 阶段崩坏实况（图文同步）：${[
+                                    "【Lv.1 平坦马甲线 (0%)】小腹平坦紧致，带有健康的马甲线肌肉线条，毫无赘肉与隆起。",
+                                    "【Lv.2 微凸孕相】下腹部出现一道温和圆润的微隆起弧线，如同孕早期般饱满柔和。",
+                                    "【Lv.3 显怀大肚】肚子如吹气的气球般高高挺起，肚皮光滑发亮、肚脐外凸，皮下隐现青筋。",
+                                    "【Lv.4 胎动破肚】巨腹大到违反人体比例，薄如蝉翼的肚皮表面恐怖地凸出无数只婴儿手脚的清晰轮廓，正在里面疯狂挣扎踢踹！",
+                                    "【Lv.5 下垂肉囊】因无数次极限生育与灌精，肚子彻底丧失弹性，像装满水袋的重型肉囊般松垮下垂至膝盖，布满紫红撕裂妊娠纹。",
+                                    "【💀 Lv.6 透明异种孵化巢（彻底崩坏）】腹部皮肤发生诡异的完全透明化病变，化作一个巨大的透明薄膜包囊！透过透明肚皮可直接看见内部翻滚的黑色羊水，以及无数畸形的异种幼体与触手胎儿正在里面互相吞噬蠕动！"
+                                ][tier6(pregStageVal)]}`,
                                 [
-                                    `小腹平坦紧致，腰身纤细轻盈。`,
-                                    `小肚子稍微有些微微发胀，很快就能恢复平复💦。`,
-                                    `被射进宫腔的15ml浓精让平坦的小腹传来一阵沉甸甸的坠胀感，弯腰换床单时尤为明显😳💦。`,
-                                    `手顺着平坦的小腹往下摸，里面被浓精撑得满满当当的热度，简直像已经怀上了一样让人腿软🥵💦！`,
-                                    `好想被射进几百毫升浓精把小肚子撑得像怀胎十月的孕妇一样鼓起来，当一个专门生小母狗的繁殖苗床呀🥵💦❤️！`,
-                                    `啊嘿♡……大肚母猪苗床已经彻底定型了，就算挺着大孕肚也请继续用大肉棒狠狠捅进子宫里内射吧🥵💦❤️❤️！`
-                                ]),
+                                    `小腹平坦紧致，腰身纤细轻盈，有着健康的马甲线。`,
+                                    `小肚子下面微微鼓起了一点圆润的弧度，沉甸甸地有些发酸💦。`,
+                                    `肚子已经被撑得像临盆孕妇一样高高挺起了，连肚脐眼都凸了出来，肚皮绷得发亮😳💦。`,
+                                    `肚皮被撑得像纸一样薄！里面好几个小手小脚正在疯狂踢踹，把肚皮都顶出一个个恐怖的手印形状了🥵💦！`,
+                                    `肚子已经被彻底生坏了♡，像个装满水的破麻袋一样松松垮垮地垂到膝盖上，爬满了紫红色的撕裂纹路呀🥵💦❤️！`,
+                                    `啊嘿♡……肚皮已经100%变成完全透明的塑料薄膜包囊啦！所有人都能直接透过肚皮看见黑羊水里密密麻麻互相吞噬的异种怪物幼虫，彻底变成透明活体孵化巢啦🥵💦❤️❤️！`
+                                ], pregStageVal),
                             "corr",
-                            { mainName: "🤰 苗床阶位", label: "🥛 腹围坠胀", theme: "semen", pct: bellySwellPct, text: `坠胀 ${bellySwellPct}%` }
+                            { mainName: "🤰 孵化巢崩坏度", label: "🥛 腹围膨隆", theme: "semen", pct: bellySwellPct, text: `膨隆 ${bellySwellPct}%` }
                         )
                     ]
                 },
-                // 8. 恩客图鉴（支持删除单个恩客）
+                // 8. 恩客图鉴
                 {
                     title: "恩客图鉴", icon: "🍆", summary: clientList.length > 0 ? `已记录 ${clientList.length} 名恩客` : `暂无恩客记录`,
                     items: clientItems
                 },
-                // 9. 淫乱总账
+                // 9. 淫乱总账（全部 5 项严格设为无阶段、无进度条纯统计展示类！）
                 {
                     title: "淫乱总账", icon: "💎", summary: `小穴${vagCnt} · 内射${creampie} · 接客${hookerCnt}`,
                     items: [
@@ -2603,40 +2883,40 @@
                                     `早就记不清最初是什么时候变成这样的了，现在的身体已经彻底习惯了眼下的风尘生活😳💦。`,
                                     `所谓的处女膜早就变成了迎合男人的熟稔肉褶，被大肉棒捅穿开发才是我这具身体真正的归宿呀🥵💦！`,
                                     `真庆幸我那层碍事的处女膜早就被大肉棒捅烂了，现在不管是谁都能毫无阻碍地一插到底啦🥵💦❤️！`,
-                                    `啊嘿♡……从破瓜那一秒起，人家就注定要进化成万人轮操的神格级肉便器啦🥵💦❤️❤️！`
-                                ]), "none", null, true),
+                                    `啊嘿♡……从破瓜那一秒起，人家就注定要被操成拳头大烂肉洞的终极排泄便器啦🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("六孔总账", `💎 性交总账：「小穴${vagCnt}／口${mouthCnt}／菊${analCnt}／乳${titCnt}／足${footCnt}」`,
                             fmtOvr("六孔总账",
-                                `【🔬 六孔历史开发统计】：\n` +
+                                `【🔬 六孔历史贯穿统计】：\n` +
                                 `• 小穴：${vagCnt} 次 ｜ 口交：${mouthCnt} 次 ｜ 后庭：${analCnt} 次 ｜ 乳交：${titCnt} 次 ｜ 足交：${footCnt} 次 ｜ 异种：${beastCnt} 次\n` +
-                                `【📊 当前各孔开发度】：\n` +
-                                `- 🌺 小穴：${dev.vagObj.val}/100（开发点 ${dev.vagObj.curPts}/${dev.vagObj.nextThreshold}）\n` +
-                                `- 🫀 子宫：${dev.wombObj.val}/100（开发点 ${dev.wombObj.curPts}/${dev.wombObj.nextThreshold}）\n` +
-                                `- 👄 骚口：${dev.mouthObj.val}/100（开发点 ${dev.mouthObj.curPts}/${dev.mouthObj.nextThreshold}）\n` +
-                                `- 🍒 丰乳：${dev.chestObj.val}/100（开发点 ${dev.chestObj.curPts}/${dev.chestObj.nextThreshold}）\n` +
-                                `- 💧 阴蒂：${dev.clitObj.val}/100（开发点 ${dev.clitObj.curPts}/${dev.clitObj.nextThreshold}）\n` +
-                                `- 🕳️ 屁眼：${dev.analObj.val}/100（开发点 ${dev.analObj.curPts}/${dev.analObj.nextThreshold}）`,
+                                `【📊 当前六孔不可逆器质崩坏度】：\n` +
+                                `- 🌺 小穴：${dev.vagObj.val}/100（畸变点 ${dev.vagObj.curPts}/${dev.vagObj.nextThreshold}）\n` +
+                                `- 🫀 子宫：${dev.wombObj.val}/100（畸变点 ${dev.wombObj.curPts}/${dev.wombObj.nextThreshold}）\n` +
+                                `- 👄 骚口：${dev.mouthObj.val}/100（畸变点 ${dev.mouthObj.curPts}/${dev.mouthObj.nextThreshold}）\n` +
+                                `- 🍒 丰乳：${dev.chestObj.val}/100（畸变点 ${dev.chestObj.curPts}/${dev.chestObj.nextThreshold}）\n` +
+                                `- 💧 阴蒂尿道：${dev.clitObj.val}/100（畸变点 ${dev.clitObj.curPts}/${dev.clitObj.nextThreshold}）\n` +
+                                `- 🕳️ 屁眼：${dev.analObj.val}/100（畸变点 ${dev.analObj.curPts}/${dev.analObj.nextThreshold}）`,
                                 [
-                                    `所有性交记录全部为 0，我的身体从上到下都保持着绝对的清白。`,
+                                    `所有性交记录全部为 0，我的身体从上到下都保持着绝对的完好与清白。`,
                                     `看着上面记录的次数，脸颊还是有些发热，希望不要再轻易增加了💦。`,
-                                    `身体已经被贯穿开发了这么多次，全身的粘膜和肉壁早就对情事形成肌肉记忆了😳💦。`,
-                                    `看着这串不断增加的挨操次数，小穴深处居然自豪地一抽一缩，好想让数字涨得更快一点呀🥵💦！`,
-                                    `才被操了这么点次数根本不够塞牙缝嘛♡，快把我的三穴次数全都刷到成百上千次吧🥵💦❤️！`,
-                                    `啊嘿♡……向着全孔穴万次贯穿的终极满贯纪录冲刺，请把人家操到死为止吧🥵💦❤️❤️！`
-                                ]), "none", null, true),
+                                    `身体已经被贯穿开发了这么多次，全身的粘膜和肉壁早就出现不可逆的松弛与熟稔记忆了😳💦。`,
+                                    `看着这串不断增加的挨操次数，外翻的骚穴居然自豪地一抽一缩，好想让数字涨得更快一点呀🥵💦！`,
+                                    `才被操了这么点次数根本不够塞牙缝嘛♡，快把我的三穴次数全都刷到成百上千次、把所有孔穴都操脱垂吧🥵💦❤️！`,
+                                    `啊嘿♡……全身六个孔穴全都已经被操到100%器质崩坏报废啦，请继续往烂肉洞里捅到死为止吧🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("高潮总账", `💎 高潮与失禁：「高潮${orgasmCnt}／强制${forceOrgCnt}／寸止${edgeCnt}／喷潮${squirtCnt}／失禁${leakCnt}」`,
                             fmtOvr("高潮总账",
-                                `【🔬 高潮与失控统计】：\n` +
+                                `【🔬 高潮与括约肌失控统计】：\n` +
                                 `• 累计高潮：${orgasmCnt} 次（强制高潮 ${forceOrgCnt} 次，寸止 ${edgeCnt} 次）\n` +
-                                `• 潮吹喷水：${squirtCnt} 次 ｜ 漏尿失禁：${leakCnt} 次 ｜ 阿嘿颜：${ahegaoCnt} 次 ｜ 自慰：${mastCnt} 次。`,
+                                `• 潮吹喷水：${squirtCnt} 次 ｜ 漏尿失禁：${leakCnt} 次 ｜ 阿嘿颜脑死：${ahegaoCnt} 次 ｜ 自慰：${mastCnt} 次。`,
                                 [
                                     `高潮与失控记录全为 0，我始终保持着良好的自制力。`,
                                     `身体偶尔会在刺激下有些失控发抖，我必须努力克制住自己💦。`,
-                                    `这具身体在情事中已经经历过太多次高潮，敏感带变得越来越容易被挑起反应了😳💦。`,
-                                    `一看到累计高潮 ${orgasmCnt} 次的记录，尾椎骨就一阵发麻，身体真是越来越经不起男人的折腾了🥵💦！`,
-                                    `好喜欢被强制操到潮吹喷水和漏尿失禁呀♡，快让我翻着白眼高潮到休克吧🥵💦❤️！`,
-                                    `啊嘿♡……人家的身体就是一台只要一插就会无限潮吹失禁的永动喷水机呀🥵💦❤️❤️！`
-                                ]), "none", null, true),
+                                    `这具身体在情事中已经经历过太多次高潮，括约肌与敏感带变得越来越容易失控了😳💦。`,
+                                    `一看到累计高潮 ${orgasmCnt} 次的记录，尾椎骨就一阵发麻，稍微刺激一下就会漏尿喷水呢🥵💦！`,
+                                    `好喜欢被强制操到潮吹喷水和大小便失禁呀♡，快让我翻着白眼高潮到脑髓短路吧🥵💦❤️！`,
+                                    `啊嘿♡……多巴胺和尿道括约肌已经彻底烧穿报废啦，人家24小时都在一边翻白眼抽搐一边往外失禁漏尿呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("射精总账", `💎 射精与泌乳：「内射${creampie}／颜射${facialCnt}／吞精${swallowCnt}(${swallowMl}ml)／喷乳${milkMl}ml」`,
                             fmtOvr("射精总账",
                                 `【🔬 精液灌注与泌乳统计】：\n` +
@@ -2647,9 +2927,9 @@
                                     `想到身上或体内沾染过的温热白浊，耳根还是会忍不住发烫💦。`,
                                     `子宫已经被内射过 ${creampie} 次，每次事后清理那些粘稠拉丝的精液都让人感到一阵疲惫与酸麻😳💦。`,
                                     `不管是射进子宫里还是射在嘴里、脚背上，我的身体早就已经被男人的浓精味彻底浸染透了🥵💦！`,
-                                    `快把成百上千毫升的滚烫浓精全都射进我的子宫和胃袋里，把母狗从里到外灌成白浊泡芙吧🥵💦❤️！`,
-                                    `啊嘿♡……累计吞精和内射突破天际啦，人家全身流淌的都是男人们的浓精呀🥵💦❤️❤️！`
-                                ]), "none", null, true),
+                                    `快把成百上千毫升的滚烫浓精全都射进我的脱垂子宫和胃袋里，把母狗从里到外灌成白浊泡芙吧🥵💦❤️！`,
+                                    `啊嘿♡……累计吞精和内射突破天际啦，全身上下每一个毛孔和烂肉洞都在往外冒着腐熟的浓精呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0),
                         mk("露出总账", `💎 接客与轮奸：「接客${hookerCnt}／轮奸${gangCnt}／睡奸${sleepCnt}／露出${safeNum(cnt.暴露?.露出)}」`,
                             fmtOvr("露出总账",
                                 `【🔬 风月交易与多人凌辱统计】：\n` +
@@ -2659,11 +2939,11 @@
                                 [
                                     `所有交易、暴露与凌辱记录均为 0，我始终守护着自己的清白与安全。`,
                                     `面对复杂危险的处境，我必须多加提防，不让自己陷入被动局面💦。`,
-                                    `送走一个客人、换好床单、洗净体内的残精再去迎接下一波客人……我已经对这样的暗娼日常麻木顺从了😳💦。`,
-                                    `看着接客 ${hookerCnt} 次的记录，今晚还要同时接待王哥和他的朋友，我这具身体真是越来越忙碌了呢🥵💦！`,
+                                    `经历过这么多轮回与折腾，身体和神智似乎都已经渐渐麻木并顺从了这种处境😳💦。`,
+                                    `看着累计记录达到了 ${hookerCnt} 次，身体已经越来越习惯顺从这些过往的经历了。`,
                                     `最喜欢接客卖身和被好几个男人一起轮奸群交了♡，快把我的三穴同时塞满操烂吧🥵💦❤️！`,
-                                    `啊嘿♡……全天候不打烊的公用轮奸肉便器，欢迎全世界的男人排队过来插我内射呀🥵💦❤️❤️！`
-                                ]), "none", null, true)
+                                    `啊嘿♡……全天候不打烊的公用轮奸排泄肉坑，欢迎全世界的男人排队过来把我操到彻底报废呀🥵💦❤️❤️！`
+                                ]), "none", null, true, 0)
                     ]
                 }
             ];
@@ -2681,7 +2961,7 @@
                         catTitle: cat.title,
                         rawKey: rk,
                         desc: fullDesc,
-                        ...fmtKey(rk, "pleas")
+                        ...fmtKey(rk, cItem.ratio ? "pleas" : "none", null, !cItem.ratio)
                     });
                 });
             });
@@ -2771,7 +3051,7 @@
             const recentMes = (personaAndDesc + "\n" + safeStr((ctx?.chat || []).slice(-6).map(m => m?.mes || "").join("\n"))).slice(-3200);
 
             const sysPrompt = "你是一个纯粹的 JSON 生成器，必须且只能输出一个标准 JSON 对象！字符串内部严禁出现英文双引号或换行符！";
-            const userPrompt = `请根据当前剧情上下文与用户的【自定义要求】，为主角【${u}（身份：${realId}，当前恶堕度：${corr}/100）】的状态栏按钮【${itemTitle}】编写状态描述（120~180字）以及一段符合当前恶堕度（若恶堕度低则保持矜持清醒，若恶堕度高则放荡）的第一人称实时心声（80~130字）！
+            const userPrompt = `请根据当前剧情上下文与用户的【自定义要求】，为主角【${u}（身份：${realId}，当前恶堕度：${corr}/100）】的状态栏按钮【${itemTitle}】编写状态描述（120~180字，遵循第1阶段完好如初到第6阶段彻底器质崩坏畸变的逻辑）以及一段符合当前崩坏阶位的第一人称实时心声（80~130字）！
 
 【用户自定义要求】：${userHint || "结合当前最新剧情与角色处境编写"}
 【最近剧情参考】：
@@ -2783,7 +3063,7 @@ ${recentMes || "无"}
   "stage": "4至6字状态概括",
   "ratio": "50/100",
   "desc": "【🔬 状态实况】：详细描写...",
-  "thought": "符合当前恶堕阶位的第一人称内心独白..."
+  "thought": "符合当前崩坏阶位的第一人称内心独白..."
 }`;
 
             const oldTxt = btnEl ? btnEl.textContent : "";
@@ -2806,7 +3086,6 @@ ${recentMes || "无"}
         }
 
         function buildFullJsonApiPrompt(u, c, rawText) {
-            const diff = getDifficultyProfile();
             const realId = detectRealCharacterIdentity(curVars);
             const ctx = safeCtx();
             const allRecentText = (ctx?.chat || []).slice(-5).map(m => safeStr(m?.mes)).join("\n");
@@ -2814,10 +3093,10 @@ ${recentMes || "无"}
             return `[SYSTEM OVERRIDE: 你现在是一个纯粹的 JSON 数据生成器，必须且只能输出一个标准 JSON 对象！字符串内部严禁出现英文双引号 " 或换行符！]
 
 请仔细阅读下方【最近剧情与设定正文】，大刀阔斧地重构并更新主角【${u}（身份：${realId}）】的全部状态栏数值与历史计数！
-🚨【强制破冰铁律（极其重要）】：
-1. 如果正文中提到主角“有无数年经验 / 身经百战 / 妓女 / 暗娼 / 荡妇 / 熟女 / 经常做爱 / 被无数人玩过”，你【必须】将下方 JSON 中的 "计数"（小穴、口、内射、高潮、接客等）直接大幅调高为符合设定的高数值（例如几百甚至上千次），并将“淫乱恶堕”、“对肉棒好感度”、“服从度”直接拉高到 65~98，将“羞耻度”降低到 5~30！绝对禁止保留为 0！
-2. 严禁把死物、道具（如笔、跳蛋、黄瓜、衣服）当成恩客！只有真正的活人男性角色才能写入 "恩客图鉴"。
-3. JSON 字符串内部严禁出现英文双引号，如需引用请用「」或『』。
+🚨【强制破冰与防虚假升阶铁律】：
+1. 如果正文中提到主角“有无数年经验 / 身经百战 / 妓女 / 暗娼 / 荡妇 / 熟女 / 经常做爱 / 被无数人玩过”，你【必须】将下方 JSON 中的 "计数"（小穴、口、内射、高潮、接客等）直接大幅调高为符合设定的高数值，并将“淫乱恶堕”、“对肉棒好感度”、“服从度”直接拉高到 65~98，将“羞耻度”降低到 5~30！
+2. 严禁虚构未发生的肉体改造！如果正文中没有明确描写刻有淫纹、穿刺打环或塞入体内道具，对应的 "淫纹与刻印"、"穿刺与环饰"、"体内道具" 必须填 "无"！
+3. 严禁把死物、道具（如笔、跳蛋、黄瓜、衣服）当成恩客！只有真正的活人男性角色才能写入 "恩客图鉴"。
 
 【最近剧情与设定正文】：
 ${safeStr(allRecentText || rawText).slice(-3500)}
@@ -2840,12 +3119,15 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
   "小穴毫升": 5,
   "子宫毫升": 15,
   "屁眼毫升": 0,
+  "体表痕迹": "根据正文概括体表伤痕或填无",
+  "淫纹与刻印": "无",
+  "穿刺与环饰": "无",
+  "体内道具": "无",
   "计数": { "口": 120, "小穴": 260, "屁眼": 45, "乳穴": 80, "足腿": 30, "高潮": 310, "强制高潮": 85, "寸止": 40, "内射": 190, "颜射": 70, "吞精次数": 95, "吞精毫升": 1400, "喷乳次数": 20, "喷乳毫升": 600, "自慰": 150, "失禁": 35, "喷潮": 90, "露出": 60, "接客": 180, "轮奸": 25, "睡奸": 15 },
   "当前姿势": "根据正文概括当前姿势",
-  "体表痕迹": "根据正文概括体表痕迹",
   "恩客图鉴": { "活人男性恩客名字": "一句话概括该男性的阳具特征与对主角的玩法" },
   "按钮详情": {
-    "内心独白": { "thought": "符合当前设定与恶堕度的第一人称心理独白" },
+    "内心独白": { "thought": "符合当前设定与崩坏阶位的第一人称心理独白" },
     "当前姿势": { "desc": "当前肢体动作与状态详写", "thought": "第一人称心声" },
     "骚口实况": { "desc": "唇舌咽喉与储精实况描写", "thought": "第一人称心声" },
     "胸部实况": { "desc": "胸部与乳腺实况描写", "thought": "第一人称心声" },
@@ -2971,6 +3253,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
 
                 if (data.当前姿势) v.实况.当前姿势 = safeStr(data.当前姿势);
                 if (data.体表痕迹) v.痕迹与标记.体表痕迹 = safeStr(data.体表痕迹);
+                if (data.淫纹与刻印) v.痕迹与标记.淫纹与刻印 = safeStr(data.淫纹与刻印);
                 if (data.公开涂鸦字迹) v.痕迹与标记.公开涂鸦字迹 = safeStr(data.公开涂鸦字迹);
                 if (data.穿刺与环饰) v.痕迹与标记.穿刺与环饰 = safeStr(data.穿刺与环饰);
                 if (data.体内道具) v.体内道具与权限.体内道具 = safeStr(data.体内道具);
@@ -3076,9 +3359,9 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
 
             if (!item.editKey) return [];
 
-            let pct = (item.pct !== null && item.pct !== undefined) ? item.pct : safeNum(curVars.核心数值?.淫乱恶堕, 0);
-            const isRev = (item.editKey === "shame" || item.editKey === "sta");
-            const stageIdx = tier6(pct, isRev);
+            let pct = (item.pct !== null && item.pct !== undefined) ? item.pct : 0;
+            const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
+            const stageIdx = item.hasStageBar ? tier6(pct, isRev) : 0;
             const stageNum = stageIdx + 1;
             const baseFolder = `${PLUGIN_BASE_PATH}/images`;
 
@@ -3203,15 +3486,15 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     : curVars.按钮详情?.[item.editKey]?.imgUrl
             ).trim();
 
-            let pctForLabel = (item.pct !== null && item.pct !== undefined) ? item.pct : safeNum(curVars.核心数值?.淫乱恶堕, 0);
-            const isRev = (item.editKey === "shame" || item.editKey === "sta");
-            const curStageIdx = tier6(pctForLabel, isRev) + 1;
+            let pctForLabel = (item.pct !== null && item.pct !== undefined) ? item.pct : 0;
+            const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
+            const curStageIdx = item.hasStageBar ? (tier6(pctForLabel, isRev) + 1) : 1;
             const defaultStageImgKey = `${item.editKey || "custom"}_${curStageIdx}`;
 
             const imgBoxHTML = `
                 <div id="st-v25-img-container" title="点击全屏放大查看" style="display:none;margin-bottom:10px;position:relative;border-radius:12px;overflow:hidden;border:1.5px solid ${curStageIdx === 6 ? "#fde047" : "#f38ba8"};background:radial-gradient(circle,#1e152a,#0d0914);box-shadow:0 6px 20px rgba(0,0,0,0.65);justify-content:center;align-items:center;cursor:zoom-in;">
                     <img id="st-v25-stage-img" alt="阶段状态图" style="max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto;">
-                    <span style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,0.75);color:#fde047;border:1px solid rgba(253,224,71,0.5);padding:1px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;pointer-events:none;">🔍 Lv.${curStageIdx}</span>
+                    ${item.hasStageBar ? `<span style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,0.75);color:#fde047;border:1px solid rgba(253,224,71,0.5);padding:1px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;pointer-events:none;">🔍 Lv.${curStageIdx}</span>` : ""}
                 </div>`;
 
             const clientDeleteBarHTML = item.isClient
@@ -3463,9 +3746,9 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
             const descContainer = document.getElementById("st-v6-det-desc");
             descContainer.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:9px;padding:6px 2px;">
-                    <input id="st-v25-new-title" type="text" placeholder="名称（如：💍 贞操环 或 🍆 新增恩客）" style="background:#11111b;color:#f9e2af;border:1px solid #f38ba8;border-radius:7px;padding:7px 10px;font-size:13px;font-weight:bold;">
+                    <input id="st-v25-new-title" type="text" placeholder="名称（如：💍 阴蒂锁环 或 🍆 新增恩客）" style="background:#11111b;color:#f9e2af;border:1px solid #f38ba8;border-radius:7px;padding:7px 10px;font-size:13px;font-weight:bold;">
                     <div style="display:flex;gap:8px;">
-                        <input id="st-v25-new-ratio" type="text" placeholder="进度（如 65/100）" style="flex:1;background:#11111b;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:6px 8px;font-size:12px;">
+                        <input id="st-v25-new-ratio" type="text" placeholder="崩坏进度（如 65/100，留空无进度条）" style="flex:1;background:#11111b;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:6px 8px;font-size:12px;">
                         <input id="st-v25-new-stage" type="text" placeholder="状态标签（如 穿戴中）" style="flex:1;background:#11111b;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:6px 8px;font-size:12px;">
                     </div>
                     <div style="display:flex;gap:6px;align-items:center;">
@@ -3537,7 +3820,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
         }
 
         // =========================================================================
-        // ⚙️ 设置面板（支持输入名字点「确认」强制锁定生成 + 去除一切冗余括号说明）
+        // ⚙️ 设置面板
         // =========================================================================
         function renderSettingsView(body) {
             const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
@@ -3570,9 +3853,14 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     <select id="st-diff-mode-sel" style="background:#11111b;color:#f9e2af;border:1px solid ${tc.sec};border-radius:6px;padding:7px 8px;font-size:12px;cursor:pointer;font-weight:bold;">
                         ${Object.entries(DIFFICULTY_PRESETS).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.label}</option>`).join("")}
                     </select>
+                    <select id="st-world-break-sel" onchange="window._stSetWorldBreak && window._stSetWorldBreak(this.value)" style="background:#11111b;color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:7px 8px;font-size:12px;cursor:pointer;font-weight:bold;">
+                        <option value="auto" ${userSettings.worldBreakMode === "auto" ? "selected" : ""}>🛡️ 智能世界观锁 (无魔改/异种自动卡在Lv.4)</option>
+                        <option value="realistic_lock" ${userSettings.worldBreakMode === "realistic_lock" ? "selected" : ""}>🔒 严格写实封顶 (强制最高Lv.4·79%生理极限)</option>
+                        <option value="fantasy_unleashed" ${userSettings.worldBreakMode === "fantasy_unleashed" ? "selected" : ""}>😈 无限制魔改全开 (允许直接升入Lv.5~6终极畸变)</option>
+                    </select>
                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:2px;">
                         <input id="st-reverse-inject-chk" type="checkbox" ${userSettings.injectReversePrompt ? "checked" : ""} style="accent-color:${tc.prim};">
-                        <span><b>🔗 启用状态栏反向支配正文</b></span>
+                        <span><b>🔗 启用器质崩坏反向支配正文</b></span>
                     </label>
                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                         <input id="st-metabolism-chk" type="checkbox" ${userSettings.autoMetabolism ? "checked" : ""} style="accent-color:${tc.prim};">
@@ -3647,7 +3935,6 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
             const revChk = box.querySelector("#st-reverse-inject-chk");
             const metaChk = box.querySelector("#st-metabolism-chk");
 
-            // 点击「确认」立即锁定主角名字并全量重新生成状态栏
             box.querySelector("#st-protag-name-confirm").onclick = () => {
                 const val = nameInp.value.trim();
                 if (!val) {
@@ -3676,6 +3963,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                 showToast("🔄 已恢复自动识别主角名字！", "info", 2200);
             };
 
+            window._stSetWorldBreak = (val) => { userSettings.worldBreakMode = val; saveSettings(); recalc(false); showToast("🌍 世界观破界规则已切换！", "info", 2200); };
             diffSel.onchange = () => {
                 userSettings.difficultyMode = diffSel.value;
                 saveSettings();
@@ -3733,6 +4021,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     saveChatCache(curVars);
                 }
                 userSettings.difficultyMode = diffSel.value;
+                userSettings.worldBreakMode = box.querySelector("#st-world-break-sel")?.value || userSettings.worldBreakMode;
                 userSettings.strictMentalLock = lockChk.checked;
                 userSettings.injectReversePrompt = revChk.checked;
                 userSettings.autoMetabolism = metaChk.checked;
@@ -3849,17 +4138,20 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     list.style.cssText = "display:flex;flex-direction:column;gap:9px;";
                     cat.items.forEach((it, idx) => {
                         const b = document.createElement("div");
-                        b.className = "st-v28-card";
+                        let pctForBadge = (it.pct !== null && it.pct !== undefined) ? it.pct : 0;
+                        const isRev = (it.editKey === "shame" || it.editKey === "sta" || it.editKey === "当前姿势");
+                        const lvNum = it.hasStageBar ? (tier6(pctForBadge, isRev) + 1) : 1;
+
+                        // 进阶优化点2：当有阶段条的卡片达到 Lv.5 或 Lv.6 时，自动赋予专属视觉污染样式
+                        const corruptCls = it.hasStageBar ? (lvNum === 6 ? " st-corrupted-card-lv6" : (lvNum === 5 ? " st-corrupted-card-lv5" : "")) : "";
+                        b.className = "st-v28-card" + corruptCls;
+
                         b.style.cssText = `background:${tc.card};border:${tc.cardBorder};border-radius:12px;padding:9px 10px;cursor:pointer;user-select:none;display:flex;gap:8px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.45);overflow:hidden;`;
                         const parts = safeStr(it.desc).split("💭");
                         const objPreview = safeStr(parts[0]).replace(/【[^】]+】：?/g, "").replace(/\s+/g, " ").trim().slice(0, 42) + "…";
                         const thoughtPreview = parts[1] ? "💭 " + safeStr(parts[1]).replace(/【[^】]+】：?/g, "").replace(/\s+/g, " ").trim().slice(0, 44) + "…" : "";
 
-                        let pctForBadge = (it.pct !== null && it.pct !== undefined) ? it.pct : safeNum(curVars.核心数值?.淫乱恶堕, 0);
-                        const isRev = (it.editKey === "shame" || it.editKey === "sta");
-                        const lvNum = tier6(pctForBadge, isRev) + 1;
-
-                       const cardKeyHTML = it.keyHTML.replace(
+                        const cardKeyHTML = it.keyHTML.replace(
                             '<span class="st-inline-refresh-slot"></span>',
                             `<button class="st-quick-refresh-item" type="button" title="单独刷新此按钮数据" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.45);border-radius:6px;padding:1px 5px;font-size:10.5px;cursor:pointer;line-height:1.2;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">🔄</button>`
                         );
@@ -3871,15 +4163,15 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                             </div>
                             <div class="st-card-thumb-wrap" title="点击全屏看大图" style="display:none;position:relative;width:70px;height:70px;border-radius:10px;overflow:hidden;border:1.5px solid ${lvNum === 6 ? "#fde047" : tc.prim};flex-shrink:0;background:#0d0914;box-shadow:0 3px 10px rgba(0,0,0,0.65);">
                                 <img class="st-card-thumb-img" style="width:100%;height:100%;object-fit:cover;display:block;">
-                                <span style="position:absolute;bottom:0;right:0;background:${lvNum === 6 ? "linear-gradient(90deg,#f59e0b,#ff0055)" : "rgba(0,0,0,0.75)"};color:#fff;font-size:9.5px;font-weight:900;padding:1px 5px;border-top-left-radius:6px;">Lv.${lvNum}</span>
+                                ${it.hasStageBar ? `<span style="position:absolute;bottom:0;right:0;background:${lvNum === 6 ? "linear-gradient(90deg,#f59e0b,#ff0055)" : "rgba(0,0,0,0.75)"};color:#fff;font-size:9.5px;font-weight:900;padding:1px 5px;border-top-left-radius:6px;">Lv.${lvNum}</span>` : ""}
                             </div>`;
                         b.onclick = (e) => { e.stopPropagation(); showDetailPopup(idx); };
 
-                        const qRefBtn = b.querySelector(".st-quick-refresh-item");                      
+                        const qRefBtn = b.querySelector(".st-quick-refresh-item");
                         if (qRefBtn) {
                             qRefBtn.onclick = async (ev) => {
                                 ev.stopPropagation();
-                                const res = await requestSingleItemAiGen(it.cleanTitle || it.rawKey, "结合最新正文剧情，同步更新该项的最新状态标签、数值(0-100)与第一人称心声", qRefBtn);
+                                const res = await requestSingleItemAiGen(it.cleanTitle || it.rawKey, "结合最新正文剧情，同步更新该项的最新状态标签、崩坏度数值(0-100)与第一人称心声", qRefBtn);
                                 if (res && it.editKey) {
                                     if (res.ratio) {
                                         const numMatch = String(res.ratio).match(/(\d+)/);
@@ -3899,10 +4191,6 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                                             if (metricMap[it.editKey]) {
                                                 const [gKey, sKey] = metricMap[it.editKey];
                                                 curVars[gKey][sKey] = nVal;
-                                                if (nVal >= 40 && safeNum(curVars.计数?.性交?.小穴) === 0) {
-                                                    curVars.计数.性交.小穴 = Math.round(nVal * 1.5);
-                                                    curVars.计数.射精.内射 = Math.round(nVal * 1.1);
-                                                }
                                             }
                                         }
                                     }
@@ -3925,7 +4213,6 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                                             };
                                         }
                                         curVars.按钮详情 = curVars.按钮详情 || {};
-                                        // 不写死 customTitle，只更新 stage，让进度条数字保持实时动态计算！
                                         curVars.按钮详情[it.editKey] = {
                                             ...(curVars.按钮详情[it.editKey] || {}),
                                             stage: res.stage || curVars.按钮详情[it.editKey]?.stage || "",
@@ -3940,7 +4227,6 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                             };
                         }
                         list.appendChild(b);
-
 
                         const cands = getStageImageCandidates(it);
                         if (cands.length > 0) {
@@ -4029,7 +4315,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     showToast("✅ 状态栏1.0 已开启！", "success", 2000);
                 } else {
                     if (typeof setExtensionPrompt === "function") {
-                        setExtensionPrompt(EXT_ID, "", extension_prompt_types?.IN_CHAT ?? 1, 0);
+                        setExtensionPrompt(EXT_ID, "", extension_prompt_types?.IN_CHAT ?? 1, 2);
                     }
                     document.getElementById("st-v25-fullscreen-lightbox")?.remove();
                     document.getElementById("st-v5-root")?.remove();
@@ -4201,7 +4487,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     const extChk = document.getElementById("st-v10-ext-enable");
                     if (extChk) extChk.checked = false;
                     if (typeof setExtensionPrompt === "function") {
-                        setExtensionPrompt(EXT_ID, "", extension_prompt_types?.IN_CHAT ?? 1, 0);
+                        setExtensionPrompt(EXT_ID, "", extension_prompt_types?.IN_CHAT ?? 1, 2);
                     }
                     document.getElementById("st-v25-fullscreen-lightbox")?.remove();
                     document.getElementById("st-v5-root")?.remove();
@@ -4222,15 +4508,16 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                 const d = (latestStatus && latestStatus.categories?.length) ? latestStatus : getFallbackData();
                 const cat = activeCat !== null ? d.categories[activeCat] : null;
                 if (cat && cat.items.length) showDetailPopup((curDetailIdx + 1) % cat.items.length);
-            };            
+            };
             renderBody();
         }
 
         function applySetStatements(text, targetVars) {
             if (!text || !text.includes("_.set")) return;
-            const regex = /_\.set\(\s*(?:(['"`])([^'"`]+)\1|([^,]+?))\s*,\s*([\s\S]*?)\)\s*;?(?=\s*(?:_\.set|<\/UpdateVariable>|$))/g;
+            const cleanBlock = safeStr(text).replace(/^\s*\/\/[^\n]*/gm, "");
+            const regex = /_\.set\(\s*(?:(['"`])([^'"`]+)\1|([^,]+?))\s*,\s*([\s\S]*?)\)\s*;?(?=\s*(?:_\.set|<\/UpdateVariable>|<\/game>|$))/g;
             let m;
-            while ((m = regex.exec(text)) !== null) {
+            while ((m = regex.exec(cleanBlock)) !== null) {
                 const rawPath = safeStr(m[2] || m[3]).trim(), rawVal = safeStr(m[4]).trim();
                 if (!rawPath) continue;
                 try {
@@ -4293,72 +4580,61 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
 
             const wombMlMatch = text.match(/(?:宫腔|宫内|射入的约?)\s*(\d+)\s*(?:毫升|ml)/i);
             if (wombMlMatch) targetVars.体内精液存量.子宫毫升 = Number(wombMlMatch[1]);
-            else if (/十五毫升.{0,12}宫腔/.test(text)) targetVars.体内精液存量.子宫毫升 = 15;
 
             const vagMlMatch = text.match(/阴道\s*(\d+)\s*(?:毫升|ml)/i);
             if (vagMlMatch) targetVars.体内精液存量.小穴毫升 = Number(vagMlMatch[1]);
-            else if (/两毫升精液的阴道/.test(text)) targetVars.体内精液存量.小穴毫升 = 2;
 
-             if (/无数年.{0,8}(?:性交|做爱|淫乱|接客|欢好|男女|房事|经验)|(?:性交|做爱|房事|实战)经验.{0,6}(?:无数|极其丰富|老手|熟稔)|身经百战|千人斩|万人骑|老手|熟女|欲女/.test(text)) {
+            if (/无数年.{0,8}(?:性交|做爱|淫乱|接客|欢好|房事|经验)|(?:性交|做爱|房事|欢好)经验.{0,6}(?:无数|极其丰富|老手|熟稔)|(?:情场|房事)身经百战|千人斩|万人骑/.test(text)) {
                 const m = getDifficultyProfile().mult;
-                targetVars.计数.性交.小穴 = Math.max(safeNum(targetVars.计数.性交.小穴), Math.round(320 * m));
-                targetVars.计数.射精.内射 = Math.max(safeNum(targetVars.计数.射精.内射), Math.round(240 * m));
-                targetVars.计数.性交.口 = Math.max(safeNum(targetVars.计数.性交.口), Math.round(180 * m));
-                targetVars.计数.精液摄入.吞精次数 = Math.max(safeNum(targetVars.计数.精液摄入.吞精次数), Math.round(150 * m));
-                targetVars.计数.精液摄入.累计毫升 = Math.max(safeNum(targetVars.计数.精液摄入.累计毫升), Math.round(2200 * m));
-                targetVars.计数.性交.屁眼 = Math.max(safeNum(targetVars.计数.性交.屁眼), Math.round(90 * m));
-                targetVars.计数.性交.乳穴 = Math.max(safeNum(targetVars.计数.性交.乳穴), Math.round(110 * m));
-                targetVars.计数.性交.足腿 = Math.max(safeNum(targetVars.计数.性交.足腿), Math.round(65 * m));
-                targetVars.计数.高潮.总数 = Math.max(safeNum(targetVars.计数.高潮.总数), Math.round(450 * m));
-                targetVars.计数.失控.喷潮 = Math.max(safeNum(targetVars.计数.失控.喷潮), Math.round(120 * m));
-                targetVars.计数.自慰 = Math.max(safeNum(targetVars.计数.自慰), Math.round(200 * m));
-                targetVars.核心数值.淫乱恶堕 = Math.max(safeNum(targetVars.核心数值.淫乱恶堕), 85);
-                targetVars.核心数值.对肉棒好感度 = Math.max(safeNum(targetVars.核心数值.对肉棒好感度), 88);
-                targetVars.核心数值.性欲程度 = Math.max(safeNum(targetVars.核心数值.性欲程度), 85);
-                targetVars.精神与心理.羞耻度 = Math.min(safeNum(targetVars.精神与心理.羞耻度, 100), 15);
-                targetVars.精神与心理.服从度 = Math.max(safeNum(targetVars.精神与心理.服从度), 78);
-            } else if ((/暗娼|妓女|常年的接客|像往常一样被内射/.test(text)) && safeNum(targetVars.计数.交易.接客卖身) === 0) {
-                const m = getDifficultyProfile().mult;
-                targetVars.计数.交易.接客卖身 = Math.round(42 * m);
-                targetVars.计数.性交.小穴 = Math.round(48 * m);
-                targetVars.计数.射精.内射 = Math.round(35 * m);
-                targetVars.计数.性交.口 = Math.round(25 * m);
-                targetVars.计数.高潮.总数 = Math.round(30 * m);
-                targetVars.核心数值.淫乱恶堕 = Math.max(safeNum(targetVars.核心数值.淫乱恶堕), 76);
-                targetVars.精神与心理.服从度 = Math.max(safeNum(targetVars.精神与心理.服从度), 74);
-                targetVars.身体.体力 = 68;
+                targetVars.计数.性交.小穴 = Math.max(safeNum(targetVars.计数.性交.小穴), Math.round(120 * m));
+                targetVars.计数.射精.内射 = Math.max(safeNum(targetVars.计数.射精.内射), Math.round(80 * m));
+                targetVars.计数.性交.口 = Math.max(safeNum(targetVars.计数.性交.口), Math.round(60 * m));
+                targetVars.计数.高潮.总数 = Math.max(safeNum(targetVars.计数.高潮.总数), Math.round(150 * m));
+                targetVars.核心数值.淫乱恶堕 = Math.max(safeNum(targetVars.核心数值.淫乱恶堕), 75);
+                targetVars.核心数值.对肉棒好感度 = Math.max(safeNum(targetVars.核心数值.对肉棒好感度), 75);
+                targetVars.精神与心理.羞耻度 = Math.min(safeNum(targetVars.精神与心理.羞耻度, 100), 25);
+                targetVars.精神与心理.服从度 = Math.max(safeNum(targetVars.精神与心理.服从度), 70);
             }
         }
 
+        // =========================================================================
+        // 🧹 强化版 DOM 净化器（彻底根治手机端流式生成或截断时 _.set 裸露问题）
+        // =========================================================================
         function cleanDOM(id, force = false) {
             if (!userSettings.hideRawBlock) return;
             const el = document.querySelector(`.mes[mesid="${id}"] .mes_text`);
             if (!el) return;
             const rawMes = safeStr(safeCtx()?.chat?.[Number(id)]?.mes);
-            const sig = `${rawMes.length}_${el.innerHTML.includes("st-ext-inline-trigger")}`;
+            const sig = `${rawMes.length}_${el.innerHTML.length}_${el.innerHTML.includes("st-ext-inline-trigger")}`;
             if (!force && el.getAttribute("data-st-cleaned") === sig) return;
 
             let h = el.innerHTML, changed = false;
             const lt = "&" + "lt;", gt = "&" + "gt;";
             const gameReg = new RegExp(`${lt}\\/?game${gt}|<\\/?game>`, "gi");
+            // 匹配闭合的 UpdateVariable 块
             const uvReg = new RegExp(`(?:${lt}|<)UpdateVariable(?:${gt}|>)[\\s\\S]*?(?:${lt}|<)\\/UpdateVariable(?:${gt}|>)`, "gi");
+            // 匹配手机端流式生成中或被截断未闭合的 UpdateVariable 块
+            const uvUnclosedReg = new RegExp(`(?:${lt}|<)UpdateVariable(?:${gt}|>)[\\s\\S]*$`, "gi");
+            // 匹配跨行或被 <br>/<p> 分割的裸 _.set(...) 语句
+            const bareSetReg = /_\.set\s*\([\s\S]*?\)\s*;?\s*(?:<br\s*\/?>|<\/p>)?/gi;
 
             if (gameReg.test(h)) { h = h.replace(gameReg, ""); changed = true; }
-            if (/UpdateVariable|_\.set\s*\(/i.test(h) && !h.includes("st-hidden-uv")) {
-                h = h.replace(uvReg, m => `<div class="st-hidden-uv" style="display:none!important">${m}</div>`)
-                     .replace(/_\.set\([^\n<]*?\)\s*;?\s*(?:<br\s*\/?>)?/gi, m => `<span class="st-hidden-uv" style="display:none!important">${m}</span>`);
-                changed = true;
+            if (/UpdateVariable|_\.set\s*\(/i.test(h)) {
+                const beforeH = h;
+                h = h.replace(uvReg, m => m.includes("st-hidden-uv") ? m : `<div class="st-hidden-uv" style="display:none!important">${m}</div>`)
+                     .replace(uvUnclosedReg, m => m.includes("st-hidden-uv") ? m : `<div class="st-hidden-uv" style="display:none!important">${m}</div>`)
+                     .replace(bareSetReg, m => m.includes("st-hidden-uv") ? m : `<span class="st-hidden-uv" style="display:none!important">${m}</span>`);
+                if (h !== beforeH) changed = true;
             }
             if ((h.includes("【状态栏") || h.includes("[[角色档案]]") || h.includes("[[档案与肉体]]") || rawMes.includes("【状态栏")) && !h.includes("st-ext-inline-trigger")) {
                 h = h.replace(/<details[^>]*>\s*<summary>[^<]*状态栏[\s\S]*?【\s*\/\s*状态栏\s*】/gi, m => `<div style="display:none!important">${m}</div>`)
-                     .replace(/(?:<p>\s*)?【\s*状态栏[\s\S]*?【\s*\/\s*状态栏\s*】(?:\s*<\/p>)?/gi, m => `<div style="display:none!important">${m}</div>`)
-                     .replace(/【\s*状态栏[\s\S]*$/gi, m => `<div style="display:none!important">${m}</div>`);
+                     .replace(/(?:<p>\s*)?【\s*状态栏[\s\S]*?【\s*\/\s*状态栏\s*】(?:\s*<\/p>)?/gi, m => `<div style="display:none!important">${m}</div>`);
                 h += `<div class="st-ext-inline-trigger" data-floor="${id}" style="display:inline-flex;margin-top:8px;padding:5px 14px;background:rgba(243,139,168,0.2);border:1px solid #f38ba8;border-radius:99px;color:#f5c2e7;font-size:12.5px;font-weight:bold;cursor:pointer;box-shadow:0 2px 10px rgba(243,139,168,0.25);">👑 打开此层 (#${id}) 状态栏</div>`;
                 changed = true;
             }
             isCleaningDOM = true;
             if (changed) el.innerHTML = h;
-            el.setAttribute("data-st-cleaned", `${rawMes.length}_${el.innerHTML.includes("st-ext-inline-trigger")}`);
+            el.setAttribute("data-st-cleaned", `${rawMes.length}_${el.innerHTML.length}_${el.innerHTML.includes("st-ext-inline-trigger")}`);
             isCleaningDOM = false;
         }
 
@@ -4367,7 +4643,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
             isCleaningDOM = true;
             try {
                 const nodes = document.querySelectorAll(".mes");
-                const start = force ? 0 : Math.max(0, nodes.length - 25);
+                const start = force ? 0 : Math.max(0, nodes.length - 15);
                 for (let idx = start; idx < nodes.length; idx++) {
                     const i = nodes[idx].getAttribute("mesid");
                     if (i !== null) cleanDOM(i, force);
@@ -4378,7 +4654,7 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
         function scheduleCleanAll() {
             if (isCleaningDOM) return;
             if (cleanTimer) clearTimeout(cleanTimer);
-            cleanTimer = setTimeout(() => cleanAll(false), 180);
+            cleanTimer = setTimeout(() => cleanAll(false), 120);
         }
 
         function recalc(notifyCardSwitch = false) {
@@ -4403,6 +4679,9 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                 if (cached && cached.手动锁定真名) {
                     fv.档案.手动锁定真名 = cached.手动锁定真名;
                     fv.档案.当前认知名字 = cached.手动锁定真名;
+                }
+                if (cached && cached.历史最高崩坏度 && !(typeof cached.floorLen === "number" && cached.floorLen > (ctx?.chat?.length || 0))) {
+                    fv.历史最高崩坏度 = { ...cached.历史最高崩坏度 };
                 }
 
                 const charDescText = safeStr(ctx?.characters?.[ctx?.characterId]?.description) + "\n" +
@@ -4437,9 +4716,11 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                     lastKnownCardKey = curCardKey;
                 }
 
+                // 注入深度改为 depth = 2，把最底部的黄金位置让给正文描写指令，解放手机端正文字数！
                 if (typeof setExtensionPrompt === "function") {
-                    setExtensionPrompt(EXT_ID, userSettings.enabled ? buildFullSystemPrompt(protagName, fv) : "", extension_prompt_types?.IN_CHAT ?? 1, 0);
+                    setExtensionPrompt(EXT_ID, userSettings.enabled ? buildFullSystemPrompt(protagName, fv) : "", extension_prompt_types?.IN_CHAT ?? 1, 2);
                 }
+                saveChatCache(curVars);
                 renderBody();
             } catch (e) {
                 showDiagnosticError("重算异常 (recalc)", e);
@@ -4512,12 +4793,16 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
                 eventSource.on(event_types.MESSAGE_UPDATED, i => setTimeout(() => { if (userSettings.enabled) recalc(false); cleanDOM(i, true); }, 120));
                 eventSource.on(event_types.MESSAGE_DELETED, () => setTimeout(() => { if (userSettings.enabled) recalc(false); scheduleCleanAll(); }, 150));
                 eventSource.on(event_types.GENERATION_STARTED, () => { if (userSettings.enabled) recalc(false); });
+                if (event_types.GENERATION_ENDED) {
+                    eventSource.on(event_types.GENERATION_ENDED, () => setTimeout(() => { cleanAll(true); }, 100));
+                }
             }
 
+            // 开启 subtree: true 实时监听手机端流式打字，一旦出现 _.set 立即隐藏
             const chatEl = document.getElementById("chat");
             if (chatEl) {
                 const obs = new MutationObserver(() => { if (!isCleaningDOM) scheduleCleanAll(); });
-                obs.observe(chatEl, { childList: true, subtree: false });
+                obs.observe(chatEl, { childList: true, subtree: true });
             }
             setTimeout(() => { recalc(true); cleanAll(false); }, 300);
         })();
@@ -4527,4 +4812,4 @@ ${safeStr(allRecentText || rawText).slice(-3500)}
     } catch (bootErr) {
         showDiagnosticError("启动初始化异常", bootErr);
     }
-})();
+})();            
