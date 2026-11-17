@@ -2250,6 +2250,9 @@
         // =========================================================================
         // 👻 智绘姬后台静默生图引擎（不盖楼、不污染正文，直接生图进插件卡片！）
         // =========================================================================
+        // =========================================================================
+        // 👻 正文借壳隐身生图引擎（100%走正文同款生图软件通道，隐身生成后吸入插件并擦除正文痕迹！）
+        // =========================================================================
         function parsePromptFromImageBlock(blockTxt) {
             const sceneMatch = blockTxt.match(/image###([\s\S]*?)###/i);
             const rawPrompt = sceneMatch ? sceneMatch[1] : blockTxt;
@@ -2268,14 +2271,22 @@
             const { posPrompt, negPrompt, rawInner } = parsePromptFromImageBlock(blockTxt);
             const stageKey = `${item.editKey || "custom"}_${curStageIdx}`;
             const oldBtnTxt = btnEl ? btnEl.textContent : "";
-            if (btnEl) { btnEl.textContent = "⏳ 后台绘图中..."; btnEl.disabled = true; }
-            showToast(`🎨 正在后台静默绘制【${item.cleanTitle || item.editKey} (第${curStageIdx}阶)】，不污染正文...`, "info", 3800);
+            if (btnEl) { btnEl.textContent = "⏳ 正在借壳隐身生图..."; btnEl.disabled = true; }
+            showToast(`🎨 正在调用正文生图软件后台绘制【${item.cleanTitle || item.editKey} (第${curStageIdx}阶)】...`, "info", 4500);
 
             const saveAndMountImg = async (imgSrc) => {
                 if (!imgSrc) return false;
                 let finalSrc = imgSrc;
                 if (!finalSrc.startsWith("data:") && !finalSrc.startsWith("http") && !finalSrc.startsWith("blob:") && !finalSrc.startsWith("/")) {
                     finalSrc = `data:image/png;base64,${finalSrc}`;
+                }
+                // 如果是 blob 或本地同源链接，尝试转为持久化 WebP DataURL
+                if (finalSrc.startsWith("blob:") || finalSrc.startsWith("http") || finalSrc.startsWith("/")) {
+                    try {
+                        const resp = await fetch(finalSrc);
+                        const blob = await resp.blob();
+                        finalSrc = await compressImageToWebpDataUrl(blob, 768, 0.85);
+                    } catch (e) {}
                 }
                 if (finalSrc.startsWith("data:")) {
                     await saveDataUrlToDB(stageKey, finalSrc).catch(() => {});
@@ -2294,12 +2305,23 @@
                 const modalPh = document.getElementById("st-det-img-placeholder");
                 if (modalImg) { modalImg.src = finalSrc; modalImg.style.display = "block"; }
                 if (modalPh) modalPh.style.display = "none";
-                showToast(`✅ 【${item.cleanTitle || item.editKey}】后台生图完成并已自动挂载至插件卡片！`, "success", 3200);
+                showToast(`✅ 【${item.cleanTitle || item.editKey}】生图完成！已自动收入插件卡片并抹除正文痕迹喵！`, "success", 3500);
                 return true;
             };
 
+            // 注入隐身样式，确保借用正文生图时，正文里绝对看不到代码和生成过程
+            let stealthStyle = document.getElementById("st-zhj-stealth-css");
+            if (!stealthStyle) {
+                stealthStyle = document.createElement("style");
+                stealthStyle.id = "st-zhj-stealth-css";
+                document.head.appendChild(stealthStyle);
+            }
+            stealthStyle.textContent = `
+                .st-zhj-parasite-box { position:fixed !important; left:-9999px !important; top:-9999px !important; width:1px !important; height:1px !important; opacity:0.001 !important; pointer-events:none !important; overflow:hidden !important; z-index:-9999 !important; }
+            `;
+
             try {
-                // 通道 1：检测用户配置的智绘姬全局函数或常见智绘姬内部直连 API
+                // 1. 先检查是否有显式暴露的全局函数
                 const customFnName = safeStr(userSettings.zhihuijiGlobalFn).trim();
                 const candFns = [customFnName, "zhihuijiGenerate", "generateZhihuijiImage", "stZhihuijiGenerate"].filter(Boolean);
                 for (const fnName of candFns) {
@@ -2315,68 +2337,116 @@
                     }
                 }
 
-                // 通道 2：尝试静默调用酒馆原生 SD / NovelAI / 智绘姬后端生图接口 (/api/sd/generate)
-                try {
-                    const headers = { "Content-Type": "application/json" };
-                    if (typeof window.getRequestHeaders === "function") Object.assign(headers, window.getRequestHeaders());
-                    const sdRes = await fetch("/api/sd/generate", {
-                        method: "POST",
-                        headers,
-                        body: JSON.stringify({ prompt: posPrompt, negative_prompt: negPrompt, width: 512, height: 512, steps: 24, cfg_scale: 7 })
-                    });
-                    if (sdRes.ok) {
-                        const sdData = await sdRes.json();
-                        const b64 = sdData?.data || sdData?.images?.[0] || sdData?.image || "";
-                        if (b64) {
-                            await saveAndMountImg(b64);
-                            return;
+                // 2. 【核心大招：最新楼层正文借壳隐身生图】
+                // 直接挂载到当前最后一条真实聊天消息 (.mes_text) 内部，并同步写入 chat[last].mes 触发正文生图插件监听！
+                const ctx = safeCtx();
+                const chatArr = ctx?.chat || [];
+                const lastIdx = chatArr.length - 1;
+                const allMesEls = document.querySelectorAll("#chat .mes");
+                const lastMesEl = allMesEls.length ? allMesEls[allMesEls.length - 1] : null;
+                const lastMesTextEl = lastMesEl ? lastMesEl.querySelector(".mes_text") : null;
+
+                if (lastMesTextEl) {
+                    pendingZhjTarget = { editKey: item.editKey, stageKey, title: item.cleanTitle || item.editKey, isCustom: item.isCustom, catTitle: item.catTitle, ts: Date.now() };
+
+                    // 记录当前最新楼层里已有的图片 URL，方便精准识别新画出来的那张图
+                    const existingSrcs = new Set(
+                        Array.from(lastMesEl.querySelectorAll("img")).map(img => img.getAttribute("src") || img.src || "")
+                    );
+
+                    // 记录原始消息文本，生完图后无痕还原
+                    const origMesRaw = (lastIdx >= 0 && chatArr[lastIdx]) ? String(chatArr[lastIdx].mes || "") : null;
+                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null && !origMesRaw.includes(rawInner)) {
+                        chatArr[lastIdx].mes = origMesRaw + "\n" + blockTxt;
+                    }
+
+                    // 在真实 .mes_text 里塞入隐身寄生节点（同时放置原始 <image> 标签和纯文本，通杀所有正则/DOM型生图插件）
+                    let parasite = document.createElement("div");
+                    parasite.className = "st-zhj-parasite-box";
+                    parasite.innerHTML = `${blockTxt}\n<div>image###${rawInner}###</div>`;
+                    lastMesTextEl.appendChild(parasite);
+
+                    // 触发酒馆所有的消息渲染/更新事件，唤醒你的正文生图插件！
+                    if (ctx?.eventSource && ctx?.event_types) {
+                        const evs = [ctx.event_types.CHARACTER_MESSAGE_RENDERED, ctx.event_types.MESSAGE_UPDATED, ctx.event_types.USER_MESSAGE_RENDERED].filter(Boolean);
+                        for (const ev of evs) {
+                            try { ctx.eventSource.emit(ev, Math.max(0, lastIdx)); } catch (e) {}
                         }
                     }
-                } catch (sdErr) {}
+                    // 同时如果存在生图插件的扫描按钮或重绘触发器，自动静默点一下
+                    try {
+                        const zhjBtns = lastMesEl.querySelectorAll("[class*='zhihuiji'], [class*='sd_gen'], [id*='zhihuiji'], .mes_img_gen");
+                        zhjBtns.forEach(b => { if (typeof b.click === "function") b.click(); });
+                    } catch (e) {}
 
-                // 通道 3：隐藏沙盒 DOM 诱捕模式（在聊天区底部挂载一个 0 高度透明虚拟楼层触发智绘姬渲染，抓到图立刻销毁沙盒！）
-                const chatEl = document.getElementById("chat");
-                if (chatEl) {
-                    pendingZhjTarget = { editKey: item.editKey, stageKey, title: item.cleanTitle || item.editKey, isCustom: item.isCustom, catTitle: item.catTitle, ts: Date.now() };
-                    let sandbox = document.getElementById("st-zhj-silent-sandbox");
-                    if (sandbox) sandbox.remove();
-                    sandbox = document.createElement("div");
-                    sandbox.id = "st-zhj-silent-sandbox";
-                    sandbox.className = "mes";
-                    sandbox.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;";
-                    sandbox.innerHTML = `<div class="mes_block"><div class="mes_text">${blockTxt.replace(/\n/g, "<br>")}</div></div>`;
-                    chatEl.appendChild(sandbox);
-
-                    // 触发酒馆消息渲染事件让智绘姬扫描沙盒
-                    const ctx = safeCtx();
-                    if (ctx?.eventSource && ctx?.event_types?.CHARACTER_MESSAGE_RENDERED) {
-                        try { ctx.eventSource.emit(ctx.event_types.CHARACTER_MESSAGE_RENDERED, (ctx.chat?.length || 1) - 1); } catch (e) {}
-                    }
-
-                    // 监听沙盒内部是否被智绘姬插入了 <img>
+                    // 轮询等待正文生图插件把新图片画进 lastMesEl（最长等待 60 秒）
                     const capturedSrc = await new Promise((resolve) => {
-                        let checks = 0;
+                        let ticks = 0;
                         const timer = setInterval(() => {
-                            checks++;
-                            const img = sandbox.querySelector("img");
-                            const src = img ? (img.getAttribute("src") || img.src) : "";
-                            if (src && !src.includes("loading") && !src.includes("spinner")) {
+                            ticks++;
+                            // 检查全局捕获器是否已经先一步抓到了
+                            if (!pendingZhjTarget) {
                                 clearInterval(timer);
-                                resolve(src);
-                            } else if (checks >= 90) { // 最长后台等待 45 秒
+                                resolve("__CAPTURED_BY_OBSERVER__");
+                                return;
+                            }
+                            const imgs = Array.from(lastMesEl.querySelectorAll("img"));
+                            for (const im of imgs) {
+                                const s = im.getAttribute("src") || im.src || "";
+                                if (!s || existingSrcs.has(s)) continue;
+                                if (s.includes("loading") || s.includes("spinner") || s.includes("avatar") || s.includes("user-avatar")) continue;
+                                if (im.closest(".avatar")) continue;
+                                // 抓到新画出来的图了！立刻把这个图片所在的生图容器也隐藏并移除
+                                const wrapper = im.closest(".st-zhj-parasite-box") || im.closest("details") || im.parentElement;
+                                if (wrapper && wrapper !== lastMesTextEl && wrapper !== lastMesEl) {
+                                    wrapper.style.display = "none";
+                                    setTimeout(() => { try { wrapper.remove(); } catch (e) {} }, 200);
+                                } else {
+                                    im.style.display = "none";
+                                    setTimeout(() => { try { im.remove(); } catch (e) {} }, 200);
+                                }
+                                clearInterval(timer);
+                                resolve(s);
+                                return;
+                            }
+                            // 检查是否有 background-image 形式生成的图
+                            const bgEls = Array.from(parasite.querySelectorAll("[style*='background-image']"));
+                            for (const bel of bgEls) {
+                                const m = (bel.style.backgroundImage || "").match(/url\(["']?(.*?)["']?\)/i);
+                                if (m && m[1] && !existingSrcs.has(m[1])) {
+                                    clearInterval(timer);
+                                    resolve(m[1]);
+                                    return;
+                                }
+                            }
+                            if (ticks >= 120) {
                                 clearInterval(timer);
                                 resolve("");
                             }
                         }, 500);
                     });
-                    sandbox.remove();
+
+                    // 清理寄生节点并还原 chat[last].mes 原文，做到 100% 雁过无痕！
+                    try { parasite.remove(); } catch (e) {}
+                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null) {
+                        chatArr[lastIdx].mes = origMesRaw;
+                    }
+                    // 顺手清理正文里可能残留的裸 <image> 文本
+                    if (lastMesTextEl.innerHTML.includes("image###")) {
+                        lastMesTextEl.innerHTML = lastMesTextEl.innerHTML.replace(/<image>[\s\S]*?<\/image>/gi, "").replace(/image###[\s\S]*?###/gi, "");
+                    }
+
+                    if (capturedSrc === "__CAPTURED_BY_OBSERVER__") {
+                        return;
+                    }
                     if (capturedSrc) {
+                        pendingZhjTarget = null;
                         await saveAndMountImg(capturedSrc);
                         return;
                     }
                 }
 
-                showToast("⚠️ 后台未检测到智绘姬响应，请检查酒馆生图后端或智绘姬扩展是否已开启自动渲染喵！", "warn", 4000);
+                showToast("⚠️ 等待正文生图超时喵！请确认你的生图插件已开启「自动生成图片」，或者点右侧【📋复制Tag】手动触发一次看看喵～", "warn", 4500);
             } catch (err) {
                 showToast("❌ 后台生图出错：" + (err.message || "未知错误"), "error", 3500);
             } finally {
@@ -2440,7 +2510,7 @@
                         </div>
                     </div>
                     <img id="st-det-stage-img" style="display:none;width:100%;max-height:240px;object-fit:contain;border-radius:8px;cursor:zoom-in;background:#0a0612;" alt="部位实况">
-                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无配图，点上方「🎨 智绘姬静默生图」将在后台直接画进插件（不发到正文），或点「📂 传图绑定」上传本地图片。</div>
+                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无配图，点上方「🎨 智绘姬静默生图」将借用正文生图通道在后台画进插件（正文不留痕），或点「📂 传图绑定」上传图片。</div>
                 </div>
                 <div style="margin-top:10px;background:rgba(0,0,0,0.28);border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,0.08);line-height:1.65;font-size:12.5px;white-space:pre-wrap;word-break:break-word;">${objText}</div>
                 <div style="margin-top:8px;background:rgba(243,139,168,0.1);border-left:3px solid ${tc.prim};border-radius:0 8px 8px 0;padding:8px 10px;font-size:12.5px;line-height:1.6;color:#ffd6e4;">
@@ -2487,7 +2557,6 @@
             imgEl.onclick = () => openTrueFullscreenImage(imgEl.src);
             if (candidates.length > 0) tryNextImg();
 
-            // 绑定上帝滑块
             const godSlider = box.querySelector("#st-god-slider");
             const godLabel = box.querySelector("#st-god-val-label");
             let tempGodVal = lockedVal;
@@ -2505,7 +2574,6 @@
                 };
             }
 
-            // 单项直接上传本地图片绑定当前阶段
             const upBtn = box.querySelector("#st-det-local-up"), fileInp = box.querySelector("#st-det-local-file");
             if (upBtn && fileInp) {
                 upBtn.onclick = () => fileInp.click();
@@ -2517,7 +2585,7 @@
                     if (res?.dUrl) {
                         imgEl.src = res.dUrl; imgEl.style.display = "block"; phEl.style.display = "none";
                         latestStatus = getFallbackData(); renderBody();
-                        showToast(`✅ 已将图片绑定至【${ stageKey }】！`, "success");
+                        showToast(`✅ 已将图片绑定至【${stageKey}】！`, "success");
                     }
                 };
             }
@@ -2577,6 +2645,171 @@
             };
         }
 
+        // 新增自定义条目弹窗（补齐！）
+        function openAddCustomItemModal(catTitle) {
+            const modal = document.getElementById("st-v5-modal");
+            if (!modal) return;
+            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
+            const box = modal.querySelector(".st-modal-box");
+            box.style.background = tc.bg; box.style.border = tc.border; box.style.color = tc.text;
+            box.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.12);">
+                    <div style="font-size:14px;font-weight:bold;color:#f9e2af;">➕ 在【${catTitle}】新增自定义条目</div>
+                    <button id="st-add-close" type="button" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:3px 9px;cursor:pointer;">✕</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+                    <div style="display:flex;gap:6px;">
+                        <input id="st-new-title" placeholder="条目名称（如：魅魔尾环 / 专属烙印）" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
+                        <button id="st-new-aigen" type="button" style="background:rgba(203,166,247,0.2);color:#cba6f7;border:1px solid #cba6f7;border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;">✨ 副API补全</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        <input id="st-new-stage" placeholder="状态标签（如：深入骨髓）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
+                        <input id="st-new-pct" type="number" min="0" max="100" placeholder="进度百分比 (0-100，选填)" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
+                    </div>
+                    <input id="st-new-img" placeholder="配图名称或URL（选填）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
+                    <textarea id="st-new-desc" rows="3" placeholder="详细客观实况描写..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea>
+                    <textarea id="st-new-thought" rows="2" placeholder="第一人称实时心声..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea>
+                    <button id="st-new-submit" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:8px;padding:8px;font-size:12.5px;font-weight:bold;cursor:pointer;">✅ 确认添加</button>
+                </div>`;
+            modal.style.display = "flex";
+            box.querySelector("#st-add-close").onclick = () => { modal.style.display = "none"; };
+            box.querySelector("#st-new-aigen").onclick = async (e) => {
+                const t = box.querySelector("#st-new-title").value.trim();
+                if (!t) { showToast("⚠️ 请先输入条目名称喵！", "warn"); return; }
+                const res = await requestSingleItemAiGen(t, `所属分类：${catTitle}`, e.target);
+                if (res) {
+                    if (res.stage) box.querySelector("#st-new-stage").value = res.stage;
+                    if (res.desc) box.querySelector("#st-new-desc").value = res.desc;
+                    if (res.thought) box.querySelector("#st-new-thought").value = res.thought;
+                }
+            };
+            box.querySelector("#st-new-submit").onclick = () => {
+                const title = box.querySelector("#st-new-title").value.trim();
+                if (!title) { showToast("⚠️ 条目名称不能为空", "warn"); return; }
+                const pctRaw = box.querySelector("#st-new-pct").value.trim();
+                curVars.自定义条目 = curVars.自定义条目 || {};
+                curVars.自定义条目[catTitle] = curVars.自定义条目[catTitle] || [];
+                curVars.自定义条目[catTitle].push({
+                    id: "cust_" + Date.now(),
+                    title,
+                    stage: box.querySelector("#st-new-stage").value.trim() || "新增记录",
+                    pct: pctRaw !== "" ? clamp(Number(pctRaw), 0, 100) : null,
+                    imgUrl: box.querySelector("#st-new-img").value.trim(),
+                    desc: box.querySelector("#st-new-desc").value.trim() || "暂无详细描述。",
+                    thought: box.querySelector("#st-new-thought").value.trim() || "……"
+                });
+                saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
+                showToast(`✅ 已添加【${title}】`, "success");
+            };
+        }
+
+        // 设置面板视图（补齐！）
+        function renderSettingsView(bodyEl) {
+            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
+            const themeOpts = Object.keys(THEMES).map(k => `<option value="${k}" ${userSettings.theme === k ? "selected" : ""}>${k}</option>`).join("");
+            const modeOpts = Object.entries(RUIN_PERSONA_MODES).map(([k, v]) => `<option value="${k}" ${userSettings.personaMode === k ? "selected" : ""}>${v.label}</option>`).join("");
+            const diffOpts = Object.entries(DIFFICULTY_PROFILES).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.label || v.fullLabel}</option>`).join("");
+            bodyEl.innerHTML = `
+                <div style="display:flex;flex-direction:column;gap:10px;padding:4px;">
+                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+                        <div style="font-weight:bold;color:${tc.prim};margin-bottom:8px;font-size:13px;">🎨 外观、排版与手机流畅优化</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+                            <label>皮肤主题<select id="st-set-theme" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${themeOpts}</select></label>
+                            <label>心声人格<select id="st-set-persona" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${modeOpts}</select></label>
+                            <label>崩坏难度<select id="st-set-diff" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${diffOpts}</select></label>
+                            <label>字体缩放(${userSettings.fontScale}%)<input id="st-set-fscale" type="range" min="80" max="130" value="${userSettings.fontScale}" style="width:100%;margin-top:6px;"></label>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px;">
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-compact" type="checkbox" ${userSettings.compactCards ? "checked" : ""}> 隐藏卡片缩略图</label>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-lite" type="checkbox" ${userSettings.mobileLiteMode ? "checked" : ""}> 手机省电模式(关特效)</label>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-revprompt" type="checkbox" ${userSettings.injectReversePrompt ? "checked" : ""}> 注入肉体铁律</label>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-cmpprompt" type="checkbox" ${userSettings.compactPromptMode ? "checked" : ""}> 省Token提示词</label>
+                        </div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+                        <div style="font-weight:bold;color:#f9e2af;margin-bottom:8px;font-size:13px;">🤖 副API 实时解析与重绘设置</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                            <input id="st-api-url" value="${safeStr(userSettings.apiUrl)}" placeholder="API 地址（如 https://api.openai.com/v1）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
+                            <input id="st-api-key" type="password" value="${safeStr(userSettings.apiKey)}" placeholder="API Key (sk-...)" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
+                            <div style="display:flex;gap:6px;">
+                                <input id="st-api-mod" value="${safeStr(userSettings.apiModel)}" placeholder="模型名称" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
+                                <button id="st-fetch-models" type="button" style="background:rgba(137,180,250,0.2);color:#89b4fa;border:1px solid #89b4fa;border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;">拉取模型</button>
+                            </div>
+                            <select id="st-model-sel" style="display:none;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px;"></select>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-autoapi" type="checkbox" ${userSettings.autoCallApiOnNewMsg ? "checked" : ""}> 新消息自动触发副API重绘</label>
+                        </div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🎨 智绘姬与本地图包管理（已缓存 ${importedImgCache.size} 张）</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+                            <input id="st-zhj-fn" value="${safeStr(userSettings.zhihuijiGlobalFn)}" placeholder="智绘姬全局函数名(选填)" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
+                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 导入图片/ZIP包</button>
+                            <input id="st-import-imgs-input" type="file" multiple accept="image/*,.zip" style="display:none;">
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button id="st-lock-name-btn" type="button" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🔒 锁定真名(${detectProtagonistName(curVars)})</button>
+                            <button id="st-clear-imgs-btn" type="button" style="background:rgba(243,139,168,0.15);color:#f38ba8;border:1px solid rgba(243,139,168,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🗑️ 清空图包</button>
+                            <button id="st-reset-vars-btn" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🧹 重置本会话变量</button>
+                        </div>
+                    </div>
+                    <button id="st-save-all-settings" type="button" style="background:linear-gradient(135deg,${tc.prim},${tc.sec});color:#11111b;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:bold;cursor:pointer;">💾 保存所有设置并返回面板</button>
+                </div>`;
+
+            const selEl = bodyEl.querySelector("#st-model-sel"), modEl = bodyEl.querySelector("#st-api-mod");
+            bodyEl.querySelector("#st-fetch-models").onclick = (e) => fetchModelList(e.target, selEl, bodyEl.querySelector("#st-api-url"));
+            selEl.onchange = () => { modEl.value = selEl.value; };
+            bodyEl.querySelector("#st-import-imgs-btn").onclick = () => bodyEl.querySelector("#st-import-imgs-input").click();
+            bodyEl.querySelector("#st-import-imgs-input").onchange = async (e) => {
+                const files = e.target.files;
+                if (!files || !files.length) return;
+                showToast("⏳ 正在解压并压缩转码 WebP 图包...", "info", 3000);
+                try {
+                    const cnt = await importFilesOrZipToDB(files);
+                    showToast(`✅ 成功导入并压缩持久化 ${cnt} 张本地图片！`, "success");
+                    renderSettingsView(bodyEl);
+                } catch (err) {
+                    showToast("❌ 导入失败：" + (err.message || "文件格式有误"), "error");
+                }
+            };
+            bodyEl.querySelector("#st-clear-imgs-btn").onclick = async () => {
+                if (!confirm("确定要清空 IndexedDB 中缓存的所有本地导入图片吗？")) return;
+                await clearAllImportedImagesDB();
+                showToast("🗑️ 已清空本地缓存图包", "info");
+                renderSettingsView(bodyEl);
+            };
+            bodyEl.querySelector("#st-lock-name-btn").onclick = () => {
+                const n = prompt("输入要手动锁定的主角真名（留空则解除锁定）：", curVars.档案.手动锁定真名 || detectProtagonistName(curVars));
+                if (n === null) return;
+                curVars.档案.手动锁定真名 = n.trim();
+                if (n.trim()) curVars.档案.当前认知名字 = n.trim();
+                saveChatCache(curVars); latestStatus = getFallbackData(); showToast(n.trim() ? `🔒 已锁定真名：${n.trim()}` : "🔓 已解除真名锁定", "success");
+                renderSettingsView(bodyEl);
+            };
+            bodyEl.querySelector("#st-reset-vars-btn").onclick = () => {
+                if (!confirm("确定要清空当前对话的全部状态栏缓存数据并从头计算吗？")) return;
+                curVars = createDefaultVars(); saveChatCache(curVars); latestStatus = getFallbackData();
+                isSettingsOpen = false; renderBody(); showToast("🧹 已重置当前会话状态栏数据", "info");
+            };
+            bodyEl.querySelector("#st-save-all-settings").onclick = () => {
+                userSettings.theme = bodyEl.querySelector("#st-set-theme").value;
+                userSettings.personaMode = bodyEl.querySelector("#st-set-persona").value;
+                userSettings.difficultyMode = bodyEl.querySelector("#st-set-diff").value;
+                userSettings.fontScale = parseInt(bodyEl.querySelector("#st-set-fscale").value, 10) || 100;
+                userSettings.compactCards = bodyEl.querySelector("#st-set-compact").checked;
+                userSettings.mobileLiteMode = bodyEl.querySelector("#st-set-lite").checked;
+                userSettings.injectReversePrompt = bodyEl.querySelector("#st-set-revprompt").checked;
+                userSettings.compactPromptMode = bodyEl.querySelector("#st-set-cmpprompt").checked;
+                userSettings.apiUrl = bodyEl.querySelector("#st-api-url").value.trim();
+                userSettings.apiKey = bodyEl.querySelector("#st-api-key").value.trim();
+                userSettings.apiModel = modEl.value.trim();
+                userSettings.autoCallApiOnNewMsg = bodyEl.querySelector("#st-set-autoapi").checked;
+                userSettings.zhihuijiGlobalFn = bodyEl.querySelector("#st-zhj-fn").value.trim();
+                saveSettings(); applyThemeAndSize(); isSettingsOpen = false;
+                latestStatus = getFallbackData(); renderBody();
+                showToast("💾 设置已保存并应用！", "success");
+            };
+        }
+
         // =========================================================================
         // 🖼️ 经典「左侧垂直快速分栏 Tab + 卡片外显缩略图」双栏渲染引擎
         // =========================================================================
@@ -2601,7 +2834,6 @@
             const cats = statusData.categories || [];
             if (!activeCat && cats.length > 0) activeCat = cats[0].title;
 
-            // 1. 顶部黄油级 Buff 胶囊栏 + ASMR 实时娇喘栏 + 快捷工具栏
             const buffBarHTML = buffs.length > 0 ? `
                 <div class="st-buff-strip" style="display:flex;flex-wrap:wrap;gap:5px;padding:5px 8px;margin-bottom:6px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
                     ${buffs.map(b => `<span title="${safeStr(b.desc)}" style="background:${b.bg};border:1px solid ${b.border};color:${b.color};padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</span>`).join("")}
@@ -2633,7 +2865,6 @@
                     </div>
                 </div>`;
 
-            // 2. 左侧垂直快速分栏导航 (#st-v5-tabs)
             const tabsHTML = [
                 ...cats.map(c => {
                     const isAct = (activeCat === c.title);
@@ -2649,7 +2880,6 @@
                 </button>`
             ].join("");
 
-            // 3. 右侧主内容区（带卡片右侧外显缩略图 .st-card-thumb-wrap）
             const visibleCats = activeCat === "__ALL__" ? cats : cats.filter(c => c.title === activeCat);
             const xrayHTML = (userSettings.showXrayOnHome && (activeCat === "六孔与储精" || activeCat === "苗床与受孕" || activeCat === "__ALL__")) ? `
                 <div style="margin-bottom:8px;">${buildDynamicXRaySVG(curVars, dev, caps)}</div>` : "";
@@ -2705,7 +2935,6 @@
                     </div>
                 </div>`;
 
-            // 异步挂载每张卡片右侧的外显缩略图
             if (!userSettings.compactCards) {
                 bodyEl.querySelectorAll(".st-card-thumb-wrap").forEach(wrap => {
                     const cIdx = parseInt(wrap.getAttribute("data-cidx"), 10);
@@ -2715,7 +2944,6 @@
                 });
             }
 
-            // 绑定左侧快速分栏导航点击
             bodyEl.querySelectorAll(".st-left-tab").forEach(tab => {
                 tab.onclick = () => {
                     playSynthSound("squelch");
