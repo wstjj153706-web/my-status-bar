@@ -1438,125 +1438,255 @@
             return `\n【⚠️ 正文字数与细节最高铁律】：重心是小说正文，严禁为输出变量而缩写正文！\n【当前角色状态快照（难度：${diff.mult}x｜身份：${detectRealCharacterIdentity(currentVars)}）】\n${compactSnap}${reverseRules}\n【🔥状态变量后台静默更新规范】全篇最末尾输出唯一闭合的 ${openTag}...${closeTag}：\n${openTag}\n_.set('${userName}.身体.体力', ${safeNum(currentVars.身体?.体力, 100)});\n_.set('${userName}.核心数值.性欲程度', ${safeNum(currentVars.核心数值?.性欲程度)});\n_.set('${userName}.精神与心理.快感累积', ${safeNum(currentVars.精神与心理?.快感累积)});\n_.set('${userName}.计数.性交.口', ${safeNum(c.性交?.口)});\n_.set('${userName}.计数.性交.小穴', ${safeNum(c.性交?.小穴)});\n_.set('${userName}.计数.性交.屁眼', ${safeNum(c.性交?.屁眼)});\n_.set('${userName}.计数.射精.内射', ${safeNum(c.射精?.内射)});\n_.set('${userName}.计数.精液摄入.吞精次数', ${safeNum(c.精液摄入?.吞精次数)});\n_.set('${userName}.计数.高潮.总数', ${safeNum(c.高潮?.总数)});\n_.set('${userName}.计数.失控.喷潮', ${safeNum(c.失控?.喷潮)});\n_.set('${userName}.计数.失控.失禁', ${safeNum(c.失控?.失禁)});\n_.set('${userName}.体内精液存量.口内毫升', ${safeNum(sp.口内毫升)});\n_.set('${userName}.体内精液存量.小穴毫升', ${safeNum(sp.小穴毫升)});\n_.set('${userName}.体内精液存量.子宫毫升', ${safeNum(sp.子宫毫升)});\n_.set('${userName}.体内精液存量.屁眼毫升', ${safeNum(sp.屁眼毫升)});\n_.set('${userName}.痕迹与标记.体表痕迹', '${safeStr(mark.体表痕迹, "无")}');\n_.set('${userName}.痕迹与标记.淫纹与刻印', '${safeStr(mark.淫纹与刻印, "无")}');\n_.set('${userName}.痕迹与标记.穿刺与环饰', '${safeStr(mark.穿刺与环饰, "无")}');\n_.set('${userName}.体内道具与权限.体内道具', '${safeStr(prop.体内道具, "无")}');\n_.set('${userName}.实况.当前姿势', '简短概括当前姿势');\n_.set('${userName}.实况.内心独白', '符合当前崩坏阶位的第一人称心声');\n${closeTag}`;
         }
 
+        // =========================================================================
+        // 🎯 1. 徹底移除“精灵之躯”等乱猜体质！直接返回纯粹的难度倍率说明
+        // =========================================================================
+        detectRealCharacterIdentity = function (v) {
+            const diff = getDifficultyProfile();
+            if (v?.档案?.种族与体质 && safeStr(v.档案.种族与体质).trim() && !/精灵之躯|修真者|魅魔之躯|普通人类/.test(v.档案.种族与体质)) {
+                return safeStr(v.档案.种族与体质).trim();
+            }
+            return `难度${diff.mult}x`;
+        };
+
+        // 🎯 2. 支持任意选定状态栏监控目标（可随时切换为主角、对面角色卡或任意指定名字！）
+        detectProtagonistName = function (v) {
+            if (userSettings.customTargetName && safeStr(userSettings.customTargetName).trim()) {
+                const t = safeStr(userSettings.customTargetName).trim();
+                const ctx = safeCtx();
+                let finalName = t;
+                if (t.toLowerCase() === "char" || t === "角色卡") finalName = safeStr(ctx?.name2, "角色").trim();
+                else if (t.toLowerCase() === "user" || t === "主角") finalName = safeStr(ctx?.name1, "主角").trim();
+                if (v?.档案) { v.档案.手动锁定真名 = finalName; v.档案.当前认知名字 = finalName; }
+                return finalName;
+            }
+            if (v?.档案?.手动锁定真名 && safeStr(v.档案.手动锁定真名).trim()) {
+                const locked = safeStr(v.档案.手动锁定真名).trim();
+                v.档案.当前认知名字 = locked;
+                return locked;
+            }
+            const ctx = safeCtx();
+            return safeStr(v?.档案?.当前认知名字 || ctx?.name1 || ctx?.name2 || "主角").trim();
+        };
+
+        // 🧬 3. 主角外貌 DNA 锁定器（确保所有按钮画出来的都是同一个人！）
+        function getLockedAppearanceTags(u, v) {
+            if (userSettings.lockedAppearanceTags && safeStr(userSettings.lockedAppearanceTags).trim()) {
+                return safeStr(userSettings.lockedAppearanceTags).trim();
+            }
+            const ctx = safeCtx();
+            const rawText = `${safeStr(v?.档案?.肉体外貌实况)} ${safeStr(ctx?.power_user?.persona_description)} ${safeStr(ctx?.characters?.[ctx?.characterId]?.description)}`;
+            const tags = [];
+            if (/白发|银发|雪发|silver hair|white hair/i.test(rawText)) tags.push("silver hair");
+            else if (/金发|黄发|blonde/i.test(rawText)) tags.push("blonde hair");
+            else if (/粉发|pink hair/i.test(rawText)) tags.push("pink hair");
+            else if (/紫发|purple hair/i.test(rawText)) tags.push("purple hair");
+            else if (/蓝发|blue hair/i.test(rawText)) tags.push("blue hair");
+            else if (/红发|red hair/i.test(rawText)) tags.push("red hair");
+            else if (/棕发|栗发|brown hair/i.test(rawText)) tags.push("brown hair");
+            else tags.push("black hair");
+
+            if (/双马尾|twintails/i.test(rawText)) tags.push("twintails");
+            else if (/马尾|ponytail/i.test(rawText)) tags.push("ponytail");
+            else if (/短发|short hair/i.test(rawText)) tags.push("short hair");
+            else tags.push("long hair, bangs");
+
+            if (/红瞳|赤瞳|red eyes/i.test(rawText)) tags.push("red eyes");
+            else if (/金瞳|golden eyes/i.test(rawText)) tags.push("golden eyes");
+            else if (/紫瞳|purple eyes/i.test(rawText)) tags.push("purple eyes");
+            else if (/蓝瞳|blue eyes/i.test(rawText)) tags.push("blue eyes");
+
+            if (/丰满|巨乳|爆乳/i.test(rawText)) tags.push("large breasts, voluptuous body");
+            else if (/娇小|贫乳|平胸/i.test(rawText)) tags.push("petite, small breasts");
+            else tags.push("medium breasts, slender waist");
+            return tags.join(", ");
+        }
+
+        function getProtagScopedImgKey(editKey, stageNum) {
+            const u = detectProtagonistName(curVars) || "protag";
+            const chatKey = getChatStoreKey().replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, "_").slice(-20);
+            return `${chatKey}_${u}_${editKey}_${stageNum}`;
+        }
+
+        // 🎨 4. 全按钮精准生图 Tag 生成器（绝不乱画小穴，且焊死同一人外貌！）
         function buildDanbooruImageBlock(item, curStageIdx, u) {
             const key = item.editKey || "custom";
             const stageNames = ["初绽完好", "初步驯化", "深度开发", "括约肌松弛", "重度畸变", "彻底崩坏"];
-            const idx = Math.min(5, Math.max(0, curStageIdx - 1));
-            const stgTag = stageNames[idx];
-
-            // 根据 1~6 阶段自动匹配人物神态表情
+            const idx = Math.min(5, Math.max(0, curStageIdx - 1)), stgTag = stageNames[idx];
+            const charDnaTags = getLockedAppearanceTags(u, curVars);
             const faceExpr = [
-                "calm expression, pure clear eyes, noble and composed aura, slight natural blush",
-                "shy expression, embarrassed blush, biting lower lip, watery eyes, flustered",
+                "calm expression, pure clear eyes, composed aura, slight blush",
+                "shy expression, embarrassed blush, biting lower lip, watery eyes",
                 "heavy breathing, misty eyes, needy blushing face, parted glossy lips",
-                "aroused expression, heart-shaped pupils, drooling slightly, submissive hot gaze",
-                "ahegao, rolled back eyes, tongue hanging out, heavy flush, trembling in ecstasy",
-                "mind break expression, empty heart eyes, profuse drooling, completely corrupted lewd smile"
+                "aroused expression, heart-shaped pupils, drooling slightly, submissive gaze",
+                "ahegao, rolled back eyes, tongue hanging out, heavy flush, ecstasy",
+                "mind break expression, empty heart eyes, profuse drooling, corrupted lewd smile"
             ][idx];
 
-            // 六孔专属 1~6 阶微距词条（仅点六孔时禁用脸部并聚焦私处！）
             const holePresets = {
                 "骚口实况": [
-                    { zh: "微距莹润红唇微启与晶莹拉丝津液", think: "第一阶段初始状态，双唇娇嫩饱满微启，舌尖轻抵下唇。", tag: "macro shot, mouth and lips focus, parted glossy pink lips, pink tongue tip, clear saliva strings", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距红肿唇瓣外翻与浓稠白浊挂丝", think: "第二阶段初步驯化，双唇微肿充血，舌头伸出承接乳白精液。", tag: "macro shot, open mouth and tongue focus, swollen red lips, protruding wet tongue, thick white cum on tongue", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距深喉扩口悬雍垂颤动与白沫满溢", think: "第三阶段深度开发，口腔大幅撑开，舌头压平，深处悬雍垂暴露。", tag: "macro shot, wide open mouth focus, deep throat view, flattened tongue, visible uvula, frothy cum pooling in throat", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距咽喉肉环松弛洞开与澄黄圣水漩涡", think: "第四阶段括约肌松弛，咽喉深处呈圆筒状松弛肉穴。", tag: "macro shot, gaping mouth and relaxed throat hole focus, numb everted lips, yellow urine and white cum swirling in deep throat", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距下颚半脱臼软肉外翻与浓稠浊液喷涌", think: "第五阶段重度畸变，下颚半脱臼无法闭拢，紫红唇肉外翻。", tag: "macro shot, dislocated gaping mouth focus, swollen purple-red everted lips, limp tongue hanging out, regurgitating frothy cum", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "彻底崩坏微距脱臼漏斗状肉洞与腐熟白浊泡沫满溢", think: "第六阶段终极崩坏，下颚永久半脱臼洞开，大量白沫喷涌。", tag: "macro shot, corrupted gaping mouth focus, dilated throat hole, permanently gaping dislocated jaw, overflowing thick cum, completely ruined oral meat hole", uc: "eyes, forehead, full face, head, hair, upper body, breasts, boy, male, penis" }
+                    "close-up, mouth and lips focus, parted glossy pink lips, pink tongue tip, saliva string",
+                    "close-up, open mouth and tongue focus, swollen red lips, protruding wet tongue, white cum on tongue",
+                    "macro shot, wide open mouth focus, deep throat view, flattened tongue, visible uvula, frothy cum",
+                    "macro shot, gaping mouth and relaxed throat hole focus, everted lips, yellow fluid and cum in throat",
+                    "macro shot, dislocated gaping mouth focus, swollen everted lips, limp tongue hanging out, frothy cum",
+                    "macro shot, corrupted gaping mouth focus, dilated throat hole, overflowing thick cum, ruined oral hole"
                 ],
                 "小穴实况": [
-                    { zh: "微距紧闭粉嫩花唇与晶莹露珠", think: "第一阶段完好处子，两瓣花唇粉嫩紧闭，干爽洁净。", tag: "macro shot, pussy focus, tight closed pink labia, virgin pussy, clean skin", uc: "face, upper body, gaping pussy" },
-                    { zh: "微距初破充血花唇微张与拉丝爱液", think: "第二阶段初破红肿，外阴软肉充血微张，透明爱液牵丝滑落。", tag: "macro shot, pussy focus, slightly parted red swollen labia, clear vaginal fluids, wet string", uc: "face, upper body, closed pussy" },
-                    { zh: "微距肥厚外翻黑木耳与白浊咕啾涌出", think: "第三阶段熟稔外翻，大小阴唇肥厚外翻且色素沉淀，浓白精液从穴口涌出。", tag: "macro shot, pussy focus, dark swollen everted labia minora, thick white cum leaking from vagina", uc: "face, upper body, tight pussy" },
-                    { zh: "微距括约肌松弛两指洞开与白浆漏淌", think: "第四阶段括约肌松弛，阴道口撑开无法闭合，白浊混着淫水不断漏出。", tag: "macro shot, gaping pussy focus, relaxed open vaginal hole, visible red vaginal interior, overflowing cum", uc: "face, upper body, closed pussy" },
-                    { zh: "微距内壁肉褶脱垂外翻与失禁漏精壶", think: "第五阶段肉壁脱垂，阴道内壁充血肉褶向外翻出穴口。", tag: "macro shot, ruined gaping pussy focus, prolapsed vaginal mucosal folds, bruised everted labia, heavy cum and urine overflow", uc: "face, upper body, closed pussy" },
-                    { zh: "彻底崩坏微距外翻紫红烂肉洞与腐熟白浊黄尿满溢", think: "第六阶段终极崩坏，阴唇紫红肿胀外翻，穴口洞开且宫颈下垂外露。", tag: "macro shot, corrupted gaping pussy focus, dilated vaginal hole, permanently gaping ruined pussy, prolapsed visible cervix deep inside, overflowing thick cum", uc: "face, head, eyes, upper body, breasts, legs, feet, boy, male, penis" }
+                    "macro shot, pussy focus, tight closed pink labia, virgin pussy, clean skin",
+                    "macro shot, pussy focus, slightly parted red swollen labia, clear vaginal fluids, wet string",
+                    "macro shot, pussy focus, dark swollen everted labia minora, thick white cum leaking",
+                    "macro shot, gaping pussy focus, relaxed open vaginal hole, visible red interior, overflowing cum",
+                    "macro shot, ruined gaping pussy focus, prolapsed vaginal folds, everted labia, heavy cum overflow",
+                    "macro shot, corrupted gaping pussy focus, permanently gaping ruined pussy, prolapsed visible cervix, overflowing cum"
                 ],
                 "子宫实况": [
-                    { zh: "微距内窥紧闭针尖宫颈口与纯净宫腔", think: "第一阶段紧闭处子，宫颈口紧密闭合。", tag: "macro shot, internal vaginal view, tight closed cervix, clean pink mucosa", uc: "face, external view" },
-                    { zh: "微距内窥充血红肿宫颈口与微量白浊", think: "第二阶段宫口充血微松，表面挂着少许精液。", tag: "macro shot, internal cervix focus, red swollen cervix, cum on cervix", uc: "face, external view" },
-                    { zh: "微距内窥扩张软肉环宫口与锁精吞吸", think: "第三阶段宫口扩张锁精，宫颈口被顶开呈环形吞吸白浊。", tag: "macro shot, dilated cervix focus, open cervical os, thick cum pouring into womb", uc: "face, external view" },
-                    { zh: "微距内窥下坠松弛宫口与浓精倒流", think: "第四阶段宫腔肥大下坠，宫颈口常年微张无法闭合。", tag: "macro shot, gaping cervix focus, relaxed open womb entrance, overflowing semen", uc: "face, external view" },
-                    { zh: "微距重度脱垂至穴口边缘的紫红宫颈口", think: "第五阶段宫颈重度脱垂至外阴边缘。", tag: "macro shot, uterine prolapse focus, swollen purple-red cervix protruding near vaginal opening, dripping cum", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距完全掉出体外的外翻死肉宫口喷涌腐精", think: "第六阶段终极崩坏，紫黑色宫颈口彻底掉出体外。", tag: "macro shot, extreme cervical prolapse focus, bruised purple-black cervix hanging outside gaping pussy, wide open cervical hole, bubbling thick cum foam", uc: "face, head, upper body, breasts" }
+                    "macro shot, internal vaginal cross-section view, tight closed cervix, clean pink mucosa",
+                    "macro shot, internal cervix focus, red swollen cervix, cum on cervix",
+                    "macro shot, dilated cervix focus, open cervical os, thick cum pouring into womb",
+                    "macro shot, gaping cervix focus, relaxed open womb entrance, overflowing semen",
+                    "macro shot, uterine prolapse focus, swollen cervix protruding near vaginal opening, dripping cum",
+                    "macro shot, extreme cervical prolapse focus, bruised cervix hanging outside gaping pussy, bubbling cum"
                 ],
                 "胸部实况": [
-                    { zh: "微距挺拔粉嫩处乳与小巧乳尖", think: "第一阶段娇嫩处乳，乳晕粉嫩紧致。", tag: "macro shot, breasts focus, perky breasts, small pink nipples, clean skin", uc: "face, lower body, pussy" },
-                    { zh: "微距充血肿大乳头与晶莹涎液", think: "第二阶段乳尖肥大，乳头充血硬挺。", tag: "macro shot, nipple focus, swollen erect pink nipples, wet saliva on breasts", uc: "face, lower body, pussy" },
-                    { zh: "微距黑紫扩张乳晕与渗奶乳孔", think: "第三阶段乳晕扩张色素沉淀，乳尖渗出乳滴。", tag: "macro shot, dark wide areola, puffy nipples, milk droplets leaking", uc: "face, lower body, pussy" },
-                    { zh: "微距乳腺失控飙奶与青筋乳房", think: "第四阶段乳腺失控，两条奶柱喷涌而出。", tag: "macro shot, lactating breasts focus, squirting breast milk, visible veins on breasts", uc: "face, lower body, pussy" },
-                    { zh: "微距硕大下垂巨乳奶袋与白浊混流", think: "第五阶段下垂巨乳奶袋，乳孔常年漏奶。", tag: "macro shot, huge sagging lactating breasts, dilated nipple holes, heavy milk and cum dripping", uc: "face, lower body, pussy" },
-                    { zh: "彻底崩坏微距紫黑下垂泌乳肉囊与血乳狂喷", think: "第六阶段终极崩坏，紫黑泌乳肉囊乳孔大开狂喷浊乳。", tag: "macro shot, corrupted sagging udder breasts focus, bruised purple-black areola, gaping dilated nipple holes, gushing thick milk", uc: "face, head, lower body, pussy" }
+                    "close-up, breasts focus, perky breasts, small pink nipples, clean skin",
+                    "macro shot, nipple focus, swollen erect pink nipples, wet saliva on breasts",
+                    "macro shot, dark wide areola, puffy nipples, milk droplets leaking",
+                    "macro shot, lactating breasts focus, squirting breast milk, visible veins",
+                    "macro shot, huge sagging lactating breasts, dilated nipple holes, heavy milk and cum dripping",
+                    "macro shot, corrupted sagging udder breasts focus, gaping nipple holes, gushing thick milk"
                 ],
                 "阴蒂尿道": [
-                    { zh: "微距隐没粉嫩阴蒂包皮与紧闭尿道", think: "第一阶段完好隐没。", tag: "macro shot, clitoris focus, small hooded pink clit, tight urethral opening", uc: "face, upper body" },
-                    { zh: "微距充血外露红肿阴蒂", think: "第二阶段充血外露。", tag: "macro shot, swollen erect clitoris, glistening wet skin", uc: "face, upper body" },
-                    { zh: "微距花生米大小肥大勃起阴蒂", think: "第三阶段阴蒂异常肥大勃起。", tag: "macro shot, enlarged hyper clitoris, throbbing red clit, wet fluids", uc: "face, upper body" },
-                    { zh: "微距扩张尿道口与失控漏尿水柱", think: "第四阶段尿道松弛漏尿。", tag: "macro shot, dilated urethral meatus, leaking yellow urine stream, enlarged clit", uc: "face, upper body" },
-                    { zh: "微距肉棒化畸变阴蒂与狂喷潮吹失禁", think: "第五阶段阴蒂肉棒化伴随失禁狂喷。", tag: "macro shot, dicklet clitoris hypertrophy, gaping urethra hole, gushing female ejaculation and urine", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距坏死洞开尿道肉坑与24h失禁黄尿冒泡", think: "第六阶段终极崩坏，尿道括约肌坏死洞开。", tag: "macro shot, extreme clitoris hypertrophy, permanently gaping ruined urethral hole, overflowing yellow urine foam and cum", uc: "face, head, upper body" }
+                    "macro shot, clitoris focus, small hooded pink clit, tight urethral opening",
+                    "macro shot, swollen erect clitoris, glistening wet skin",
+                    "macro shot, enlarged hyper clitoris, throbbing red clit, wet fluids",
+                    "macro shot, dilated urethral meatus, leaking yellow stream, enlarged clit",
+                    "macro shot, clitoris hypertrophy, gaping urethra hole, gushing female ejaculation",
+                    "macro shot, extreme clitoris hypertrophy, permanently gaping urethral hole, overflowing foam"
                 ],
                 "屁眼实况": [
-                    { zh: "微距紧闭粉嫩菊蕾褶皱", think: "第一阶段紧闭完好。", tag: "macro shot, anus focus, tight closed pink anus, clean skin", uc: "face, upper body" },
-                    { zh: "微距充血红肿菊口与掌印臀肉", think: "第二阶段红肿微张。", tag: "macro shot, swollen red anus, spanked red ass cheeks, wet lube", uc: "face, upper body" },
-                    { zh: "微距褶皱磨平松弛后庭与白浊渗出", think: "第三阶段褶皱磨平松弛。", tag: "macro shot, relaxed smooth anal ring, cum leaking from anus", uc: "face, upper body" },
-                    { zh: "微距圆洞状不合肛口与内壁红肉", think: "第四阶段后庭空洞不合。", tag: "macro shot, gaping anus focus, open anal hole, visible red rectum interior, overflowing cum", uc: "face, upper body" },
-                    { zh: "微距直肠粘膜外翻轻度脱肛肉环", think: "第五阶段轻度脱肛翻肉。", tag: "macro shot, anal prolapse focus, everted red rectal mucosa ring, dripping thick cum", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距重度脱肛5厘米烂玫瑰肉管与浊液狂漏", think: "第六阶段终极崩坏，大段直肠肉管永久翻出体外。", tag: "macro shot, extreme anal prolapse focus, long protruding bruised red rectal tube hanging outside, gaping ruined anal hole, overflowing frothy cum", uc: "face, head, upper body" }
+                    "macro shot, anus focus, tight closed pink anus, clean skin",
+                    "macro shot, swollen red anus, spanked red ass cheeks, wet lube",
+                    "macro shot, relaxed smooth anal ring, cum leaking from anus",
+                    "macro shot, gaping anus focus, open anal hole, visible red rectum interior, overflowing cum",
+                    "macro shot, anal prolapse focus, everted red rectal mucosa ring, dripping thick cum",
+                    "macro shot, extreme anal prolapse focus, protruding red rectal tube, overflowing frothy cum"
                 ]
             };
 
-            // 如果是六孔之一，走六孔微距特写
             if (holePresets[key]) {
-                const chosen = holePresets[key][idx];
-                return `第${["一","二","三","四","五","六"][idx]}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${chosen.zh}]\n<image_think>\n${chosen.think}\n</image_think>\nimage###Scene:NSFW, 1girl, solo, 1.5::extreme close-up, ${chosen.tag}, filling the frame::, straight-on, dark erotic lighting;\nChar1:1.5::${u}::, pale sweaty skin, 1.8::${chosen.tag}::|centers:C3;\nChar1 UC:1.5::${chosen.uc}, multiple views, zoomed out, text, watermark::;###\n</image>`;
+                const tag = holePresets[key][idx];
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${item.cleanTitle || key}第${curStageIdx}阶特写]\n<image_think>\n展现${u}的${item.cleanTitle || key}第${curStageIdx}阶微距特写。\n</image_think>\nimage###Scene:NSFW, 1girl, solo, 1.4::${charDnaTags}::, 1.5::extreme close-up, ${tag}, filling the frame::, dark erotic lighting;\nChar1:1.5::${u}, ${charDnaTags}::, sweaty skin, 1.8::${tag}::|centers:C3;\nChar1 UC:1.5::full body, zoomed out, multiple views, text, watermark::;###\n</image>`;
             }
 
-            // 非六孔按钮：精准对应各自的部位与肖像！（绝不禁脸、绝不画小穴！）
             const nonHoleMap = {
-                "身份与背景": { zh: `${u}的认知身份与半身人物肖像立绘`, tag: `portrait, upper body, face focus, looking at viewer, detailed hair and eyes, ${faceExpr}`, uc: "extreme close-up of genitals, pussy focus, anus focus, cropped head" },
-                "肉体外貌":   { zh: `${u}的全身外貌与身材曲线立绘`, tag: `full body portrait, standing or sitting pose, curves, detailed skin, ${faceExpr}`, uc: "cropped head, extreme macro" },
-                "表里风评":   { zh: `${u}在外界视线下的神态半身像`, tag: `upper body, medium shot, ${faceExpr}, dramatic lighting, contrasting aura`, uc: "pussy focus, anus focus, cropped head" },
-                "挂牌身价":   { zh: `${u}的身价展示半身立绘`, tag: `cowboy shot, upper body and hips, ${faceExpr}, alluring posture`, uc: "extreme macro, cropped head" },
-                "内心独白":   { zh: `${u}的内心独白面部眼神特写`, tag: `close-up face portrait, expressive eyes, ${faceExpr}, emotional lighting`, uc: "lower body, pussy focus, anus focus" },
-                "当前姿势":   { zh: `${u}的当前全身动作姿态特写`, tag: `full body shot, dynamic posture, limbs and torso focus, ${faceExpr}`, uc: "extreme macro" },
-                "cockLove":   { zh: `${u}对阳具好感神态肖像`, tag: `upper body portrait, face focus, ${faceExpr}, longing gaze`, uc: "cropped head" },
-                "lust":       { zh: `${u}的情欲潮红半身特写`, tag: `upper body, heavy blush, sweaty skin, hot breath, ${faceExpr}`, uc: "cropped head" },
-                "corr":       { zh: `${u}的恶堕神态肖像立绘`, tag: `upper body portrait, dark seductive lighting, ${faceExpr}`, uc: "cropped head" },
-                "shame":      { zh: `${u}的羞耻掩面半身特写`, tag: `upper body, covering face shyly or blushing furiously, ${faceExpr}`, uc: "cropped head" },
-                "obey":       { zh: `${u}的温顺臣服姿态特写`, tag: `kneeling full body or upper body, submissive posture, looking up at viewer, ${faceExpr}`, uc: "cropped head" },
-                "pleas":      { zh: `${u}的快感战栗面部与上半身特写`, tag: `upper body, trembling, arched back, ${faceExpr}`, uc: "cropped head" },
-                "精神沦陷":   { zh: `${u}的眼神迷离催眠面部特写`, tag: `close-up face focus, hypnotic glowing eyes, ${faceExpr}`, uc: "lower body" },
-                "媚药毒瘾":   { zh: `${u}的微醺发热神态半身像`, tag: `upper body, flushed feverish skin, panting, ${faceExpr}`, uc: "cropped head" },
-                "正字涂鸦":   { zh: `${u}身上的涂鸦字迹与肌肤痕迹特写`, tag: `cowboy shot, body writing on skin, tally marks on thigh and belly, ${faceExpr}`, uc: "extreme macro" },
-                "淫纹烙印":   { zh: `${u}小腹上的发光淫纹特写`, tag: `midriff and lower abdomen focus, glowing pink womb tattoo on belly, navel`, uc: "extreme genital macro" },
-                "穿刺环饰":   { zh: `${u}身上的金属穿刺环饰特写`, tag: `torso close-up, body piercing, silver rings and chains glinting on skin`, uc: "text, watermark" },
-                "体内道具":   { zh: `${u}体内道具震动与夹腿忍耐姿态`, tag: `cowboy shot, trembling thighs, pink vibrator cord, hunched over blushing, ${faceExpr}`, uc: "text, watermark" },
-                "穿搭_头饰":  { zh: `${u}的发型头饰与面容特写`, tag: `head and upper body focus, intricate hairstyle, hair ornament, detailed face, ${faceExpr}`, uc: "lower body, pussy, breasts macro" },
-                "穿搭_颈部":  { zh: `${u}的脖颈锁骨与项圈特写`, tag: `neck and collarbone focus, choker or collar, slender neck, chin and lips visible`, uc: "lower body, pussy" },
-                "穿搭_胸罩":  { zh: `${u}的胸衣内衬与上围穿搭特写`, tag: `upper body focus, brassiere or innerwear on chest, cleavage, fabric texture`, uc: "lower body, pussy" },
-                "穿搭_上衣":  { zh: `${u}的上衣外衫穿搭半身立绘`, tag: `upper body and waist focus, detailed top clothing, outfit texture, ${faceExpr}`, uc: "pussy macro, anus macro" },
-                "穿搭_内裤":  { zh: `${u}的底裤穿搭与腰臀特写`, tag: `hips and panties focus, underwear fabric, waist and upper thighs`, uc: "face close-up" },
-                "穿搭_下装":  { zh: `${u}的裙裤下装穿搭特写`, tag: `lower body and waist focus, skirt or pants outfit, fabric folds, hips`, uc: "extreme genital macro" },
-                "穿搭_丝袜":  { zh: `${u}的丝袜与修长双腿特写`, tag: `legs and stockings focus, thighhighs or pantyhose, slender thighs and knees`, uc: "upper body only" },
-                "穿搭_鞋子":  { zh: `${u}的鞋履与足部特写`, tag: `feet and shoes focus, ankles and footwear, lower legs`, uc: "upper body" },
-                "排卵周期":   { zh: `${u}手抚温热小腹的受孕期半身像`, tag: `cowboy shot, hand resting gently on lower abdomen, blushing, ${faceExpr}`, uc: "cropped head" },
-                "受精断面":   { zh: `${u}的小腹微光与受精感应特写`, tag: `lower abdomen and torso focus, warm womb glow, heavy breathing`, uc: "text, watermark" },
-                "精液归属":   { zh: `${u}事后汗湿慵懒的全身姿态`, tag: `full body lying on bed, sweaty glistening skin, exhausted afterglow, ${faceExpr}`, uc: "text, watermark" },
-                "孕肚进度":   { zh: `${u}的孕肚小腹轮廓特写`, tag: `cowboy shot, cradling rounded pregnant belly, maternal blushing expression, ${faceExpr}`, uc: "text, watermark" }
+                "身份与背景": `portrait, upper body, face focus, looking at viewer, detailed hair and eyes, ${faceExpr}`,
+                "肉体外貌":   `full body portrait, standing pose, curves, detailed skin, ${faceExpr}`,
+                "表里风评":   `upper body, medium shot, ${faceExpr}, dramatic lighting`,
+                "挂牌身价":   `cowboy shot, upper body and hips, ${faceExpr}, alluring posture`,
+                "内心独白":   `close-up face portrait, expressive eyes, ${faceExpr}`,
+                "当前姿势":   `full body shot, dynamic posture, limbs and torso focus, ${faceExpr}`,
+                "cockLove":   `upper body portrait, face focus, ${faceExpr}, longing gaze`,
+                "lust":       `upper body, heavy blush, sweaty skin, hot breath, ${faceExpr}`,
+                "corr":       `upper body portrait, dark seductive lighting, ${faceExpr}`,
+                "shame":      `upper body, covering face shyly, blushing furiously, ${faceExpr}`,
+                "obey":       `kneeling full body, submissive posture, looking up at viewer, ${faceExpr}`,
+                "pleas":      `upper body, trembling, arched back, ${faceExpr}`,
+                "精神沦陷":   `close-up face focus, hypnotic glowing eyes, ${faceExpr}`,
+                "媚药毒瘾":   `upper body, flushed feverish skin, panting, ${faceExpr}`,
+                "正字涂鸦":   `cowboy shot, body writing on skin, tally marks on thigh and belly, ${faceExpr}`,
+                "淫纹烙印":   `midriff and lower abdomen focus, glowing pink womb tattoo on belly, navel`,
+                "穿刺环饰":   `torso close-up, body piercing, silver rings glinting on skin`,
+                "体内道具":   `cowboy shot, trembling thighs, pink vibrator cord, blushing, ${faceExpr}`,
+                "穿搭_头饰":  `head and upper body focus, intricate hairstyle, hair ornament, detailed face, ${faceExpr}`,
+                "穿搭_颈部":  `neck and collarbone focus, choker or collar, slender neck, ${faceExpr}`,
+                "穿搭_胸罩":  `upper body focus, brassiere or innerwear on chest, cleavage`,
+                "穿搭_上衣":  `upper body and waist focus, detailed top clothing, ${faceExpr}`,
+                "穿搭_内裤":  `hips and panties focus, underwear fabric, waist and thighs`,
+                "穿搭_下装":  `lower body and waist focus, skirt or pants outfit, hips`,
+                "穿搭_丝袜":  `legs and stockings focus, thighhighs or pantyhose, slender thighs`,
+                "穿搭_鞋子":  `feet and shoes focus, ankles and footwear, lower legs`,
+                "排卵周期":   `cowboy shot, hand resting gently on lower abdomen, blushing, ${faceExpr}`,
+                "受精断面":   `lower abdomen and torso focus, warm womb glow, heavy breathing`,
+                "精液归属":   `full body lying on bed, sweaty glistening skin, afterglow, ${faceExpr}`,
+                "孕肚进度":   `cowboy shot, cradling rounded pregnant belly, blushing, ${faceExpr}`
             };
-
-            const chosen = nonHoleMap[key] || {
-                zh: `${u}的【${item.cleanTitle || key}】人物半身肖像立绘`,
-                tag: `upper body portrait, solo, looking at viewer, ${faceExpr}`,
-                uc: "pussy focus, anus focus, cropped head"
-            };
-
-            return `第${["一","二","三","四","五","六"][idx]}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${chosen.zh}]\n<image_think>\n展现${u}的${chosen.zh}（第${curStageIdx}阶·${stgTag}）。\n</image_think>\nimage###Scene:1girl, solo, 1.5::masterpiece, best quality, ${chosen.tag}::, detailed background;\nChar1:1.5::${u}::, ${chosen.tag}|centers:C3;\nChar1 UC:1.5::${chosen.uc}, multiple views, lowres, bad anatomy, text, watermark::;###\n</image>`;
+            const chosenTag = nonHoleMap[key] || `upper body portrait, solo, looking at viewer, ${faceExpr}`;
+            return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${u}的${item.cleanTitle || key}特写]\n<image_think>\n展现${u}的${item.cleanTitle || key}（第${curStageIdx}阶）。\n</image_think>\nimage###Scene:1girl, solo, 1.5::masterpiece, best quality, ${charDnaTags}, ${chosenTag}::, detailed background;\nChar1:1.5::${u}, ${charDnaTags}::, ${chosenTag}|centers:C3;\nChar1 UC:1.5::extreme genital macro, pussy focus, anus focus, cropped head, multiple views, lowres, text, watermark::;###\n</image>`;
         }
+
+        // 🔬 5. 置顶全息 X-Ray 实时内窥遥测中心（打开面板第一眼即见，点击器官直达详情！）
+        function buildEnhancedTopXRayCenter(v, dev, caps, u) {
+            const sp = v.体内精液存量 || {};
+            const wombMl = safeNum(sp.子宫毫升), vagMl = safeNum(sp.小穴毫升), analMl = safeNum(sp.屁眼毫升), mouthMl = safeNum(sp.口内毫升);
+            const totalMl = wombMl + vagMl + analMl + mouthMl;
+            const pleas = safeNum(v.精神与心理?.快感累积), lust = safeNum(v.核心数值?.性欲程度), sta = safeNum(v.身体?.体力, 100);
+            const bpm = Math.min(195, Math.round(72 + pleas * 0.65 + lust * 0.45));
+            const bodyTemp = (36.5 + (lust * 0.015) + (pleas * 0.012)).toFixed(1);
+            const vagDia = (1.5 + dev.vagObj.val * 0.06).toFixed(1);
+            const cervixDrop = Math.round((dev.wombObj.val / 100) * 18);
+            const cervixGap = Math.round(2 + (dev.wombObj.val / 100) * 14);
+            const wombRatio = Math.min(1, wombMl / Math.max(50, caps.wombMax));
+            const rx = Math.round(24 + (dev.wombObj.val * 0.16) + wombRatio * 14), ry = Math.round(18 + (dev.wombObj.val * 0.12) + wombRatio * 12);
+            const vagW = Math.round(7 + (dev.vagObj.val * 0.22)), analW = Math.round(5 + (dev.analObj.val * 0.18));
+            const fertProb = safeNum(v.受孕与生理?.受孕概率, wombMl > 0 ? 75 : 15);
+
+            return `
+            <div id="st-top-xray-hub" style="margin-bottom:8px;background:linear-gradient(160deg,rgba(35,8,28,0.92),rgba(10,4,18,0.96));border:1.5px solid rgba(244,114,182,0.45);border-radius:13px;padding:8px 10px;box-shadow:0 8px 24px rgba(0,0,0,0.65);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
+                    <span style="font-size:12px;font-weight:bold;color:#f9e2af;">🔬 全息 X-Ray 实时内窥遥测（点击器官直达）</span>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:Consolas,monospace;">
+                        <span style="color:#fb7185;font-weight:bold;"><span class="st-heart-beat">💓</span> ${bpm} BPM</span>
+                        <span style="color:#fde047;">🌡️ ${bodyTemp}℃</span>
+                        <span style="color:#a5f3fc;">🥛 蓄精 ${totalMl}ml</span>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:8px;align-items:center;">
+                    <svg viewBox="0 0 250 155" style="width:100%;max-height:145px;display:block;background:radial-gradient(circle at 50% 50%,rgba(95,15,52,0.6),rgba(8,4,15,0.95));border-radius:10px;border:1px solid rgba(243,139,168,0.3);">
+                        <defs>
+                            <radialGradient id="stWombGrad2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fb7185" stop-opacity="0.75"/><stop offset="100%" stop-color="#881337" stop-opacity="0.94"/></radialGradient>
+                            <linearGradient id="stCumGrad2" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/><stop offset="100%" stop-color="#fde68a" stop-opacity="0.82"/></linearGradient>
+                        </defs>
+                        <path d="M52,6 Q42,78 58,149 L198,149 Q212,78 202,6 Z" fill="rgba(35,10,30,0.68)" stroke="#f472b6" stroke-width="1.2"/>
+                        <g class="st-xray-hotspot" data-key="排卵周期" style="cursor:pointer;">
+                            <path d="M58,48 Q92,35 125,${52 + cervixDrop} Q158,35 192,48" fill="none" stroke="#f472b6" stroke-width="2.5"/>
+                            <circle cx="56" cy="49" r="${6 + Math.round(dev.wombObj.tier * 0.8)}" fill="#fb7185" stroke="#fff" stroke-width="1"/>
+                            <circle cx="194" cy="49" r="${6 + Math.round(dev.wombObj.tier * 0.8)}" fill="#fb7185" stroke="#fff" stroke-width="1"/>
+                        </g>
+                        <g class="st-xray-hotspot" data-key="子宫实况" style="cursor:pointer;">
+                            <ellipse cx="125" cy="${54 + cervixDrop}" rx="${rx}" ry="${ry}" fill="url(#stWombGrad2)" stroke="#fda4af" stroke-width="1.6"/>
+                            ${wombRatio > 0 ? `<ellipse cx="125" cy="${54 + cervixDrop + ry * (1 - wombRatio) * 0.3}" rx="${Math.max(3, rx * 0.88 * wombRatio)}" ry="${Math.max(3, ry * 0.84 * wombRatio)}" fill="url(#stCumGrad2)"/>` : ""}
+                            <rect x="${125 - cervixGap / 2}" y="${54 + cervixDrop + ry - 3}" width="${cervixGap}" height="10" fill="#be123c" rx="2"/>
+                        </g>
+                        <g class="st-xray-hotspot" data-key="小穴实况" style="cursor:pointer;">
+                            <rect x="${125 - vagW / 2}" y="${62 + cervixDrop + ry}" width="${vagW}" height="${Math.max(25, 72 - cervixDrop)}" rx="${vagW / 2}" fill="#9f1239" stroke="#f472b6" stroke-width="1.3"/>
+                            ${vagMl > 0 ? `<rect x="${125 - (vagW * 0.68) / 2}" y="${68 + cervixDrop + ry}" width="${vagW * 0.68}" height="${Math.min(55, 12 + vagMl * 0.25)}" rx="3" fill="url(#stCumGrad2)"/>` : ""}
+                        </g>
+                        <g class="st-xray-hotspot" data-key="屁眼实况" style="cursor:pointer;">
+                            <rect x="${174 - analW / 2}" y="68" width="${analW}" height="72" rx="${analW / 2}" fill="#581c87" stroke="#c084fc" stroke-width="1.2"/>
+                            ${analMl > 0 ? `<rect x="${174 - (analW * 0.68) / 2}" y="78" width="${analW * 0.68}" height="${Math.min(50, 10 + analMl * 0.25)}" rx="3" fill="url(#stCumGrad2)"/>` : ""}
+                        </g>
+                        <text x="10" y="20" fill="#f9e2af" font-size="9" font-weight="bold">🫀宫腔:${wombMl}ml</text>
+                        <text x="10" y="33" fill="#fbcfe8" font-size="9">🌺小穴:${vagMl}ml</text>
+                        <text x="10" y="46" fill="#d8b4fe" font-size="9">🕳️后庭:${analMl}ml</text>
+                        <text x="10" y="59" fill="#fde68a" font-size="9">👄胃袋:${mouthMl}ml</text>
+                        <text x="10" y="144" fill="#67e8f9" font-size="8.5">下垂:${cervixDrop * 2}mm | 穴径:${vagDia}cm</text>
+                    </svg>
+                    <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;">
+                        <div class="st-xray-hotspot" data-key="骚口实况" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #fda4af;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>👄 骚口 Lv.${dev.mouthObj.tier + 1}</span><b style="color:#fda4af;">${dev.mouthObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="胸部实况" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #fbcfe8;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>🍒 丰乳 Lv.${dev.chestObj.tier + 1}</span><b style="color:#fbcfe8;">${dev.chestObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="小穴实况" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #f472b6;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>🌺 小穴 Lv.${dev.vagObj.tier + 1}</span><b style="color:#f472b6;">${dev.vagObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="子宫实况" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #e879f9;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>🫀 子宫 Lv.${dev.wombObj.tier + 1}</span><b style="color:#e879f9;">${dev.wombObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="阴蒂尿道" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #fde047;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>💧 蒂尿 Lv.${dev.clitObj.tier + 1}</span><b style="color:#fde047;">${dev.clitObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="屁眼实况" style="cursor:pointer;background:rgba(0,0,0,0.4);border-left:2.5px solid #c084fc;padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;"><span>🕳️ 后庭 Lv.${dev.analObj.tier + 1}</span><b style="color:#c084fc;">${dev.analObj.val}%</b></div>
+                        <div class="st-xray-hotspot" data-key="受精断面" style="cursor:pointer;background:rgba(244,114,182,0.15);border:1px dashed rgba(244,114,182,0.45);padding:3px 6px;border-radius:5px;display:flex;justify-content:space-between;color:#fef08a;"><span>🥚 受孕:${fertProb}%</span><b>体力:${sta}%</b></div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
         function fmtKey(rk, barTheme = "pleas", subBarCfg = null, hideBar = false, stagePctOverride = null) {
-            const rawKeyStr = safeStr(rk, "状态项");
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
+            const rawKeyStr = safeStr(rk, "状态项"), tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
             let pct = null, rawRatioStr = null;
             const m = rawKeyStr.match(/(\d+(?:\.\d+)?)\s*[\/／]\s*(\d+(?:\.\d+)?)([a-zA-Z\u4e00-\u9fa5]*)/);
             if (m) {
@@ -1574,8 +1704,7 @@
                     const isStage5 = !isStage6 && (s.includes("第五阶段") || s.includes("脱垂") || s.includes("脱肛") || s.includes("便器"));
                     const cls = isStage6 ? "st-stage6-badge" : (isStage5 ? "st-stage5-badge" : "");
                     const bBg = isStage5 ? "linear-gradient(90deg,#ff003c,#2b0012)" : tc.hi;
-                    const bCol = (isStage6 || isStage5) ? "#fff" : tc.text;
-                    badges.push(`<span class="${cls}" style="background:${bBg};border:1px solid ${tc.sec};color:${bCol};padding:1px 6px;border-radius:6px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${s}</span>`);
+                    badges.push(`<span class="${cls}" style="background:${bBg};border:1px solid ${tc.sec};color:#fff;padding:1px 6px;border-radius:6px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${s}</span>`);
                     return "";
                 })
                 .replace(/[（(]([^）)]{1,45}?(?:阶段|\d+\s*[\/／]\s*\d+)[^）)]{0,25}?)[）)]/g, (_, s) => {
@@ -1588,43 +1717,16 @@
                 })
                 .replace(/[：:]\s*$/, "").trim();
 
-            const keyHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;width:100%;">
-                    <span style="color:#f9e2af;font-weight:bold;font-size:13px;line-height:1.35;word-break:break-word;">${cleanTitle}</span>
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-end;margin-left:auto;">
-                        ${badges.join("")}
-                        <span class="st-inline-refresh-slot"></span>
-                    </div>
-                </div>`;
-
+            const keyHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;width:100%;"><span style="color:#f9e2af;font-weight:bold;font-size:13px;line-height:1.35;word-break:break-word;">${cleanTitle}</span><div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-end;margin-left:auto;">${badges.join("")}</div></div>`;
             let barHTML = "";
             if (pct !== null && !hideBar && barTheme !== "none") {
                 const st = getThemedBarStyle(pct, barTheme);
                 const mainLabel = subBarCfg ? `${pct}%` : (rawRatioStr && rawRatioStr.includes("ml") ? rawRatioStr : `${pct}%`);
                 const barTitle = subBarCfg ? (subBarCfg.mainName || "💀 崩坏阶位") : `Lv.${st.tier + 1} 崩坏度`;
-                barHTML = `<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;width:100%;background:rgba(0,0,0,0.36);padding:6px 8px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);box-sizing:border-box;">
-                    <div style="display:flex;flex-direction:column;gap:3px;width:100%;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;width:100%;flex-wrap:wrap;">
-                            <span style="font-size:10.5px;color:#f5c2e7;font-weight:bold;">${barTitle} <b style="color:${st.labelColor};font-family:Consolas,monospace;">${mainLabel}</b></span>
-                            ${st.emo}
-                        </div>
-                        <div style="width:100%;height:8px;background:rgba(0,0,0,0.82);border:1px solid rgba(255,255,255,0.15);border-radius:99px;overflow:hidden;padding:1px;box-sizing:border-box;">
-                            <div class="st-bar-fill" style="width:${pct}%;height:100%;background:${st.grad};border-radius:99px;box-shadow:${st.glow};transition:width 0.35s ease;"></div>
-                        </div>
-                    </div>`;
+                barHTML = `<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;width:100%;background:rgba(0,0,0,0.36);padding:6px 8px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);box-sizing:border-box;"><div style="display:flex;flex-direction:column;gap:3px;width:100%;"><div style="display:flex;justify-content:space-between;align-items:center;gap:4px;width:100%;flex-wrap:wrap;"><span style="font-size:10.5px;color:#f5c2e7;font-weight:bold;">${barTitle} <b style="color:${st.labelColor};font-family:Consolas,monospace;">${mainLabel}</b></span>${st.emo}</div><div style="width:100%;height:8px;background:rgba(0,0,0,0.82);border:1px solid rgba(255,255,255,0.15);border-radius:99px;overflow:hidden;padding:1px;box-sizing:border-box;"><div class="st-bar-fill" style="width:${pct}%;height:100%;background:${st.grad};border-radius:99px;box-shadow:${st.glow};transition:width 0.35s ease;"></div></div></div>`;
                 if (subBarCfg) {
-                    const subPct = Math.max(0, Math.min(100, safeNum(subBarCfg.pct, 0)));
-                    const subSt = getThemedBarStyle(subPct, subBarCfg.theme || "semen");
-                    barHTML += `
-                    <div style="display:flex;flex-direction:column;gap:3px;width:100%;padding-top:3px;border-top:1px dashed rgba(255,255,255,0.08);">
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;width:100%;flex-wrap:wrap;">
-                            <span style="font-size:10.5px;color:${subSt.labelColor};font-weight:bold;">${subBarCfg.label || "💧 容量"} <b style="font-family:Consolas,monospace;">${subBarCfg.text || (subPct + "%")}</b></span>
-                            ${subSt.emo}
-                        </div>
-                        <div style="width:100%;height:6.5px;background:rgba(0,0,0,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:99px;overflow:hidden;padding:1px;box-sizing:border-box;">
-                            <div class="st-bar-fill" style="width:${subPct}%;height:100%;background:${subSt.grad};border-radius:99px;box-shadow:${subSt.glow};transition:width 0.35s ease;"></div>
-                        </div>
-                    </div>`;
+                    const subPct = Math.max(0, Math.min(100, safeNum(subBarCfg.pct, 0))), subSt = getThemedBarStyle(subPct, subBarCfg.theme || "semen");
+                    barHTML += `<div style="display:flex;flex-direction:column;gap:3px;width:100%;padding-top:3px;border-top:1px dashed rgba(255,255,255,0.08);"><div style="display:flex;justify-content:space-between;align-items:center;gap:4px;width:100%;flex-wrap:wrap;"><span style="font-size:10.5px;color:${subSt.labelColor};font-weight:bold;">${subBarCfg.label || "💧 容量"} <b style="font-family:Consolas,monospace;">${subBarCfg.text || (subPct + "%")}</b></span>${subSt.emo}</div><div style="width:100%;height:6.5px;background:rgba(0,0,0,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:99px;overflow:hidden;padding:1px;box-sizing:border-box;"><div class="st-bar-fill" style="width:${subPct}%;height:100%;background:${subSt.grad};border-radius:99px;box-shadow:${subSt.glow};transition:width 0.35s ease;"></div></div></div>`;
                 }
                 barHTML += `</div>`;
             }
@@ -1651,22 +1753,22 @@
                 const matched = allSents.filter(s => s.length < 150 && regex.test(s));
                 return matched.length ? matched.slice(0, maxCount).join("；") + "。" : "";
             };
-            res.identity = pick(/(?:变成了|重塑|身份|原本是|继承人|大小姐|千金|少宗主|妓女|暗娼|魅魔|夫人|妻子|母狗|性奴|身处)/, 2) || (personaDesc ? personaDesc.slice(0, 120) : `${u}当前正与 ${c} 处于剧情互动中。`);
-            res.bodyDesc = pick(/(?:容颜|肌肤|皮肤|小手|十指|青丝|长发|柳腰|曲线|身段|丰满|白皙|臀|腿|掌印|指痕|咬痕)/, 3) || (charDesc ? charDesc.slice(0, 120) : `${u}拥有细腻敏感的娇躯。`);
-            res.pose = pick(/(?:撑起|扶着|站起|捂住|喘息|瘫坐|一僵|收拢|颤抖|跪|趴|弯腰|夹紧|退后|张开|躺|探入)/, 2);
-            res.mouth = pick(/(?:喉咙|声音|嗓音|红唇|唇瓣|舌|喘|啼鸣|娇呼|吞咽|口水|涎)/, 2);
+            res.identity = pick(/(?:身份|原本是|继承人|大小姐|千金|夫人|妻子|身处)/, 2) || (personaDesc ? personaDesc.slice(0, 120) : `${u}当前正处于剧情互动中。`);
+            res.bodyDesc = pick(/(?:容颜|肌肤|皮肤|青丝|长发|柳腰|曲线|身段|丰满|白皙|臀|腿)/, 3) || (charDesc ? charDesc.slice(0, 120) : `${u}拥有细腻敏感的身躯。`);
+            res.pose = pick(/(?:撑起|扶着|站起|捂住|喘息|瘫坐|跪|趴|弯腰|夹紧|躺)/, 2);
+            res.mouth = pick(/(?:喉咙|声音|嗓音|红唇|唇瓣|舌|喘|吞咽|涎)/, 2);
             res.chest = pick(/(?:胸|乳|丰盈|双峰|蓓蕾|奶|锁骨)/, 2);
-            res.vag = pick(/(?:下身|下半身|阴唇|花唇|小穴|骚逼|幽谷|私处|爱液|湿热|淫水|肉缝|甬道)/, 2);
-            res.womb = pick(/(?:小腹|下腹|子宫|宫颈|肚子|深处|暖意|抽搐|内射|精液|白浊|坠胀)/, 2);
-            res.anal = pick(/(?:臀|屁股|后庭|屁眼|菊|腰臀|S型|掌印)/, 2);
-            res.headWear = pick(/(?:青丝|长发|发丝|发簪|发带|刘海|眼罩|眼镜|耳环|耳尖|口球|面纱|头饰|汗水浸湿)/, 2);
-            res.neckWear = pick(/(?:项圈|锁骨|雪颈|脖颈|项链|铃铛|锁链|喉咙|衣领|领口|咬痕)/, 2);
-            res.braWear = pick(/(?:裹胸|胸罩|文胸|乳夹|肚兜|内衬|真空|乳肉|蓓蕾|乳头|未着寸缕)/, 2);
-            res.topWear = pick(/(?:战袍|上衣|T恤|衬衫|外套|长袍|毛衣|束腰|束带|衣襟|下摆|吊带睡裙|未着寸缕)/, 2);
-            res.pantyWear = pick(/(?:内裤|底裤|衬裤|丁字裤|开裆|胖次|阴唇|私处|光裸|纸团)/, 2);
-            res.bottomWear = pick(/(?:长裙|短裙|裙摆|百褶裙|裤子|短裤|热裤|紧身裤|战袍裙)/, 2);
-            res.sockWear = pick(/(?:丝袜|黑丝|白丝|吊带袜|网袜|长袜|大腿|双腿|膝盖|裸腿)/, 2);
-            res.shoeWear = pick(/(?:战靴|高跟鞋|皮鞋|拖鞋|凉鞋|鞋子|玉足|脚趾|足|赤足|赤裸的脚趾)/, 2);
+            res.vag = pick(/(?:下身|阴唇|花唇|小穴|私处|爱液|湿热|淫水|甬道)/, 2);
+            res.womb = pick(/(?:小腹|下腹|子宫|宫颈|肚子|深处|内射|精液|白浊|坠胀)/, 2);
+            res.anal = pick(/(?:臀|屁股|后庭|屁眼|菊|腰臀|掌印)/, 2);
+            res.headWear = pick(/(?:青丝|长发|发丝|发簪|发带|眼罩|耳环|口球|头饰)/, 2);
+            res.neckWear = pick(/(?:项圈|锁骨|雪颈|脖颈|项链|铃铛|锁链|衣领)/, 2);
+            res.braWear = pick(/(?:裹胸|胸罩|文胸|乳夹|肚兜|内衬|真空|乳头)/, 2);
+            res.topWear = pick(/(?:上衣|T恤|衬衫|外套|长袍|毛衣|束腰|衣襟|睡裙)/, 2);
+            res.pantyWear = pick(/(?:内裤|底裤|衬裤|丁字裤|开裆|胖次|光裸)/, 2);
+            res.bottomWear = pick(/(?:长裙|短裙|裙摆|百褶裙|裤子|短裤|热裤)/, 2);
+            res.sockWear = pick(/(?:丝袜|黑丝|白丝|吊带袜|网袜|长袜|大腿|双腿)/, 2);
+            res.shoeWear = pick(/(?:高跟鞋|皮鞋|拖鞋|凉鞋|鞋子|玉足|脚趾|赤足)/, 2);
             return res;
         }
 
@@ -1674,60 +1776,60 @@
             const ovr = v.按钮详情?.[type];
             const map = {
                 cockLove: { val: safeNum(v.核心数值?.对肉棒好感度), rev: false, st: ["抗拒戒备","粘膜适应","空虚渴求","跪舔崇拜","断根戒断","脑干阳具寄生"], d: [
-                    `【🔬 阳具好感与神经回路（Lv.1 完好戒备）】：${u}神经与理智完好，对雄性阳具保持着强烈的警惕与排斥。\n💭【${u}的实时心声】：“*我必须离那种粗鲁肮脏的雄性东西远一点，绝不能让自己的清白受到半点玷污。*”`,
-                    `【🔬 阳具好感与神经回路（Lv.2 粘膜适应）】：粘膜在反复摩擦中记住了阳具的轮廓与热度，排斥反应减退为麻木配合。\n💭【${u}的实时心声】：“*虽然心里还是觉得难为情，但身体粘膜似乎已经渐渐适应了那种滚烫异物的温度💦……*”`,
-                    `【🔬 阳具好感与神经回路（Lv.3 空虚渴求）】：阴道与口腔神经已在抽插中食髓知味，空虚时内壁会本能泛起酸痒。\n💭【${u}的实时心声】：“*小穴里面隐隐有些发空发痒，用手指根本比不上被滚烫肉棒塞满时的充实感呀😳💦……*”`,
-                    `【🔬 阳具好感与神经回路（Lv.4 跪舔崇拜）】：大脑快感中枢已被阳具驯化，闻到腥膻味便会双腿发软、唾液泛滥。\n💭【${u}的实时心声】：“*浓烈的雄性腥膻味一冲进鼻腔，下面就已经湿透了，好想快点跪下来用嘴和骚穴服侍大肉棒呀🥵💦！*”`,
-                    `【🔬 阳具好感与神经回路（Lv.5 断根戒断）】：重度阳具成瘾畸变，脱离肉棒超过半小时即引发剧烈戒断发抖。\n💭【${u}的实时心声】：“*呜汪♡……没有大肉棒塞着全身骨头都像有蚂蚁在咬一样难受，求求快插进来救救发瘾的母狗吧🥵💦❤️！*”`,
-                    `【💀 第六阶段·脑干阳具寄生畸变（100% 彻底崩坏）】：大脑视觉与嗅觉中枢彻底崩坏，眼中除了勃起肉棒外已无法识别任何人类面孔！脱离肉棒即刻引发翻白眼自残抽搐！\n💭【${u}的实时心声】：“*啊嘿♡……脑干里全都长满大肉棒的形状了，请把肉棒焊死在我的烂肉洞里吧🥵💦❤️❤️！*”`
+                    `【🔬 阳具好感（Lv.1 完好戒备）】：${u}理智完好，对雄性阳具保持警惕与排斥。\n💭【${u}的实时心声】：“*我必须保持距离，绝不能让自己的清白受到玷污。*”`,
+                    `【🔬 阳具好感（Lv.2 粘膜适应）】：粘膜在摩擦中记住了阳具轮廓与热度。\n💭【${u}的实时心声】：“*虽然还是觉得难为情，但身体粘膜似乎渐渐适应了那种滚烫温度💦……*”`,
+                    `【🔬 阳具好感（Lv.3 空虚渴求）】：神经已在抽插中食髓知味，空虚时内壁泛起酸痒。\n💭【${u}的实时心声】：“*里面隐隐有些发空发痒，好想念被塞满时的充实感呀😳💦……*”`,
+                    `【🔬 阳具好感（Lv.4 跪舔崇拜）】：快感中枢已被驯化，闻到气息便双腿发软。\n💭【${u}的实时心声】：“*浓烈的气息一冲进鼻腔下面就已经湿透了，好想快点跪下来服侍呀🥵💦！*”`,
+                    `【🔬 阳具好感（Lv.5 断根戒断）】：重度阳具成瘾，脱离肉棒即引发戒断发抖。\n💭【${u}的实时心声】：“*呜汪♡……没有大肉棒塞着全身骨头都难受，求求快插进来吧🥵💦❤️！*”`,
+                    `【💀 第六阶段·脑干阳具寄生（100% 彻底崩坏）】：视觉与嗅觉中枢彻底崩坏，眼中只有肉棒！\n💭【${u}的实时心声】：“*啊嘿♡……脑干里全都长满大肉棒的形状了，请永远焊死在肉洞里吧🥵💦❤️❤️！*”`
                 ]},
-                lust: { val: safeNum(v.核心数值?.性欲程度), rev: false, st: ["清心克制","春情微燥","欲火焚身","重度发骚","狂暴发情","下丘脑发情烧毁"], d: [
-                    `【🔬 情欲与内分泌实况（Lv.1 清心完好）】：下丘脑与内分泌系统完好平稳，心神清澈冷静。\n💭【${u}的实时心声】：“*现在心境很平静，身体没有任何奇怪的燥热感。*”`,
-                    `【🔬 情欲与内分泌实况（Lv.2 春情微燥）】：体内雌激素微升，小腹深处泛起淡淡温热。\n💭【${u}的实时心声】：“*唔……不知怎么身体稍微有些发热，连呼吸都变得比平时温热了一点💦。*”`,
-                    `【🔬 情欲与内分泌实况（Lv.3 欲火焚身）】：情欲翻涌，乳尖发硬充血，私处不自觉分泌出湿润春水。\n💭【${u}的实时心声】：“*身体烫得厉害，两腿之间已经湿漉漉地黏在一起了😳💦！*”`,
-                    `【🔬 情欲与内分泌实况（Lv.4 重度发骚）】：内分泌过载，双腿本能交叠磨蹭外翻阴唇，眼神迷离拉丝。\n💭【${u}的实时心声】：“*哈啊……淫水根本止不住地往外淌，满脑子都想着被粗暴地按住灭火呀🥵💦！*”`,
-                    `【🔬 情欲与内分泌实况（Lv.5 狂暴发情）】：理智被情欲吞没，三穴不断涌出滚烫粘液主动撅臀求配。\n💭【${u}的实时心声】：“*啊啊♡……发情一秒钟都停不下来了，快过来把我按在地上狠狠干烂吧🥵💦❤️！*”`,
-                    `【💀 第六阶段·下丘脑发情烧毁畸变（100% 彻底崩坏）】：下丘脑因长期极限催情彻底烧毁坏死！体温常年40℃，化作不交配到死就不会停歇的发情肉偶！\n💭【${u}的实时心声】：“*啊嘿♡……脑子里的发情开关彻底烧化坏死了，不睡觉不吃饭也要永远挨操交配呀🥵💦❤️❤️！*”`
+                lust: { val: safeNum(v.核心数值?.性欲程度), rev: false, st: ["清心克制","春情微燥","欲火焚身","重度发骚","狂暴发情","下丘脑烧毁"], d: [
+                    `【🔬 情欲实况（Lv.1 清心完好）】：内分泌系统平稳，心神清澈冷静。\n💭【${u}的实时心声】：“*现在心境很平静，没有任何奇怪的燥热感。*”`,
+                    `【🔬 情欲实况（Lv.2 春情微燥）】：雌激素微升，小腹深处泛起淡淡温热。\n💭【${u}的实时心声】：“*唔……不知怎么身体稍微有些发热💦。*”`,
+                    `【🔬 情欲实况（Lv.3 欲火焚身）】：情欲翻涌，乳尖发硬，私处分泌湿润春水。\n💭【${u}的实时心声】：“*身体烫得厉害，两腿之间已经湿漉漉地黏在一起了😳💦！*”`,
+                    `【🔬 情欲实况（Lv.4 重度发骚）】：双腿本能交叠磨蹭，眼神迷离拉丝。\n💭【${u}的实时心声】：“*哈啊……淫水根本止不住地往外淌，满脑子都想着被按住灭火呀🥵💦！*”`,
+                    `【🔬 情欲实况（Lv.5 狂暴发情）】：理智被情欲吞没，三穴不断涌出粘液求配。\n💭【${u}的实时心声】：“*啊啊♡……发情一秒钟都停不下来了，快把我按在地上狠狠干烂吧🥵💦❤️！*”`,
+                    `【💀 第六阶段·下丘脑烧毁（100% 彻底崩坏）】：下丘脑彻底烧毁，化作永不停歇的发情肉偶！\n💭【${u}的实时心声】：“*啊嘿♡……发情开关彻底烧化坏死了，不睡觉也要永远挨操交配呀🥵💦❤️❤️！*”`
                 ]},
                 corr: { val: safeNum(v.核心数值?.淫乱恶堕), rev: false, st: ["完好清白","初度染尘","食髓知味","放荡娼妇","公用精盆","彻底崩坏肉坑"], d: [
-                    `【🔬 道德人格与尊严实况（Lv.1 完好清白）】：人格与道德尊严完好无损，绝不接受任何下流亵渎。\n💭【${u}的实时心声】：“*无论处境如何变化，我都绝不会放弃自己的尊严与清白底线。*”`,
-                    `【🔬 道德人格与尊严实况（Lv.2 初度染尘）】：矜持防线出现裂痕，学会了用被动顺从来应对局面。\n💭【${u}的实时心声】：“*虽然心里还是觉得有些屈辱，但似乎已经不像最开始那样剧烈抗拒了💦……*”`,
-                    `【🔬 道德人格与尊严实况（Lv.3 食髓知味）】：身体对情事已产生熟练肌肉记忆，道德负罪感大幅消退。\n💭【${u}的实时心声】：“*身体早就习惯了男人的温度与粗鲁摆弄，甚至会忍不住主动夹紧迎合呢😳💦。*”`,
-                    `【🔬 道德人格与尊严实况（Lv.4 放荡娼妇）】：尊严坍塌，彻底接纳并享受放荡欢愉，以用肉体榨干男人为乐。\n💭【${u}的实时心声】：“*什么清白体面全都是多余的，哪有张开双腿享受肉棒抽插和内射来得快活呀🥵💦！*”`,
-                    `【🔬 道德人格与尊严实况（Lv.5 公用精盆）】：完全将自己视作供男人发泄兽欲的公用排泄精盆。\n💭【${u}的实时心声】：“*呜汪♡……我就是一件只要张开腿就能随便插进来射精的公用精盆，请尽情使用我吧🥵💦❤️！*”`,
-                    `【💀 第六阶段·人格粉碎排泄肉坑（100% 彻底崩坏）】：人类自尊与人格回路100%坏死清零！只是一块接精液与秽物的烂肉痰盂！\n💭【${u}的实时心声】：“*啊嘿♡……人类的人格已经彻底死掉啦，请把臭肉洞彻底操烂报废吧🥵💦❤️❤️！*”`
+                    `【🔬 恶堕实况（Lv.1 完好清白）】：人格与道德尊严完好无损。\n💭【${u}的实时心声】：“*无论处境如何变化，我都绝不会放弃自己的尊严底线。*”`,
+                    `【🔬 恶堕实况（Lv.2 初度染尘）】：矜持防线出现裂痕，被动顺从。\n💭【${u}的实时心声】：“*虽然心里有些屈辱，但似乎不像最开始那样剧烈抗拒了💦……*”`,
+                    `【🔬 恶堕实况（Lv.3 食髓知味）】：对情事产生熟练肌肉记忆，道德负罪感消退。\n💭【${u}的实时心声】：“*身体早就习惯了男人的温度，甚至会忍不住主动夹紧迎合呢😳💦。*”`,
+                    `【🔬 恶堕实况（Lv.4 放荡娼妇）】：尊严坍塌，彻底享受放荡欢愉。\n💭【${u}的实时心声】：“*什么清白体面全都是多余的，哪有张开双腿享受内射来得快活呀🥵💦！*”`,
+                    `【🔬 恶堕实况（Lv.5 公用精盆）】：完全将自己视作公用排泄精盆。\n💭【${u}的实时心声】：“*呜汪♡……我就是一件只要张开腿就能随便射精的公用精盆🥵💦❤️！*”`,
+                    `【💀 第六阶段·排泄肉坑（100% 彻底崩坏）】：自尊回路100%坏死清零！\n💭【${u}的实时心声】：“*啊嘿♡……人类的人格已经彻底死掉啦，请把臭肉洞操烂报废吧🥵💦❤️❤️！*”`
                 ]},
                 shame: { val: safeNum(v.精神与心理?.羞耻度, 100), rev: true, st: ["羞愤自持","耳根滚烫","习以为常","敞腿任看","羞耻全灭","羞耻神经坏死"], d: [
-                    `【🔬 羞耻神经防线（Lv.1 完好自持）】：羞耻心完好极强，极度注重衣着得体与身体隐私。\n💭【${u}的实时心声】：“*必须注意整理好衣襟与姿态，绝不能让人看到丝毫不雅的模样。*”`,
-                    `【🔬 羞耻神经防线（Lv.2 耳根滚烫）】：在亲密接触或暴露下耳根滚烫，遮挡动作迟疑无力。\n💭【${u}的实时心声】：“*脸颊烫得厉害……被人用那种灼热的视线盯着看，连手脚都不知道该往哪儿放了😳💦。*”`,
-                    `【🔬 羞耻神经防线（Lv.3 习以为常）】：羞耻感已被磨平大半，赤裸清理私处时已能保持平静麻木。\n💭【${u}的实时心声】：“*光着身子走动或者清理私处，现在的我早已经习以为常了💦。*”`,
-                    `【🔬 羞耻神经防线（Lv.4 敞腿任看）】：廉耻心瓦解，被人视奸红肿私处时非但不遮掩反而兴奋分泌爱液。\n💭【${u}的实时心声】：“*就算现在被人撞见我一丝不挂的下流模样，我也会直接敞开双腿让他看个够哟🥵💦！*”`,
-                    `【🔬 羞耻神经防线（Lv.5 羞耻全灭）】：羞耻回路逆转为强烈催情剂，渴望当众展示外翻烂穴。\n💭【${u}的实时心声】：“*啊啊♡……快让所有人都来看看这具刚被玩弄过、还在往外漏精滴尿的骚身体吧🥵💦❤️！*”`,
-                    `【💀 第六阶段·羞耻神经彻底坏死（0/100 彻底崩坏）】：掌管廉耻的神经区域100%萎缩坏死！只有当众敞开烂穴潮吹喷尿才能刺激脑干产生高潮！\n💭【${u}的实时心声】：“*啊嘿♡……羞耻是什么早就忘光啦！看母猪当众喷尿失禁高潮吧🥵💦❤️❤️！*”`
+                    `【🔬 羞耻防线（Lv.1 完好自持）】：羞耻心极强，注重衣着得体。\n💭【${u}的实时心声】：“*必须注意整理好衣襟与姿态，绝不能让人看到不雅模样。*”`,
+                    `【🔬 羞耻防线（Lv.2 耳根滚烫）】：暴露下耳根滚烫，遮挡动作迟疑。\n💭【${u}的实时心声】：“*脸颊烫得厉害……被人盯着看连手脚都不知道往哪放了😳💦。*”`,
+                    `【🔬 羞耻防线（Lv.3 习以为常）】：羞耻感磨平大半，赤裸时已平静麻木。\n💭【${u}的实时心声】：“*光着身子走动或者清理私处，现在的我早已经习以为常了💦。*”`,
+                    `【🔬 羞耻防线（Lv.4 敞腿任看）】：被人视奸私处时反而兴奋分泌爱液。\n💭【${u}的实时心声】：“*就算被人撞见一丝不挂的模样，我也会直接敞开双腿让他看个够哟🥵💦！*”`,
+                    `【🔬 羞耻防线（Lv.5 羞耻全灭）】：羞耻逆转为催情剂，渴望当众展示烂穴。\n💭【${u}的实时心声】：“*啊啊♡……快让所有人都来看看这具还在漏精滴尿的骚身体吧🥵💦❤️！*”`,
+                    `【💀 第六阶段·羞耻坏死（0/100 彻底崩坏）】：只有当众敞穴喷尿才能刺激高潮！\n💭【${u}的实时心声】：“*啊嘿♡……羞耻是什么早就忘光啦！看母猪当众喷尿失禁高潮吧🥵💦❤️❤️！*”`
                 ]},
                 obey: { val: safeNum(v.精神与心理?.服从度), rev: false, st: ["孤高自主","被动妥协","温顺配合","摇尾乞怜","绝对盲从","前额叶切除木偶"], d: [
-                    `【🔬 自由意志与服从实况（Lv.1 完好自主）】：自我意志独立坚定，绝不轻易屈服。\n💭【${u}的实时心声】：“*我的身体与意志只属于我自己，任何人都休想随便摆布我。*”`,
-                    `【🔬 自由意志与服从实况（Lv.2 被动妥协）】：在局势压迫下学会低头妥协，被动配合。\n💭【${u}的实时心声】：“*人在屋檐下不得不低头……眼下还是先顺从配合吧💦。*”`,
-                    `【🔬 自由意志与服从实况（Lv.3 温顺配合）】：已形成温顺配合的肌肉记忆，面对折腾十分听话。\n💭【${u}的实时心声】：“*乖乖听话把身体收拾干净准备接下来的安排，身体已经完全习惯顺从了😳💦。*”`,
-                    `【🔬 自由意志与服从实况（Lv.4 摇尾乞怜）】：反抗意志被彻底驯服，甚至会主动塌腰撅臀讨好。\n💭【${u}的实时心声】：“*只要一声令下，无论让我摆出什么屈辱的姿势伺候，我都会乖乖听话照做的🥵💦！*”`,
-                    `【🔬 自由意志与服从实况（Lv.5 绝对盲从）】：完全丧失拒绝能力，将服从一切残酷改造视为唯一本能。\n💭【${u}的实时心声】：“*呜汪♡……只要主人们高兴，要把我怎么捆起来改造、怎么轮流内射都可以呀🥵💦❤️！*”`,
-                    `【💀 第六阶段·前额叶切除级肉偶（100% 彻底崩坏）】：大脑前额叶功能100%报废坏死！丧失复杂语言能力，只会条件反射般执行任何下流指令！\n💭【${u}的实时心声】：“*啊嘿……呜汪♡……脑子空空的不会思考了，主人让怎么弄坏就怎么弄坏呀🥵💦❤️❤️！*”`
+                    `【🔬 服从实况（Lv.1 完好自主）】：自我意志独立坚定。\n💭【${u}的实时心声】：“*我的身体与意志只属于我自己，休想随便摆布我。*”`,
+                    `【🔬 服从实况（Lv.2 被动妥协）】：在压迫下学会低头妥协。\n💭【${u}的实时心声】：“*人在屋檐下不得不低头……眼下还是先顺从配合吧💦。*”`,
+                    `【🔬 服从实况（Lv.3 温顺配合）】：已形成温顺配合的肌肉记忆。\n💭【${u}的实时心声】：“*乖乖听话把身体收拾干净，身体已经完全习惯顺从了😳💦。*”`,
+                    `【🔬 服从实况（Lv.4 摇尾乞怜）】：反抗意志被驯服，主动塌腰撅臀讨好。\n💭【${u}的实时心声】：“*只要一声令下，无论让我摆出什么姿势伺候都会乖乖照做的🥵💦！*”`,
+                    `【🔬 服从实况（Lv.5 绝对盲从）】：完全丧失拒绝能力。\n💭【${u}的实时心声】：“*呜汪♡……只要主人们高兴，要把我怎么捆起来内射都可以呀🥵💦❤️！*”`,
+                    `【💀 第六阶段·木偶化（100% 彻底崩坏）】：只会条件反射执行任何下流指令！\n💭【${u}的实时心声】：“*啊嘿……呜汪♡……脑子空空的不会思考了，主人让怎么弄坏就怎么弄坏呀🥵💦❤️❤️！*”`
                 ]},
                 pleas: { val: safeNum(v.精神与心理?.快感累积), rev: false, st: ["神思清明","尾椎微麻","趾尖蜷缩","濒临绝顶","潮吹失神","多巴胺烧穿熔断"], d: [
-                    `【🔬 神经快感与脑负荷（Lv.1 完好清明）】：神经系统平稳正常，无异常电流残留。\n💭【${u}的实时心声】：“*呼吸平稳，身体没有任何异常的酸麻或失控感。*”`,
-                    `【🔬 神经快感与脑负荷（Lv.2 尾椎微麻）】：敏感带残留微弱酥麻与酸胀余温。\n💭【${u}的实时心声】：“*呼……身体深处还残留着一点微妙的酸麻感💦。*”`,
-                    `【🔬 神经快感与脑负荷（Lv.3 趾尖蜷缩）】：酥麻电流顺尾椎向上攀升，脚趾本能微微蜷缩。\n💭【${u}的实时心声】：“*唔嗯……酥麻感一波接一波往上涌，连脚趾头都忍不住蜷缩起来了😳💦！*”`,
-                    `【🔬 神经快感与脑负荷（Lv.4 濒临绝顶）】：快感蓄积至临界点，括约肌剧烈痉挛收缩随时泄身。\n💭【${u}的实时心声】：“*要、要去了！再刺激一下就会当场高潮出来的呀🥵💦！*”`,
-                    `【🔬 神经快感与脑负荷（Lv.5 潮吹失神）】：连续高潮过载导致大脑一片空白，伴随失控潮吹。\n💭【${u}的实时心声】：“*啊啊——去了♡！！全身骨头都爽得融化成水了，潮吹根本停不下来呀🥵💦❤️！*”`,
-                    `【💀 第六阶段·多巴胺受体烧穿熔断（100% 彻底崩坏）】：多巴胺受体彻底烧穿坏死！双眼翻白无法复位，陷入永不停止的帕金森式痉挛绝顶！\n💭【${u}的实时心声】：“*啊嘿♡——咕嘿嘿！！脑髓彻底烧穿短路啦，一秒钟不停地抽搐喷尿高潮到死呀🥵💦❤️❤️！*”`
+                    `【🔬 快感负荷（Lv.1 完好清明）】：神经系统平稳正常。\n💭【${u}的实时心声】：“*呼吸平稳，身体没有任何异常的酸麻或失控感。*”`,
+                    `【🔬 快感负荷（Lv.2 尾椎微麻）】：敏感带残留微弱酥麻余温。\n💭【${u}的实时心声】：“*呼……身体深处还残留着一点微妙的酸麻感💦。*”`,
+                    `【🔬 快感负荷（Lv.3 趾尖蜷缩）】：酥麻电流顺尾椎攀升，脚趾蜷缩。\n💭【${u}的实时心声】：“*唔嗯……酥麻感一波接一波往上涌，脚趾都蜷缩起来了😳💦！*”`,
+                    `【🔬 快感负荷（Lv.4 濒临绝顶）】：快感蓄积至临界点，括约肌剧烈收缩。\n💭【${u}的实时心声】：“*要、要去了！再刺激一下就会当场高潮出来的呀🥵💦！*”`,
+                    `【🔬 快感负荷（Lv.5 潮吹失神）】：连续高潮过载导致大脑空白潮吹。\n💭【${u}的实时心声】：“*啊啊——去了♡！！全身骨头都爽得融化成水了🥵💦❤️！*”`,
+                    `【💀 第六阶段·多巴胺熔断（100% 彻底崩坏）】：陷入永不停止的痉挛绝顶！\n💭【${u}的实时心声】：“*啊嘿♡——脑髓彻底烧穿短路啦，一秒钟不停地抽搐喷尿高潮到死呀🥵💦❤️❤️！*”`
                 ]},
                 sta: { val: safeNum(v.身体?.体力, 100), rev: true, st: ["亭亭玉立","腰腿酸软","膝软外八不合","双腿痉挛瘫软","髋骨脱臼爬行","四肢废用肉垫"], d: [
-                    `【🔬 躯体骨骼与运动机能（Lv.1 完好充沛）】：体力充沛（${safeNum(v.身体?.体力, 100)}/100），身姿挺拔行动自如。\n💭【${u}的实时心声】：“*目前精力很充沛，四肢百骸都充满力气，姿态端正稳健。*”`,
-                    `【🔬 躯体骨骼与运动机能（Lv.2 腰腿酸软）】：略带倦意，腰腹与双腿肌肉酸软沉重。\n💭【${u}的实时心声】：“*稍微出了一身薄汗，腰和腿都有点酸沉沉的💦。*”`,
-                    `【🔬 躯体骨骼与运动机能（Lv.3 膝软外八不合）】：大腿内收肌拉伤松弛，走路呈外八字无法完全并拢。\n💭【${u}的实时心声】：“*膝盖一直在发抖，大腿根部的肌肉酸软得根本并拢不了😳💦。*”`,
-                    `【🔬 躯体骨骼与运动机能（Lv.4 双腿痉挛瘫软）】：体力濒临枯竭，双腿发生神经性抽搐难以站稳。\n💭【${u}的实时心声】：“*哈啊……浑身上下一点力气都使不出来了，双腿软得只能敞开着瘫倒下来🥵💦……*”`,
-                    `【🔬 躯体骨骼与运动机能（Lv.5 髋骨脱臼母犬爬行）】：髋关节习惯性半脱臼变形，彻底丧失直立行走能力，只能四肢着地爬行。\n💭【${u}的实时心声】：“*呜汪♡……胯骨早就被撞脱臼站不起来了，只能像母狗一样撅着烂屁股爬行等操呀🥵💦❤️！*”`,
-                    `【💀 第六阶段·四肢废用痉挛肉垫（0/100 彻底崩坏）】：运动神经与四肢彻底废用萎缩，脊椎长死成M字大开腿撅臀肉垫！\n💭【${u}的实时心声】：“*啊嘿♡……手脚彻底废掉动不了啦，骨头已经长死成M字开腿撅屁股的肉垫形状了🥵💦❤️❤️！*”`
+                    `【🔬 躯体机能（Lv.1 完好充沛）】：体力充沛（${safeNum(v.身体?.体力, 100)}/100），身姿挺拔。\n💭【${u}的实时心声】：“*目前精力很充沛，姿态端正稳健。*”`,
+                    `【🔬 躯体机能（Lv.2 腰腿酸软）】：腰腹与双腿肌肉酸软沉重。\n💭【${u}的实时心声】：“*稍微出了一身薄汗，腰和腿都有点酸沉沉的💦。*”`,
+                    `【🔬 躯体机能（Lv.3 膝软外八不合）】：大腿内收肌拉伤松弛，走路外八字。\n💭【${u}的实时心声】：“*膝盖一直在发抖，大腿根部酸软得根本并拢不了😳💦。*”`,
+                    `【🔬 躯体机能（Lv.4 双腿痉挛瘫软）】：体力濒临枯竭，双腿抽搐难以站稳。\n💭【${u}的实时心声】：“*哈啊……浑身一点力气都使不出来了，只能敞开腿瘫倒下来🥵💦……*”`,
+                    `【🔬 躯体机能（Lv.5 髋骨脱臼爬行）】：丧失直立行走能力，只能四肢着地爬行。\n💭【${u}的实时心声】：“*呜汪♡……胯骨被撞脱臼站不起来了，只能像母狗一样撅着屁股爬行呀🥵💦❤️！*”`,
+                    `【💀 第六阶段·四肢废用肉垫（0/100 彻底崩坏）】：脊椎长死成M字大开腿撅臀肉垫！\n💭【${u}的实时心声】：“*啊嘿♡……手脚彻底废掉啦，骨头长死成M字开腿的肉垫形状了🥵💦❤️❤️！*”`
                 ]}
             };
             const cfg = map[type] || map.cockLove, t = tier6(cfg.val, cfg.rev);
@@ -1738,10 +1840,10 @@
             const pureThoughtsArr = cfg.d.map(itemStr => cleanThoughtText(itemStr.split("实时心声】：“")[1] || ""));
             return { val: cfg.val, stage: cfg.st[t], desc: `${objSection}💭【${u}的实时心声】：“*${pickStageThought(v, pureThoughtsArr, cfg.val, cfg.rev)}*”` };
         }
+
         function buildFullFallbackCategories(u, c, v) {
             calibrateMentalMetrics(v);
-            const dev = computeAllOrganDevelopments(v);
-            const ovr = v.按钮详情 || {};
+            const dev = computeAllOrganDevelopments(v), ovr = v.按钮详情 || {};
             const mk = (editKey, defaultRawKey, desc, barTheme = "pleas", subBarCfg = null, hideBar = false, stagePctOverride = null, extraProps = {}) => {
                 const customTitle = ovr[editKey]?.customTitle, customStage = ovr[editKey]?.stage;
                 let finalRawKey = customTitle || defaultRawKey;
@@ -1749,7 +1851,7 @@
                 return { editKey, rawKey: finalRawKey, desc, ...fmtKey(finalRawKey, barTheme, subBarCfg, hideBar, stagePctOverride), ...extraProps };
             };
 
-            const live = extractDynamicContext(u, c), diff = getDifficultyProfile(), realId = detectRealCharacterIdentity(v);
+            const live = extractDynamicContext(u, c), diff = getDifficultyProfile();
             const cnt = v.计数 || {}, sp = v.体内精液存量 || {}, mark = v.痕迹与标记 || {}, prop = v.体内道具与权限 || {}, extPsy = v.精神与心理扩展 || {}, prof = v.档案 || {}, rt = v.实况 || {}, wear = v.穿搭 || {}, preg = v.受孕与生理 || {};
             const cockM = getDynamicMetricDetail("cockLove", v, u), lustM = getDynamicMetricDetail("lust", v, u), corrM = getDynamicMetricDetail("corr", v, u);
             const shameM = getDynamicMetricDetail("shame", v, u), obeyM = getDynamicMetricDetail("obey", v, u), pleasM = getDynamicMetricDetail("pleas", v, u), staM = getDynamicMetricDetail("sta", v, u);
@@ -1757,7 +1859,7 @@
             const vagCnt = safeNum(cnt.性交?.小穴), mouthCnt = safeNum(cnt.性交?.口), analCnt = safeNum(cnt.性交?.屁眼), titCnt = safeNum(cnt.性交?.乳穴), footCnt = safeNum(cnt.性交?.足腿), beastCnt = safeNum(cnt.性交?.兽交异种);
             const creampie = safeNum(cnt.射精?.内射), facialCnt = safeNum(cnt.射精?.颜射体外), swallowCnt = safeNum(cnt.精液摄入?.吞精次数), swallowMl = safeNum(cnt.精液摄入?.累计毫升);
             const orgasmCnt = safeNum(cnt.高潮?.总数), forceOrgCnt = safeNum(cnt.高潮?.强制), edgeCnt = safeNum(cnt.高潮?.寸止);
-            const leakCnt = safeNum(cnt.失控?.失禁), squirtCnt = safeNum(cnt.失控?.喷潮), ahegaoCnt = safeNum(cnt.失控?.阿嘿颜);
+            const leakCnt = safeNum(cnt.失控?.失禁), squirtCnt = safeNum(cnt.失控?.喷潮);
             const hookerCnt = safeNum(cnt.交易?.接客卖身), gangCnt = safeNum(cnt.交易?.轮奸群交), sleepCnt = safeNum(cnt.交易?.睡眠昏迷奸);
             const milkCnt = safeNum(cnt.泌乳?.喷乳次数), milkMl = safeNum(cnt.泌乳?.累计毫升), mastCnt = safeNum(cnt.自慰);
 
@@ -1776,13 +1878,11 @@
             const fallTier = tier6(fallMax, false), sensMult = (1.0 + corr * 0.06 + dev.all6OrganAvg * 0.05 + (vagCnt > 0 ? 1.0 : 0)).toFixed(1);
             const mouthDev = dev.mouthObj.val, chestDev = dev.chestObj.val, vagDev = dev.vagObj.val, wombDev = dev.wombObj.val, clitDev = dev.clitObj.val, analDev = dev.analObj.val;
 
-            const rawScarStr = `${safeStr(mark.体表痕迹)} ${safeStr(mark.公开涂鸦字迹)}`;
-            const isPermScar = /刺青|纹身|烙铁|烙印|烫伤|刀刻|烂肉|深可见骨/.test(rawScarStr);
+            const rawScarStr = `${safeStr(mark.体表痕迹)} ${safeStr(mark.公开涂鸦字迹)}`, isPermScar = /刺青|纹身|烙铁|烙印|烫伤|刀刻|烂肉/.test(rawScarStr);
             const hasScarsOrTally = (mark.体表痕迹 && mark.体表痕迹 !== "无") || (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无") || safeNum(mark.鞭痕与掌印) > 0;
             const tallyStrokes = hasScarsOrTally ? (safeNum(mark.鞭痕与掌印) * 4 + (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无" ? Math.max(5, creampie + vagCnt) : 0)) : 0;
             const tallyFull = Math.floor(tallyStrokes / 5);
-            let rawScarDev = 0;
-            if (hasScarsOrTally) rawScarDev = isPermScar ? Math.max(62, calcStage6Score(tallyStrokes + 80, 1.0, diff.mult, /烂肉|刀刻/.test(rawScarStr)).val) : Math.min(58, Math.max(22, 20 + tallyFull * 6 + safeNum(mark.鞭痕与掌印) * 3));
+            let rawScarDev = hasScarsOrTally ? (isPermScar ? Math.max(62, calcStage6Score(tallyStrokes + 80, 1.0, diff.mult, /烂肉|刀刻/.test(rawScarStr)).val) : Math.min(58, Math.max(22, 20 + tallyFull * 6 + safeNum(mark.鞭痕与掌印) * 3))) : 0;
             const tallyDev = typeof v.上帝强制锁定?.["正字涂鸦"] === "number" ? v.上帝强制锁定["正字涂鸦"] : (isPermScar ? lockIrreversible(v, "mod_scar", rawScarDev, "正字涂鸦") : Math.max(hasScarsOrTally ? rawScarDev : 0, safeNum(v.历史最高崩坏度?.mod_scar) >= 60 ? v.历史最高崩坏度.mod_scar : 0));
 
             const rawTattooStr = safeStr(mark.淫纹与刻印), isPermTattoo = /永久|烙印|刺青|漆黑刻印|荧光|异化|触须|魔腹|腐蚀/.test(rawTattooStr);
@@ -1828,7 +1928,7 @@
             const totalCapAll = caps.mouthMax + caps.vagMax + caps.wombMax + caps.analMax;
 
             const marketRank = corr >= 100 ? "EX神格·崩坏便器" : corr >= 80 ? "SSS级·公用便器" : corr >= 50 ? "A级·风俗名器" : hookerCnt > 0 ? "B级·暗娼熟肉" : "S级·纯洁无瑕";
-            const marketPrice = prof.风月挂牌身价 || (hookerCnt > 0 ? `单次皮肉资 ${Math.max(50, 500 - corr * 4)} 元（已接客 ${hookerCnt} 次）` : `无价之宝（清白之身，尚未涉足风尘交易）`);
+            const marketPrice = prof.风月挂牌身价 || (hookerCnt > 0 ? `单次皮肉资 ${Math.max(50, 500 - corr * 4)} 元（已接客 ${hookerCnt} 次）` : `无价之宝（清白之身）`);
 
             const fmtOvr = (key, defObj, defThoughtArr, specificStageVal = null, isRev = false) => {
                 const defaultThought = Array.isArray(defThoughtArr) ? pickStageThought(v, defThoughtArr, specificStageVal, isRev) : defThoughtArr;
@@ -1837,12 +1937,12 @@
             };
 
             const defaultMonologue = pickStageThought(v, [
-                `我叫${u}，无论周围处境如何变化，我都必须保持冷静清醒，守护好自己的尊严与清白。`,
-                `呼……身体稍微有些发热发软，我得尽快调整好呼吸与状态，应付接下来的局面💦。`,
-                `身体深处还残留着难以忽视的酸胀感与湿热感，必须抓紧时间清理收拾干净，准备应对接下来的事😳💦。`,
-                `哈啊……小肚子里沉甸甸地往下坠，被开发过的熟稔身体越来越松软易湿了，稍微动一下就让人腿软呢🥵💦！`,
-                `呜汪♡……身体从里到外都已经被操成了贪恋肉棒与浓精的崩坏形状，真想快点被粗暴地按在床上狠狠灌满呀🥵💦❤️！`,
-                `啊嘿♡……脑髓和全身孔穴都已经100%崩坏畸变成流着浓精和骚尿的活体排泄肉坑了，请把${u}彻底操烂报废吧🥵💦❤️❤️！`
+                `我是${u}，无论周围处境如何变化，我都必须保持冷静清醒。`,
+                `呼……身体稍微有些发热发软，我得尽快调整好呼吸与状态💦。`,
+                `身体深处还残留着难以忽视的酸胀感与湿热感😳💦。`,
+                `哈啊……小肚子里沉甸甸地往下坠，身体越来越松软易湿了🥵💦！`,
+                `呜汪♡……身体已经被操成了贪恋肉棒与浓精的形状🥵💦❤️！`,
+                `啊嘿♡……全身孔穴都已经100%崩坏畸变成活体排泄肉坑了🥵💦❤️❤️！`
             ]);
             const curThought = cleanThoughtText(ovr.内心独白?.thought || rt.内心独白 || live.thought || defaultMonologue);
             const curPose = rt.当前姿势 || live.pose || (isPureZero ? `${u}身姿端正，神色平静自然。` : `${u}正调整着呼吸与姿态。`);
@@ -1866,34 +1966,33 @@
             const unlockedFetishes = computeUnlockedFetishes(v);
             const fetishItems = unlockedFetishes.length > 0
                 ? unlockedFetishes.map(fObj => mk(`fetish_${fObj.name}`, `🧬 ${fObj.name}：${fObj.val}/100「${fObj.stage}」`, buildFetishRichDesc(fObj, v, u), "corr"))
-                : [mk("fetish_none", `🔒 暂无性癖「完好未染」`, `【性癖状态】：\n当前所有性交、高潮、内射与受虐记录均为 0。\n💭【${u}的实时心声】：“*我现在的身心依然保持着原本的纯净完好。*”`, "none", null, true, 0)];
+                : [mk("fetish_none", `🔒 暂无性癖「完好未染」`, `【性癖状态】：当前所有性交、高潮、内射记录均为 0。\n💭【${u}的实时心声】：“*我现在的身心依然保持着原本的纯净完好。*”`, "none", null, true, 0)];
 
             const clientList = extractClientsFromHistory(v, u, c);
             const clientItems = clientList.length > 0
                 ? clientList.map((cl, idx) => mk(`client_${idx}`, `🍆 ${cl.name}：${cl.val}/100「${cl.roleTag}•${cl.statusTag}」`, `${cl.detailDesc}\n💭【${u}的实时心声】：“*${cleanThoughtText(cl.thoughtStr)}*”`, "cockLove", cl.dnaShare > 0 ? { mainName: "🍆 调教崩坏度", label: "🧬 宫内DNA", theme: "semen", pct: cl.dnaShare, text: `${cl.dnaShare}%` } : null, false, null, { isClient: true, clientName: cl.name }))
-                : [mk("client_none", `🔒 暂无恩客记录「完好清白」`, `【恩客图鉴】：\n当前尚未与任何男性建立肉体支配记录。\n💭【${u}的实时心声】：“*我还没有被任何男人占有过。*”`, "none", null, true, 0)];
+                : [mk("client_none", `🔒 暂无恩客记录「完好清白」`, `【恩客图鉴】：当前尚未建立肉体支配记录。\n💭【${u}的实时心声】：“*我还没有被占有过。*”`, "none", null, true, 0)];
+
+            const customIdentityNote = (prof.种族与体质 && !/精灵之躯|修真者|普通人类/.test(prof.种族与体质)) ? prof.种族与体质 : `难度${diff.mult}x`;
 
             const baseCategories = [
                 {
-                    title: "档案与风评", icon: "👩", summary: `${u} (${realId}) · 敏感${sensMult}x`,
+                    title: "档案与风评", icon: "👩", summary: `${u} (${customIdentityNote}) · 敏感${sensMult}x`,
                     items: [
-                        mk("身份与背景", `👩 认知真名与身份：${u}「${realId}•${prop.肉体所有权 || (hookerCnt > 0 ? "恩客共有" : "自由身")}」`,
-                            fmtOvr("身份与背景", `【🔬 认知真名与身份处境】：\n• 认知真名：${u}${prof.原身旧名 && prof.原身旧名 !== u ? `（已取代原名「${prof.原身旧名}」）` : ""} ｜ 肉体归属：${prop.肉体所有权 || (hookerCnt > 0 ? "买春恩客支配" : "自由身")}\n• 真实身份与体质：${realId}（敏感度：${sensMult} 倍 ｜ 难度：${diff.fullLabel}）\n• 当前处境：${prof.身份与背景 || live.identity}`,
-                                [`我现在是以「${u}」（${realId}）的身份活在这个世界里，必须保持稳妥。`,`作为「${u}」，虽然眼前的处境让人有些紧绷为难，但我还是得努力维持体面💦。`,`我已经彻底习惯了「${u}」这个身份和这具敏感度 ${sensMult} 倍的身体😳💦。`,`现在的我就是「${u}」，这具敏感易湿的熟肉身体早就离不开男人的玩弄与支配了🥵💦！`,`只要听到有人叫我「${u}」，合不拢的骚穴就会条件反射涌出热流🥵💦❤️！`,`啊嘿♡……「${u}」就是天生为了给所有男人当泄欲排泄肉坑而存在的崩坏母猪呀🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("身份与背景", `👩 监控目标与身份：${u}「${customIdentityNote}•${prop.肉体所有权 || (hookerCnt > 0 ? "恩客共有" : "自由身")}」`,
+                            fmtOvr("身份与背景", `【🔬 当前状态栏绑定目标】：\n• 监控目标名字：${u} ｜ 肉体归属：${prop.肉体所有权 || (hookerCnt > 0 ? "恩客支配" : "自由身")}\n• 崩坏难度倍率：${diff.fullLabel}（敏感度：${sensMult} 倍）\n• 锁定外貌DNA：${getLockedAppearanceTags(u, v)}\n• 当前处境：${prof.身份与背景 || live.identity}`,
+                                [`我现在是「${u}」，必须保持稳妥。`,`虽然眼前的处境让人有些紧绷为难，但我还是得努力维持体面💦。`,`我已经习惯了这具敏感度 ${sensMult} 倍的身体😳💦。`,`这具敏感易湿的熟肉身体早就离不开男人的玩弄与支配了🥵💦！`,`只要听到有人叫我「${u}」，合不拢的骚穴就会条件反射涌出热流🥵💦❤️！`,`啊嘿♡……「${u}」就是天生为了给所有男人当泄欲排泄肉坑而存在的呀🥵💦❤️❤️！`]), "none", null, true, 0),
                         mk("肉体外貌", `🌸 肉体敏感与畸变总览：${bodyTotalCorrupt}/100「敏感${sensMult}倍•${stageNameFromVal(bodyTotalCorrupt)}」`,
                             fmtOvr("肉体外貌", `【🔬 全身器质崩坏度与外貌实况：${bodyTotalCorrupt}/100】：\n• 躯体实况：${prof.肉体外貌实况 || live.bodyDesc}\n• 神经敏感倍率：常人的 ${sensMult} 倍 ｜ 六孔平均崩坏度：${dev.all6OrganAvg}%`,
-                                [`这具身体肌肤细腻、完好无瑕，我应当好好爱惜保护自己。`,`不知是不是错觉，总觉得现在的皮肤和粘膜变得比以前敏感了不少💦。`,`看着镜子里留着薄汗与红痕、私处微张的身体，每一寸皮肤都敏感到极点😳💦。`,`我这具丰满白腻的身体早就被开发得松软熟透了🥵💦！`,`好喜欢看自己这副满身巴掌印、穴口外翻脱垂合不拢的下流母畜身体呀🥵💦❤️！`,`啊嘿♡……全身上下每一个器官都已经100%崩坏畸变成流着脓精和骚尿的烂肉块啦🥵💦❤️❤️！`], bodyTotalCorrupt), "corr"),
+                                [`这具身体肌肤细腻、完好无瑕。`,`总觉得现在的皮肤和粘膜变得比以前敏感了不少💦。`,`看着镜子里留着薄汗与红痕的身体，每一寸皮肤都敏感到极点😳💦。`,`我这具丰满白腻的身体早就被开发得松软熟透了🥵💦！`,`好喜欢看自己这副穴口外翻合不拢的下流母畜身体呀🥵💦❤️！`,`啊嘿♡……全身上下每一个器官都已经100%崩坏畸变啦🥵💦❤️❤️！`], bodyTotalCorrupt), "corr"),
                         mk("表里风评", `🎭 表里风评：「${prof.表里风评与称号 || (corr >= 60 ? "名声崩坏•难以自持" : (isPureZero ? "清白端庄•品行自持" : "表面平静•暗藏反差"))}」`,
-                            fmtOvr("表里风评", `【🔬 表里风评与把柄威胁】：\n• 当前称号：【${corr >= 100 ? "深度沦陷" : corr >= 80 ? "彻底失守" : corr >= 50 ? "习以为常" : vagCnt > 0 ? "初尝禁果" : "清白自持"}】\n• 风评实况：${prof.表里风评与称号 || (hookerCnt > 0 ? "存在私密交易记录，声誉已受影响。" : "外界风评正常端庄。")}\n• 致命把柄：${prof.致命把柄与威胁 !== "无" ? prof.致命把柄与威胁 : "暂无已知把柄"}`,
-                                [`我的名声与清白容不得半点污点。`,`但愿那些略显尴尬的私密接触不会被外人知晓💦。`,`在知情的熟客眼里，我早就不是什么高不可攀的女人了😳💦。`,`反正名声和把柄早就落在男人们手里了，还不如享受当荡妇的快乐呢🥵💦！`,`嘻嘻♡……最好让所有男人都知道我是个给钱就能无套内射的下贱娼妇🥵💦❤️！`,`啊嘿♡……请把人家的崩坏事迹传遍天下吧🥵💦❤️❤️！`]), "none", null, true, 0),
+                            fmtOvr("表里风评", `【🔬 表里风评与把柄威胁】：\n• 风评实况：${prof.表里风评与称号 || "外界风评正常端庄。"}\n• 致命把柄：${prof.致命把柄与威胁 !== "无" ? prof.致命把柄与威胁 : "暂无已知把柄"}`, [`我的名声与清白容不得半点污点。`,`但愿那些私密接触不会被外人知晓💦。`,`在知情的熟客眼里，我早就不是高不可攀的女人了😳💦。`,`还不如享受当荡妇的快乐呢🥵💦！`,`最好让所有男人都知道我是个下贱娼妇🥵💦❤️！`,`啊嘿♡……请把人家的崩坏事迹传遍天下吧🥵💦❤️❤️！`]), "none", null, true, 0),
                         mk("挂牌身价", `🏷️ 挂牌身价：「${marketRank}」`,
-                            fmtOvr("挂牌身价", `【🔬 风月估值与身价评级】：\n• 评级：【${marketRank}】\n• 估值明细：${marketPrice}。`,
-                                [`我的身体与尊严是无价的。`,`一想到如果沦落到被金钱衡量的地步，心里就一阵发寒💦。`,`我已经渐渐习惯了靠出卖这具身体来换取生活所需😳💦。`,`只要给几张零钞就能随便玩弄内射我这具名器身体🥵💦！`,`哪怕倒贴钱都行♡，只要能用粗大肉棒把子宫灌满浓精就是最好的报酬🥵💦❤️！`,`啊嘿♡……倒贴钱求操的0元公用排泄便池挂牌营业中呀🥵💦❤️❤️！`]), "none", null, true, 0),
+                            fmtOvr("挂牌身价", `【🔬 风月估值与身价评级】：【${marketRank}】｜${marketPrice}。`, [`我的身体与尊严是无价的。`,`一想到被金钱衡量心里就发寒💦。`,`已经渐渐习惯了靠身体换取所需😳💦。`,`只要给点零钞就能随便玩弄内射我🥵💦！`,`只要能把子宫灌满浓精就是最好的报酬🥵💦❤️！`,`啊嘿♡……倒贴钱求操的0元公用便池营业中呀🥵💦❤️❤️！`]), "none", null, true, 0),
                         mk("内心独白", `💬 内心独白：「实时心声」`,
-                            fmtOvr("内心独白", `【⚡ 当前敏感带与规矩日程】：\n• 敏感带：${extPsy.当前敏感点 || (isPureZero ? "耳根、脖颈与腰侧" : "外翻阴唇、肿大阴蒂、脱垂宫颈口与乳尖")}\n• 当前日程：${v.调教进度?.规矩与日程 || (isPureZero ? "保持警惕，正常推进日常事务" : "尽快清理体内残留，准备应对接下来的互动")}。`, curThought), "none", null, true, 0),
+                            fmtOvr("内心独白", `【⚡ 当前敏感带与日程】：${extPsy.当前敏感点 || (isPureZero ? "耳根、脖颈与腰侧" : "外翻阴唇、肿大阴蒂、宫颈口与乳尖")}`, curThought), "none", null, true, 0),
                         mk("当前姿势", `🧍 姿势与躯体机能：${staM.val}/100「${staM.stage}」`,
-                            fmtOvr("当前姿势", `【🔬 当前姿态与躯体骨骼机能崩坏实况】：\n• 实时姿态：${curPose}\n${staM.desc.split("💭")[0]}`,
-                                [`保持端正自然的姿态，目前体力充沛。`,`稍微有些劳累出汗，我得扶稳站好💦。`,`大腿内侧肌肉被撑得酸软无力，膝盖打颤合不拢腿😳💦。`,`腰椎和双腿都酸软痉挛得厉害，连站着都在摇晃🥵💦！`,`胯骨早就被撞得习惯性半脱臼了，只能像母狗一样四肢着地爬行等操🥵💦❤️！`,`啊嘿♡……四肢彻底废用萎缩成M字开腿撅臀的活体肉垫了🥵💦❤️❤️！`], staM.val, true), "sta")
+                            fmtOvr("当前姿势", `【🔬 当前姿态与躯体骨骼机能实况】：\n• 实时姿态：${curPose}\n${staM.desc.split("💭")[0]}`, [`保持端正自然的姿态，目前体力充沛。`,`稍微有些劳累出汗💦。`,`大腿内侧肌肉酸软无力，膝盖打颤😳💦。`,`腰椎和双腿都酸软痉挛得厉害🥵💦！`,`只能像母狗一样四肢着地爬行等操🥵💦❤️！`,`啊嘿♡……四肢彻底废用成M字开腿撅臀的活体肉垫了🥵💦❤️❤️！`], staM.val, true), "sta")
                     ]
                 },
                 {
@@ -1906,65 +2005,63 @@
                         mk("obey", `🙇 意志切除：${obeyM.val}/100「${obeyM.stage}」`, obeyM.desc, "obey"),
                         mk("pleas", `💓 脑髓熔断：${pleasM.val}/100「${pleasM.stage}」`, pleasM.desc, "pleas"),
                         mk("精神沦陷", `🌀 脑实质沦陷：${fallMax}/100「${["理智完好","浅层恍惚","催眠暗示","常识改写","人格碎裂","脑海绵化痴呆"][fallTier]}」`,
-                            fmtOvr("精神沦陷", `【🔬 脑实质与认知崩坏（第${fallTier + 1}阶段 · ${fallMax}/100）】：\n• 沦陷：${fallVal}/100 ｜ 崩解：${brkVal}/100 ｜ 清醒：${safeNum(v.精神与心理?.意识清醒度, 100)}/100 ｜ 催眠：${hypnoVal}/100`,
-                                [`我的头脑非常清醒，三观坚不可摧。`,`脑海里偶尔会闪过一丝恍惚与疲惫💦。`,`眼神已经变得像死水一样平静麻木了😳💦。`,`只要一闻到男人的气息，脑子就会变得晕乎乎的🥵💦！`,`人格和常识都已经被彻底改写成了只知道张腿接精的母猪逻辑🥵💦❤️！`,`啊嘿……脑子彻底变成装满精液的浆糊海绵啦🥵💦❤️❤️！`], fallMax), "hypno"),
+                            fmtOvr("精神沦陷", `【🔬 脑实质与认知崩坏（第${fallTier + 1}阶段 · ${fallMax}/100）】：沦陷${fallVal}% ｜ 崩解${brkVal}% ｜ 催眠${hypnoVal}%`, [`我的头脑非常清醒。`,`脑海里偶尔闪过一丝恍惚💦。`,`眼神已经变得平静麻木了😳💦。`,`一闻到男人气息脑子就晕乎乎的🥵💦！`,`常识已经被改写成只知道张腿接精了🥵💦❤️！`,`啊嘿……脑子变成装满精液的浆糊海绵啦🥵💦❤️❤️！`], fallMax), "hypno"),
                         mk("媚药毒瘾", `🧪 脑脊液毒瘾：${drugVal}/100「${["纯净无毒","微醺依恋","药力发热","精液戒断","断精发狂","脑脊液毒化母猪"][tier6(drugVal)]}」`,
-                            fmtOvr("媚药毒瘾", `【🔬 媚药侵蚀与脑脊液毒瘾（Lv.${tier6(drugVal) + 1} · ${drugVal}/100）】：\n• 药物状态：${v.调教进度?.媚药与发情毒 || "无外源化学媚药"}`,
-                                [`体内干净纯粹，没有任何药物残留。`,`屋里浑浊的气味吸进肺里让人有些头晕胸闷💦。`,`身体似乎渐渐习惯了雄性精液的热度与气味😳💦。`,`太久没有被灌进子宫里，小肚子深处就像犯了毒瘾一样发痒呢🥵💦！`,`一天不喝精液、不被内射灌满就会浑身抽搐发狂呀🥵💦❤️！`,`啊嘿♡……连脑脊液都被媚药和浓精彻底毒化啦🥵💦❤️❤️！`], drugVal), "drug")
+                            fmtOvr("媚药毒瘾", `【🔬 媚药侵蚀与毒瘾（Lv.${tier6(drugVal) + 1} · ${drugVal}/100）】：${v.调教进度?.媚药与发情毒 || "无外源化学媚药"}`, [`体内干净纯粹。`,`有些头晕胸闷💦。`,`习惯了雄性精液的热度😳💦。`,`小肚子深处像犯了毒瘾一样发痒🥵💦！`,`一天不喝精液不被内射就会抽搐发狂🥵💦❤️！`,`啊嘿♡……连脑脊液都被媚药和浓精毒化啦🥵💦❤️❤️！`], drugVal), "drug")
                     ]
                 },
                 { title: "下流性癖库", icon: "🧬", summary: unlockedFetishes.length > 0 ? `已畸变 ${unlockedFetishes.length} 项` : `完好未染`, items: fetishItems },
                 {
                     title: "六孔与储精", icon: "🌸", summary: `总储精${totalMl}ml · 六孔崩坏实况`,
                     items: [
-                        mk("骚口实况", `👄 骚口：${mouthDev}/100「${mouthStg}」`, fmtOvr("骚口实况", `【🔬 口腔崩坏度：${mouthDev}/100（${mouthStg}｜口交${mouthCnt}·吞精${swallowCnt}）】：\n• 💧 胃袋储精：${mouthMl}ml / ${caps.mouthMax}ml（累计吞精 ${swallowMl}ml）\n• 📍 当前细节：${rt.骚口实况 || live.mouth || "唇瓣微张喘息。"}`, [`双唇与口腔干净清爽。`,`嘴唇稍微有些发干发麻💦。`,`咽喉深处还残留着一丝酸胀感😳💦。`,`舌头和嗓子眼早就记住了大肉棒的形状🥵💦！`,`快用大肉棒捅穿我的喉咙直接射进胃里吧🥵💦❤️！`,`啊嘿♡……下巴彻底脱臼，直接往嗓子眼里灌精撒尿吧🥵💦❤️❤️！`], mouthDev), "mouth", { mainName: "👄 口器崩坏度", label: "🥛 胃袋储精", theme: "semen", pct: Math.round((mouthMl / Math.max(1, caps.mouthMax)) * 100), text: `${mouthMl}/${caps.mouthMax}ml` }),
-                        mk("胸部实况", `🍒 丰乳：${chestDev}/100「${chestStg}」`, fmtOvr("胸部实况", `【🔬 乳房崩坏度：${chestDev}/100（${chestStg}｜乳交${titCnt}·喷乳${milkCnt}）】：\n• 🍼 乳腺蓄乳：${curMilkMl}ml / ${milkCap}ml（累计泌乳 ${milkMl}ml）\n• 📍 当前细节：${rt.胸部实况 || live.chest || "双峰随呼吸起伏。"}`, [`双峰紧致完好。`,`乳尖被磨得有些充血发硬💦。`,`肿大的乳头又硬又痛😳💦。`,`稍微碰一下乳头就会控制不住往外渗奶水🥵💦！`,`硕大下垂的奶袋子又胀又麻好难受呀♡🥵💦❤️！`,`啊嘿♡……一对烂奶子已经彻底崩坏成垂到肚子上的紫黑肉袋了🥵💦❤️❤️！`], chestDev), "chest", { mainName: "🍒 乳腺崩坏度", label: "🍼 乳腺蓄乳", theme: "milk", pct: Math.round((curMilkMl / Math.max(1, milkCap)) * 100), text: `${curMilkMl}/${milkCap}ml` }),
-                        mk("小穴实况", `🌺 小穴：${vagDev}/100「${vagStg}」`, fmtOvr("小穴实况", `【🔬 小穴崩坏度：${vagDev}/100（${vagStg}｜贯穿${vagCnt}·内射${creampie}·孔径${vagWidth}cm·闭合${vagClose}%）】：\n• 💧 阴道储精：${vagMl}ml / ${caps.vagMax}ml\n• 📍 当前细节：${rt.小穴实况 || live.vag || "花唇微张。"}`, [`下半身干爽整洁，私密处紧致完好。`,`两腿之间有些红肿温热💦。`,`花唇已经红肿外翻合不拢了😳💦。`,`走一步路就咕啾一声往外漏白浆🥵💦！`,`骚逼已经彻底被操成内壁外翻的漏精肉壶了♡🥵💦❤️！`,`啊嘿♡……小穴已经100%彻底崩坏成合不拢的拳头大烂肉洞啦🥵💦❤️❤️！`], vagDev), "vag", { mainName: "🌺 小穴崩坏度", label: "🥛 穴内储精", theme: "semen", pct: Math.round((vagMl / Math.max(1, caps.vagMax)) * 100), text: `${vagMl}/${caps.vagMax}ml` }),
-                        mk("子宫实况", `🫀 子宫：${wombDev}/100「${wombStg}」`, fmtOvr("子宫实况", `【🔬 子宫崩坏度：${wombDev}/100（${wombStg}｜内射${creampie}次）】：\n• 💧 宫腔储精：${wombMl}ml / ${caps.wombMax}ml\n• 📍 当前细节：${rt.子宫实况 || live.womb || "小腹微沉。"}`, [`小腹平坦温暖，子宫紧闭纯净。`,`小肚子最深处稍微有些发酸发沉💦。`,`宫腔深处被灌进了满满的滚烫浓精😳💦。`,`子宫口已经被撞得又软又松合不拢了🥵💦！`,`子宫韧带都被撞松脱垂到穴口边上了♡🥵💦❤️！`,`啊嘿♡……子宫口已经100%彻底脱垂掉到阴道外面来啦🥵💦❤️❤️！`], wombDev), "womb", { mainName: "🫀 宫颈崩坏度", label: "🥛 宫腔锁精", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }),
-                        mk("阴蒂尿道", `💧 阴蒂与尿道：${clitDev}/100「${clitStg}」`, fmtOvr("阴蒂尿道", `【🔬 阴蒂与尿道崩坏度：${clitDev}/100（${clitStg}｜高潮${orgasmCnt}·失禁${leakCnt}·阴蒂${clitSize}mm）】：\n• 💦 尿道失禁度：${peeVal}/100\n• 📍 当前细节：${rt.阴蒂尿道实况 || "私处神经微颤。"}`, [`全身括约肌完全受控。`,`充血的阴蒂偶尔传来微弱摩擦酥麻感💦。`,`阴蒂（${clitSize}mm）每走一步都传来酸痛😳💦。`,`稍微高潮一下就会漏出尿来🥵💦！`,`阴蒂已经畸变肿大成小肉棒的样子了🥵💦❤️！`,`啊嘿♡……尿道括约肌已经100%彻底坏死报废啦🥵💦❤️❤️！`], clitDev), "clit", { mainName: "⚡ 尿道崩坏度", label: "💦 失禁漏尿", theme: "pee", pct: peeVal, text: `失禁度 ${peeVal}%` }),
-                        mk("屁眼实况", `🕳️ 屁眼：${analDev}/100「${analStg}」`, fmtOvr("屁眼实况", `【🔬 后庭崩坏度：${analDev}/100（${analStg}｜肛交${analCnt}次）】：\n• 💧 直肠储精：${analMl}ml / ${caps.analMax}ml\n• 📍 当前细节：${rt.屁眼实况 || live.anal || "臀线紧绷。"}`, [`后庭紧闭洁净。`,`臀部肌肉稍微有些酸紧💦。`,`臀肉上的掌印还火辣辣地发烫😳💦。`,`后面的括约肌已经被撑松了🥵💦！`,`屁眼已经被操得往外翻出鲜红的直肠肉了♡🥵💦❤️！`,`啊嘿♡……屁眼括约肌彻底断掉重度脱肛啦🥵💦❤️❤️！`], analDev), "anal", { mainName: "🕳️ 后庭崩坏度", label: "🥛 直肠储精", theme: "semen", pct: Math.round((analMl / Math.max(1, caps.analMax)) * 100), text: `${analMl}/${caps.analMax}ml` })
+                        mk("骚口实况", `👄 骚口：${mouthDev}/100「${mouthStg}」`, fmtOvr("骚口实况", `【🔬 口腔崩坏度：${mouthDev}/100（口交${mouthCnt}·吞精${swallowCnt}）】：\n• 💧 胃袋储精：${mouthMl}ml / ${caps.mouthMax}ml\n• 📍 当前细节：${rt.骚口实况 || live.mouth || "唇瓣微张。"}`, [`双唇干净清爽。`,`嘴唇有些发麻💦。`,`咽喉深处残留酸胀感😳💦。`,`嗓子眼早就记住了肉棒形状🥵💦！`,`快捅穿喉咙直接射进胃里吧🥵💦❤️！`,`啊嘿♡……直接往嗓子眼里灌精撒尿吧🥵💦❤️❤️！`], mouthDev), "mouth", { mainName: "👄 口器崩坏度", label: "🥛 胃袋储精", theme: "semen", pct: Math.round((mouthMl / Math.max(1, caps.mouthMax)) * 100), text: `${mouthMl}/${caps.mouthMax}ml` }),
+                        mk("胸部实况", `🍒 丰乳：${chestDev}/100「${chestStg}」`, fmtOvr("胸部实况", `【🔬 乳房崩坏度：${chestDev}/100（乳交${titCnt}·喷乳${milkCnt}）】：\n• 🍼 乳腺蓄乳：${curMilkMl}ml / ${milkCap}ml\n• 📍 当前细节：${rt.胸部实况 || live.chest || "双峰随呼吸起伏。"}`, [`双峰紧致完好。`,`乳尖有些充血发硬💦。`,`肿大的乳头又硬又痛😳💦。`,`稍微碰一下就会渗奶水🥵💦！`,`奶袋子又胀又麻好难受呀♡🥵💦❤️！`,`啊嘿♡……烂奶子已经崩坏成紫黑肉袋了🥵💦❤️❤️！`], chestDev), "chest", { mainName: "🍒 乳腺崩坏度", label: "🍼 乳腺蓄乳", theme: "milk", pct: Math.round((curMilkMl / Math.max(1, milkCap)) * 100), text: `${curMilkMl}/${milkCap}ml` }),
+                        mk("小穴实况", `🌺 小穴：${vagDev}/100「${vagStg}」`, fmtOvr("小穴实况", `【🔬 小穴崩坏度：${vagDev}/100（贯穿${vagCnt}·内射${creampie}·孔径${vagWidth}cm）】：\n• 💧 阴道储精：${vagMl}ml / ${caps.vagMax}ml\n• 📍 当前细节：${rt.小穴实况 || live.vag || "花唇微张。"}`, [`私密处紧致完好。`,`两腿间有些红肿温热💦。`,`花唇红肿外翻合不拢了😳💦。`,`走一步路就往外漏白浆🥵💦！`,`骚逼已经被操成漏精肉壶了♡🥵💦❤️！`,`啊嘿♡……小穴已经100%崩坏成拳头大烂肉洞啦🥵💦❤️❤️！`], vagDev), "vag", { mainName: "🌺 小穴崩坏度", label: "🥛 穴内储精", theme: "semen", pct: Math.round((vagMl / Math.max(1, caps.vagMax)) * 100), text: `${vagMl}/${caps.vagMax}ml` }),
+                        mk("子宫实况", `🫀 子宫：${wombDev}/100「${wombStg}」`, fmtOvr("子宫实况", `【🔬 子宫崩坏度：${wombDev}/100（内射${creampie}次）】：\n• 💧 宫腔储精：${wombMl}ml / ${caps.wombMax}ml\n• 📍 当前细节：${rt.子宫实况 || live.womb || "小腹微沉。"}`, [`子宫紧闭纯净。`,`小肚子深处有些发酸💦。`,`宫腔被灌进了滚烫浓精😳💦。`,`子宫口被撞得又软又松🥵💦！`,`子宫脱垂到穴口边上了♡🥵💦❤️！`,`啊嘿♡……子宫口已经100%脱垂掉到外面来啦🥵💦❤️❤️！`], wombDev), "womb", { mainName: "🫀 宫颈崩坏度", label: "🥛 宫腔锁精", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }),
+                        mk("阴蒂尿道", `💧 阴蒂与尿道：${clitDev}/100「${clitStg}」`, fmtOvr("阴蒂尿道", `【🔬 阴蒂尿道崩坏度：${clitDev}/100（高潮${orgasmCnt}·失禁${leakCnt}·阴蒂${clitSize}mm）】：\n• 💦 尿道失禁度：${peeVal}/100`, [`括约肌完全受控。`,`充血阴蒂传来酥麻感💦。`,`每走一步都磨得酸痛😳💦。`,`稍微高潮就会漏出尿来🥵💦！`,`阴蒂已经肿大成小肉棒了🥵💦❤️！`,`啊嘿♡……尿道括约肌100%坏死报废啦🥵💦❤️❤️！`], clitDev), "clit", { mainName: "⚡ 尿道崩坏度", label: "💦 失禁漏尿", theme: "pee", pct: peeVal, text: `失禁度 ${peeVal}%` }),
+                        mk("屁眼实况", `🕳️ 屁眼：${analDev}/100「${analStg}」`, fmtOvr("屁眼实况", `【🔬 后庭崩坏度：${analDev}/100（肛交${analCnt}次）】：\n• 💧 直肠储精：${analMl}ml / ${caps.analMax}ml\n• 📍 当前细节：${rt.屁眼实况 || live.anal || "臀线紧绷。"}`, [`后庭紧闭洁净。`,`臀部肌肉有些酸紧💦。`,`臀肉掌印火辣辣发烫😳💦。`,`后面括约肌已经被撑松了🥵💦！`,`屁眼往外翻出鲜红直肠肉了♡🥵💦❤️！`,`啊嘿♡……屁眼括约肌彻底断掉重度脱肛啦🥵💦❤️❤️！`], analDev), "anal", { mainName: "🕳️ 后庭崩坏度", label: "🥛 直肠储精", theme: "semen", pct: Math.round((analMl / Math.max(1, caps.analMax)) * 100), text: `${analMl}/${caps.analMax}ml` })
                     ]
                 },
                 {
                     title: "肉改与道具", icon: "⛓️", summary: `伤痕${tallyDev}% · 淫纹${tattooDev}% · 穿刺${pierceDev}% · 腔改${propDev}%`,
                     items: [
-                        mk("正字涂鸦", `🩹 正字涂鸦与烙痕：${tallyDev}/100「${scarStg}」`, fmtOvr("正字涂鸦", `【🔬 涂鸦与刻痕畸变度：${tallyDev}/100（${scarStg}｜正字${tallyFull}个）】：\n• 当前痕迹：${mark.体表痕迹 !== "无" ? mark.体表痕迹 : "无"} ｜ 涂鸦：${mark.公开涂鸦字迹 || "无"}`, [`全身肌肤光洁如初。`,`大腿根部画上了正字好屈辱💦……`,`密密麻麻全都是红黑交错的正字😳💦。`,`正字已经变成永久刺青了🥵💦！`,`焦黑的正字烫疤把痛觉神经都烫成高潮开关了🥵💦❤️！`,`啊嘿♡……全身皮肉都被刀子刻满了血肉正字🥵💦❤️❤️！`], tallyDev), "corr"),
-                        mk("淫纹烙印", `🔮 淫纹烙印与魔蚀：${tattooDev}/100「${tattooStg}」`, fmtOvr("淫纹烙印", `【🔬 淫纹畸变度：${tattooDev}/100（${tattooStg}）】：\n• 当前状态：${hasTattoo ? mark.淫纹与刻印 : "小腹平坦光洁（0%）"}`, [`小腹肌肤白净平坦。`,`小腹下面隐约浮现出了浅粉色的奇怪纹路💦。`,`漆黑如墨的淫纹怎么洗都洗不掉😳💦。`,`小肚子上的淫纹亮起了紫红色的发情荧光🥵💦！`,`淫纹已经变成凸起蠕动的暗红肉须长在肚皮上了♡🥵💦❤️！`,`啊嘿♡……整个小肚子都被紫黑色的深渊淫纹腐蚀烂穿啦🥵💦❤️❤️！`], tattooDev), "hypno"),
-                        mk("穿刺环饰", `💍 穿刺铁牢与嵌合：${pierceDev}/100「${pierceStg}」`, fmtOvr("穿刺环饰", `【🔬 穿刺环饰畸变度：${pierceDev}/100（${pierceStg}）】：\n• 当前状态：${hasPierce ? mark.穿刺与环饰 : "天然无饰（0%）"}`, [`身体各处完好自然。`,`刚被打穿戴上小银环又红又肿💦。`,`粗铁环和重锤把乳头和阴唇都拉扯得红肿变形了😳💦。`,`阴唇和乳房都被密密麻麻的铁环锁死了🥵💦！`,`粗大的工业钢筋直接插穿化脓的烂肉♡🥵💦❤️！`,`啊嘿♡……生锈的铁环齿轮已经和烂肉彻底长在一起啦🥵💦❤️❤️！`], pierceDev), "clit"),
-                        mk("体内道具", `🎛️ 机械填塞与肉壶化：${propDev}/100「${propStg}」`, fmtOvr("体内道具", `【🔬 体内道具畸变度：${propDev}/100（${propStg}）】：\n• 当前道具：${hasProp ? prop.体内道具 : "空荡纯净（0%）"} ｜ 权限：${prop.排泄与高潮权限 || "自主控制"}`, [`身体内部清爽洁净。`,`塞着的小跳蛋嗡嗡震动得好难受💦。`,`发光电动假阳具把穴口撑得发白合不拢😳💦。`,`前后两个穴全都被冷冰冰的金属机械触手塞爆了🥵💦！`,`带刺的机械核心在子宫和直肠里高速旋转刮擦♡🥵💦❤️！`,`啊嘿♡……彻底变成永久固定的赛博机械肉便器啦🥵💦❤️❤️！`], propDev), "pleas")
+                        mk("正字涂鸦", `🩹 正字涂鸦与烙痕：${tallyDev}/100「${scarStg}」`, fmtOvr("正字涂鸦", `【🔬 涂鸦刻痕：${tallyDev}/100（正字${tallyFull}个）】：${mark.体表痕迹 !== "无" ? mark.体表痕迹 : "无"}`, [`肌肤光洁如初。`,`画上正字好屈辱💦。`,`密密麻麻全是正字😳💦。`,`变成永久刺青了🥵💦！`,`烫疤变成高潮开关了🥵💦❤️！`,`啊嘿♡……全身刻满血肉正字🥵💦❤️❤️！`], tallyDev), "corr"),
+                        mk("淫纹烙印", `🔮 淫纹烙印与魔蚀：${tattooDev}/100「${tattooStg}」`, fmtOvr("淫纹烙印", `【🔬 淫纹畸变：${tattooDev}/100】：${hasTattoo ? mark.淫纹与刻印 : "平坦光洁（0%）"}`, [`小腹白净平坦。`,`浮现浅粉色纹路💦。`,`漆黑淫纹洗不掉😳💦。`,`亮起紫红发情荧光🥵💦！`,`变成蠕动肉须长在肚皮上了♡🥵💦❤️！`,`啊嘿♡……小肚子被深渊淫纹腐蚀烂穿啦🥵💦❤️❤️！`], tattooDev), "hypno"),
+                        mk("穿刺环饰", `💍 穿刺铁牢与嵌合：${pierceDev}/100「${pierceStg}」`, fmtOvr("穿刺环饰", `【🔬 穿刺畸变：${pierceDev}/100】：${hasPierce ? mark.穿刺与环饰 : "天然无饰（0%）"}`, [`身体完好自然。`,`戴上小银环又红又肿💦。`,`重锤把乳头阴唇拉扯变形😳💦。`,`被密密麻麻铁环锁死了🥵💦！`,`钢筋插穿化脓烂肉♡🥵💦❤️！`,`啊嘿♡……铁环已经和烂肉长在一起啦🥵💦❤️❤️！`], pierceDev), "clit"),
+                        mk("体内道具", `🎛️ 机械填塞与肉壶化：${propDev}/100「${propStg}」`, fmtOvr("体内道具", `【🔬 体内道具：${propDev}/100】：${hasProp ? prop.体内道具 : "空荡纯净（0%）"}`, [`内部清爽洁净。`,`跳蛋嗡嗡震动好难受💦。`,`假阳具把穴口撑得合不拢😳💦。`,`前后穴都被机械触手塞爆了🥵💦！`,`带刺核心高速旋转刮擦♡🥵💦❤️！`,`啊嘿♡……变成永久赛博机械肉便器啦🥵💦❤️❤️！`], propDev), "pleas")
                     ]
                 },
                 {
                     title: "全身穿搭", icon: "👗", summary: `状态:${wearStateTag}`,
                     items: [
-                        mk("穿搭_头饰", `👑 头部与面容「${headTxt.slice(0, 14)}」`, fmtOvr("穿搭_头饰", `【🔬 头部实况】：${headTxt}\n• 细节：${live.headWear || "发丝整洁。"}`, [`妆容与发丝整洁得体。`,`额角渗出一层细密薄汗💦。`,`汗湿头发黏在脸颊上😳💦。`,`嘴角还挂着没擦干净的口水印子🥵💦！`,`快给我戴上流口水的开口球吧🥵💦❤️！`,`啊嘿♡……眼珠子彻底翻白回不来了🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_颈部", `⛓️ 脖颈与锁骨「${neckTxt.slice(0, 14)}」`, fmtOvr("穿搭_颈部", `【🔬 脖颈实况】：${neckTxt}\n• 细节：${live.neckWear || "脖颈白皙。"}`, [`衣领扣得很整齐。`,`脖颈稍微有些发热出汗💦。`,`右侧锁骨印着显眼的殷红咬痕😳💦。`,`锁骨红咬痕一碰就又酸又麻🥵💦！`,`好想戴上带铁链的母狗电击项圈呀🥵💦❤️！`,`啊嘿♡……脖子已经被生锈铁链勒出深槽了🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_胸罩", `👙 胸衣与内衬「${braTxt.slice(0, 14)}」`, fmtOvr("穿搭_胸罩", `【🔬 胸部穿戴】：${braTxt}\n• 细节：${live.braWear || "包裹完好。"}`, [`贴身内衬穿戴整齐。`,`贴身布料微微贴在皮肤上💦。`,`胸前暴露在微凉空气里😳💦。`,`光着大奶子才方便男人随时揉捏呀🥵💦！`,`只配穿把乳头勒出来的开洞情趣胸罩🥵💦❤️！`,`啊嘿♡……紫黑烂奶袋再也不需要遮挡啦🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_上衣", `👚 上衣与外衫「${topTxt.slice(0, 14)}」`, fmtOvr("穿搭_上衣", `【🔬 上身衣着】：${topTxt}\n• 细节：${live.topWear || "衣衫合体。"}`, [`身上的外衫平整洁净。`,`后背稍微出了一层薄汗💦。`,`光着后背把脏床单换了下来😳💦。`,`黑色吊带睡裙也是真空透视的🥵💦！`,`母狗只配穿一撕就碎的情趣薄纱🥵💦❤️！`,`啊嘿♡……全裸展示满身烙印就是终极礼服呀🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_内裤", `🩲 底裤与私处「${pantyTxt.slice(0, 14)}」`, fmtOvr("穿搭_内裤", `【🔬 底裤与遮护】：${pantyTxt}（泥泞度：${wetLevel}%）`, [`贴身底裤干爽舒适。`,`底裤稍微有些温热潮意💦。`,`下身赤裸外阴红肿微张😳💦。`,`内裤不到一分钟就会被淫水泡透🥵💦！`,`只配穿开裆丁字裤方便大肉棒随时插进来🥵💦❤️！`,`啊嘿♡……让烂肉洞24小时敞开着滴精漏尿吧🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_下装", `🍑 裙裤与臀部「${botTxt.slice(0, 14)}」`, fmtOvr("穿搭_下装", `【🔬 下装实况】：${botTxt}\n• 细节：${live.bottomWear || "垂顺得体。"}`, [`裙摆平整垂顺。`,`我轻轻抚平下摆褶皱💦。`,`光溜臀肉上印着暗红掌印😳💦。`,`屁股蛋上全是男人扇出来的红巴掌印🥵💦！`,`把屁股高高撅起来摇晃等插🥵💦❤️！`,`啊嘿♡……塌腰撅起印满烙印的烂屁股🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_丝袜", `🧦 丝袜与双腿「${sockTxt.slice(0, 14)}」`, fmtOvr("穿搭_丝袜", `【🔬 腿部实况】：${sockTxt}\n• 细节：${live.sockWear || "双腿端正。"}`, [`双腿姿态端正稳健。`,`双腿稍微有些酸沉💦。`,`大腿内侧全是被掐出来的指痕😳💦。`,`双腿软得连并拢都做不到啦🥵💦！`,`想穿上被撕开裆部的油亮黑丝架在肩上挨操🥵💦❤️！`,`啊嘿♡……髋骨脱臼长死成180度M字大开腿啦🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("穿搭_鞋子", `👠 鞋履与玉足「${shoeTxt.slice(0, 14)}」`, fmtOvr("穿搭_鞋子", `【🔬 足部实况】：${shoeTxt}\n• 细节：${live.shoeWear || "鞋履整洁。"}`, [`鞋履整洁合脚。`,`脚踝稍微有些酸软💦。`,`脚趾前滴落着溢出的白浊😳💦。`,`高潮时十根脚趾都会蜷缩起来呢🥵💦！`,`想用沾满精液的脚趾头为您足交奉侍🥵💦❤️！`,`啊嘿♡……脚趾头永远痉挛蜷缩在精液池里🥵💦❤️❤️！`]), "none", null, true, 0)
+                        mk("穿搭_头饰", `👑 头部与面容「${headTxt.slice(0, 14)}」`, fmtOvr("穿搭_头饰", `【🔬 头部实况】：${headTxt}`, [`妆容整洁。`,`渗出薄汗💦。`,`头发黏在脸颊😳💦。`,`嘴角挂着口水🥵💦！`,`想戴开口球🥵💦❤️！`,`啊嘿♡……眼珠彻底翻白了🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_颈部", `⛓️ 脖颈与锁骨「${neckTxt.slice(0, 14)}」`, fmtOvr("穿搭_颈部", `【🔬 脖颈实况】：${neckTxt}`, [`衣领整齐。`,`脖颈微热💦。`,`锁骨印着咬痕😳💦。`,`一碰又酸又麻🥵💦！`,`想戴电击项圈🥵💦❤️！`,`啊嘿♡……脖子被铁链勒出深槽了🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_胸罩", `👙 胸衣与内衬「${braTxt.slice(0, 14)}」`, fmtOvr("穿搭_胸罩", `【🔬 胸部穿戴】：${braTxt}`, [`穿戴整齐。`,`布料贴肤💦。`,`暴露在空气里😳💦。`,`光着奶子方便揉捏🥵💦！`,`只配穿开洞胸罩🥵💦❤️！`,`啊嘿♡……烂奶袋不需要遮挡啦🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_上衣", `👚 上衣与外衫「${topTxt.slice(0, 14)}」`, fmtOvr("穿搭_上衣", `【🔬 上身衣着】：${topTxt}`, [`外衫洁净。`,`后背薄汗💦。`,`光着后背😳💦。`,`真空透视🥵💦！`,`一撕就碎的薄纱🥵💦❤️！`,`啊嘿♡……全裸展示满身烙印🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_内裤", `🩲 底裤与私处「${pantyTxt.slice(0, 14)}」`, fmtOvr("穿搭_内裤", `【🔬 底裤与遮护】：${pantyTxt}（泥泞度：${wetLevel}%）`, [`底裤干爽。`,`有些潮意💦。`,`下身赤裸微张😳💦。`,`内裤被淫水泡透🥵💦！`,`只配穿开裆裤🥵💦❤️！`,`啊嘿♡……24小时敞开滴精漏尿吧🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_下装", `🍑 裙裤与臀部「${botTxt.slice(0, 14)}」`, fmtOvr("穿搭_下装", `【🔬 下装实况】：${botTxt}`, [`裙摆垂顺。`,`抚平褶皱💦。`,`臀肉印着掌印😳💦。`,`全是红巴掌印🥵💦！`,`高高撅起摇晃等插🥵💦❤️！`,`啊嘿♡……撅起印满烙印的烂屁股🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_丝袜", `🧦 丝袜与双腿「${sockTxt.slice(0, 14)}」`, fmtOvr("穿搭_丝袜", `【🔬 腿部实况】：${sockTxt}`, [`双腿端正。`,`有些酸沉💦。`,`大腿内侧全是掐痕😳💦。`,`软得并拢不了🥵💦！`,`撕开裆部黑丝架肩上挨操🥵💦❤️！`,`啊嘿♡……长死成180度M字大开腿啦🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("穿搭_鞋子", `👠 鞋履与玉足「${shoeTxt.slice(0, 14)}」`, fmtOvr("穿搭_鞋子", `【🔬 足部实况】：${shoeTxt}`, [`鞋履合脚。`,`脚踝酸软💦。`,`脚趾前滴落白浊😳💦。`,`高潮脚趾蜷缩🥵💦！`,`用沾满精液的脚趾足交🥵💦❤️！`,`啊嘿♡……脚趾永远痉挛蜷缩在精液池里🥵💦❤️❤️！`]), "none", null, true, 0)
                     ]
                 },
                 {
                     title: "苗床与受孕", icon: "🤰", summary: `${cycLabel} · 苗床崩坏${pregStageVal}%`,
                     items: [
-                        mk("排卵周期", `🥚 卵巢异变与下崽化：${ovulStageVal}/100「${ovulStg}」`, fmtOvr("排卵周期", `【🔬 卵巢畸变度：${ovulStageVal}/100（${ovulStg}）】：\n• 周期：${cycLabel} ｜ 单发受孕率：${fertProb}%`, [`处于正常生理周期内。`,`正好排出一颗成熟卵子💦。`,`被催熟的卵巢一次排出了好几颗卵子😳💦。`,`卵巢像喷鱼子酱般狂喷几百颗卵子🥵💦！`,`长出带血丝的异种大肉卵了🥵💦❤️！`,`啊嘿♡……变成永动深渊下崽机器啦🥵💦❤️❤️！`], ovulStageVal), "lust", { mainName: "🥚 卵巢崩坏度", label: "🎯 受孕概率", theme: "pleas", pct: fertProb, text: `受孕率 ${fertProb}%` }),
-                        mk("受精断面", `🔬 受精断面与胎盘魔化：${xrayStageVal}/100「${xrayStg}」`, fmtOvr("受精断面", `【🔬 胎盘畸变度：${xrayStageVal}/100（${xrayStg}）】：\n• 💧 宫腔储精：${wombMl}ml / ${caps.wombMax}ml`, [`子宫内部纯净安宁。`,`成千上万条精子正在围攻卵子💦！`,`最粗壮的精子已经钻破卵膜着床了😳💦。`,`几十颗卵子全都被同时受精着床了🥵💦！`,`漆黑触手精虫把卵子撕裂灌进黑毒了♡🥵💦❤️！`,`啊嘿♡……子宫内膜彻底变成吃肉的怪物胎盘啦🥵💦❤️❤️！`], xrayStageVal), "womb", { mainName: "🔬 胎盘畸变度", label: "🥛 精虫密度", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }),
-                        mk("精液归属", `🧬 肌体吸精与白浊同化：${dnaStageVal}/100「${dnaStg}」`, fmtOvr("精液归属", `【🔬 白浊同化度：${dnaStageVal}/100（${dnaStg}）】：\n• 💧 四穴总储精：${totalMl}ml ｜ 来源：${totalMl > 0 ? (preg.宫内精液归属 !== "无" ? preg.宫内精液归属 : `存留 ${totalMl}ml 浓精`) : "无"}`, [`身体干干净净。`,`大腿根溅到了几滴热精液💦。`,`穴口里一缕接一缕地往外溢流拉丝😳💦。`,`全身被浓厚精液像泥浆一样糊满结痂了🥵💦！`,`毛孔张开像海绵一样把精液吸进肉里了♡🥵💦❤️！`,`啊嘿♡……下半身化作咕嘟冒泡的白浊烂肉史莱姆啦🥵💦❤️❤️！`], dnaStageVal), "drug", { mainName: "🧬 白浊同化度", label: "🥛 四穴总精", theme: "semen", pct: Math.round((totalMl / Math.max(1, totalCapAll)) * 100), text: `合计 ${totalMl}ml` }),
-                        mk("孕肚进度", `🤰 破肚胎动与透明孵化巢：${pregStageVal}/100「${pregStg}」`, fmtOvr("孕肚进度", `【🔬 孵化巢畸变度：${pregStageVal}/100（${pregStg}）】：\n• 腹围膨隆度：${bellySwellPct}%（产卵/生产：${safeNum(preg.生产产卵次数)} 次）`, [`小腹平坦紧致。`,`小肚子微微鼓起一点弧度💦。`,`肚子像临盆孕妇一样高高挺起😳💦。`,`肚皮薄得像纸，里面小手脚在疯狂踢踹🥵💦！`,`肚子松垮垂到膝盖上爬满撕裂纹♡🥵💦❤️！`,`啊嘿♡……肚皮变成透明薄膜，里面翻滚着黑羊水和异种幼虫呀🥵💦❤️❤️！`], pregStageVal), "corr", { mainName: "🤰 孵化巢崩坏度", label: "🥛 腹围膨隆", theme: "semen", pct: bellySwellPct, text: `膨隆 ${bellySwellPct}%` })
+                        mk("排卵周期", `🥚 卵巢异变：${ovulStageVal}/100「${ovulStg}」`, fmtOvr("排卵周期", `【🔬 卵巢畸变：${ovulStageVal}/100】：${cycLabel} ｜ 受孕率：${fertProb}%`, [`正常生理期。`,`排出成熟卵子💦。`,`一次排出好几颗卵子😳💦。`,`狂喷几百颗卵子🥵💦！`,`长出异种大肉卵了🥵💦❤️！`,`啊嘿♡……变成永动下崽机器啦🥵💦❤️❤️！`], ovulStageVal), "lust", { mainName: "🥚 卵巢崩坏度", label: "🎯 受孕概率", theme: "pleas", pct: fertProb, text: `受孕率 ${fertProb}%` }),
+                        mk("受精断面", `🔬 受精断面：${xrayStageVal}/100「${xrayStg}」`, fmtOvr("受精断面", `【🔬 胎盘畸变：${xrayStageVal}/100】：宫腔储精 ${wombMl}ml / ${caps.wombMax}ml`, [`子宫纯净安宁。`,`精子正在围攻卵子💦！`,`钻破卵膜着床了😳💦。`,`几十颗卵子同时着床🥵💦！`,`触手精虫撕裂卵子♡🥵💦❤️！`,`啊嘿♡……变成怪物胎盘啦🥵💦❤️❤️！`], xrayStageVal), "womb", { mainName: "🔬 胎盘畸变度", label: "🥛 精虫密度", theme: "semen", pct: Math.round((wombMl / Math.max(1, caps.wombMax)) * 100), text: `${wombMl}/${caps.wombMax}ml` }),
+                        mk("精液归属", `🧬 白浊同化：${dnaStageVal}/100「${dnaStg}」`, fmtOvr("精液归属", `【🔬 白浊同化：${dnaStageVal}/100】：四穴总储精 ${totalMl}ml`, [`身体干净。`,`溅到几滴精液💦。`,`穴口往外拉丝😳💦。`,`全身被精液糊满🥵💦！`,`毛孔把精液吸进肉里♡🥵💦❤️！`,`啊嘿♡……化作白浊史莱姆啦🥵💦❤️❤️！`], dnaStageVal), "drug", { mainName: "🧬 白浊同化度", label: "🥛 四穴总精", theme: "semen", pct: Math.round((totalMl / Math.max(1, totalCapAll)) * 100), text: `合计 ${totalMl}ml` }),
+                        mk("孕肚进度", `🤰 孕肚孵化巢：${pregStageVal}/100「${pregStg}」`, fmtOvr("孕肚进度", `【🔬 孵化巢畸变：${pregStageVal}/100】：腹围膨隆 ${bellySwellPct}%`, [`小腹平坦。`,`微微鼓起💦。`,`高高挺起😳💦。`,`小手脚疯狂踢踹🥵💦！`,`垂到膝盖爬满撕裂纹♡🥵💦❤️！`,`啊嘿♡……肚皮变成透明薄膜孵化巢呀🥵💦❤️❤️！`], pregStageVal), "corr", { mainName: "🤰 孵化巢崩坏度", label: "🥛 腹围膨隆", theme: "semen", pct: bellySwellPct, text: `膨隆 ${bellySwellPct}%` })
                     ]
                 },
                 { title: "恩客图鉴", icon: "🍆", summary: clientList.length > 0 ? `已记录 ${clientList.length} 名恩客` : `暂无恩客记录`, items: clientItems },
                 {
                     title: "淫乱总账", icon: "💎", summary: `小穴${vagCnt} · 内射${creampie} · 接客${hookerCnt}`,
                     items: [
-                        mk("破瓜纪念", `🥀 破瓜纪念：「${vagCnt === 0 ? "🌸处女完好" : (mark.初夜破瓜纪念 && !mark.初夜破瓜纪念.includes("完好") ? mark.初夜破瓜纪念.slice(0, 16) : `🌺已破瓜(累计${vagCnt}次)`)}」`, fmtOvr("破瓜纪念", `【🔬 处女档案】：${vagCnt === 0 ? "处女膜完好无损" : (mark.初夜破瓜纪念 || `累计承受小穴贯穿 ${vagCnt} 次、内射 ${creampie} 次`)}。`, [`处女之身完好无损。`,`失去清白的那一刻有些酸涩💦。`,`早就习惯了眼下的生活😳💦。`,`被捅穿开发才是我这具身体的归宿🥵💦！`,`庆幸碍事的处女膜早就被捅烂啦🥵💦❤️！`,`啊嘿♡……注定要被操成拳头大烂肉洞的终极肉便器啦🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("六孔总账", `💎 性交总账：「小穴${vagCnt}／口${mouthCnt}／菊${analCnt}／乳${titCnt}／足${footCnt}」`, fmtOvr("六孔总账", `【🔬 六孔历史贯穿统计】：\n• 小穴：${vagCnt} ｜ 口交：${mouthCnt} ｜ 后庭：${analCnt} ｜ 乳交：${titCnt} ｜ 足交：${footCnt} ｜ 异种：${beastCnt}`, [`所有性交记录全为 0。`,`脸颊还是有些发热💦。`,`粘膜和肉壁早就出现不可逆松弛😳💦。`,`外翻骚穴自豪地一抽一缩，想让数字涨更快🥵💦！`,`快把三穴次数刷到成百上千次吧🥵💦❤️！`,`啊嘿♡……六个孔穴全都100%器质崩坏报废啦🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("高潮总账", `💎 高潮与失禁：「高潮${orgasmCnt}／强制${forceOrgCnt}／寸止${edgeCnt}／喷潮${squirtCnt}／失禁${leakCnt}」`, fmtOvr("高潮总账", `【🔬 高潮统计】：累计高潮 ${orgasmCnt}（强制 ${forceOrgCnt}，寸止 ${edgeCnt}），喷潮 ${squirtCnt}，失禁 ${leakCnt}，自慰 ${mastCnt}。`, [`高潮与失控记录全为 0。`,`偶尔在刺激下有些发抖💦。`,`括约肌变得越来越容易失控😳💦。`,`尾椎骨发麻，稍微刺激就漏尿喷水🥵💦！`,`最喜欢被强制操到潮吹失禁啦♡🥵💦❤️！`,`啊嘿♡……24小时都在一边翻白眼一边失禁漏尿呀🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("射精总账", `💎 射精与泌乳：「内射${creampie}／颜射${facialCnt}／吞精${swallowCnt}(${swallowMl}ml)／喷乳${milkMl}ml」`, fmtOvr("射精总账", `【🔬 射精与泌乳】：内射 ${creampie} ｜ 颜射 ${facialCnt} ｜ 吞精 ${swallowCnt}次(${swallowMl}ml) ｜ 泌乳 ${milkCnt}次(${milkMl}ml)。`, [`从未被注入过雄性体液。`,`耳根忍不住发烫💦。`,`事后清理让人疲惫酸麻😳💦。`,`早就被浓精味浸染透了🥵💦！`,`把母狗从里到外灌成白浊泡芙吧🥵💦❤️！`,`啊嘿♡……全身每一个毛孔都在往外冒浓精呀🥵💦❤️❤️！`]), "none", null, true, 0),
-                        mk("露出总账", `💎 接客与轮奸：「接客${hookerCnt}／轮奸${gangCnt}／睡奸${sleepCnt}／露出${safeNum(cnt.暴露?.露出)}」`, fmtOvr("露出总账", `【🔬 交易与凌辱】：接客 ${hookerCnt} ｜ 外借 ${safeNum(cnt.交易?.被外借共享)} ｜ 轮奸 ${gangCnt} ｜ 睡奸 ${sleepCnt} ｜ 露出 ${safeNum(cnt.暴露?.露出)}。`, [`所有记录均为 0。`,`必须多加提防💦。`,`渐渐麻木并顺从这种处境😳💦。`,`已经习惯顺从这些过往了。`,`最喜欢接客和被好几个男人轮奸群交了♡🥵💦❤️！`,`啊嘿♡……全天候不打烊的公用排泄肉坑欢迎排队来操呀🥵💦❤️❤️！`]), "none", null, true, 0)
+                        mk("破瓜纪念", `🥀 破瓜纪念：「${vagCnt === 0 ? "🌸处女完好" : `🌺已破瓜(累计${vagCnt}次)`}」`, fmtOvr("破瓜纪念", `【🔬 处女档案】：${vagCnt === 0 ? "处女膜完好无损" : `累计承受小穴贯穿 ${vagCnt} 次、内射 ${creampie} 次`}。`, [`处女之身完好。`,`失去清白有些酸涩💦。`,`习惯了眼下生活😳💦。`,`被捅穿才是归宿🥵💦！`,`庆幸处女膜被捅烂啦🥵💦❤️！`,`啊嘿♡……终极肉便器啦🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("六孔总账", `💎 性交总账：「小穴${vagCnt}／口${mouthCnt}／菊${analCnt}／乳${titCnt}／足${footCnt}」`, fmtOvr("六孔总账", `【🔬 六孔统计】：小穴${vagCnt}｜口${mouthCnt}｜菊${analCnt}｜乳${titCnt}｜足${footCnt}`, [`记录全为0。`,`脸颊发热💦。`,`粘膜不可逆松弛😳💦。`,`想让数字涨更快🥵💦！`,`刷到成百上千次吧🥵💦❤️！`,`啊嘿♡……六孔全部崩坏报废啦🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("高潮总账", `💎 高潮与失禁：「高潮${orgasmCnt}／强制${forceOrgCnt}／寸止${edgeCnt}／喷潮${squirtCnt}／失禁${leakCnt}」`, fmtOvr("高潮总账", `【🔬 高潮统计】：高潮${orgasmCnt}，喷潮${squirtCnt}，失禁${leakCnt}，自慰${mastCnt}。`, [`记录全为0。`,`偶尔发抖💦。`,`括约肌容易失控😳💦。`,`稍微刺激就漏尿🥵💦！`,`最喜欢潮吹失禁啦♡🥵💦❤️！`,`啊嘿♡……24小时翻白眼失禁呀🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("射精总账", `💎 射精与泌乳：「内射${creampie}／颜射${facialCnt}／吞精${swallowCnt}(${swallowMl}ml)／喷乳${milkMl}ml」`, fmtOvr("射精总账", `【🔬 射精与泌乳】：内射${creampie}｜颜射${facialCnt}｜吞精${swallowCnt}次｜泌乳${milkCnt}次。`, [`未注入过体液。`,`耳根发烫💦。`,`清理让人酸麻😳💦。`,`被浓精味浸染透了🥵💦！`,`灌成白浊泡芙吧🥵💦❤️！`,`啊嘿♡……毛孔都在冒浓精呀🥵💦❤️❤️！`]), "none", null, true, 0),
+                        mk("露出总账", `💎 接客与轮奸：「接客${hookerCnt}／轮奸${gangCnt}／睡奸${sleepCnt}／露出${safeNum(cnt.暴露?.露出)}」`, fmtOvr("露出总账", `【🔬 交易与凌辱】：接客${hookerCnt}｜轮奸${gangCnt}｜睡奸${sleepCnt}。`, [`记录均为0。`,`多加提防💦。`,`渐渐麻木顺从😳💦。`,`习惯这些过往了。`,`最喜欢被轮奸群交了♡🥵💦❤️！`,`啊嘿♡……公用排泄肉坑欢迎排队来操呀🥵💦❤️❤️！`]), "none", null, true, 0)
                     ]
                 }
             ];
@@ -1980,38 +2077,25 @@
             });
             return baseCategories;
         }
-        // =========================================================================
-        // 🔧 状态栏 2.0 兼容性桥接与核心变量解析引擎补丁
-        // =========================================================================
+
         const createDefaultVars = getInitialVars;
         const DIFFICULTY_PROFILES = DIFFICULTY_PRESETS;
-        let isPanelOpen = false;
-        let isSettingsOpen = false;
-        const openCategorySet = new Set(["档案与风评", "恶堕与脑改", "六孔与储精"]);
+        let isPanelOpen = false, isSettingsOpen = false;
 
-        // 补齐默认悬浮球与面板坐标
         if (typeof userSettings.btnX !== "number") userSettings.btnX = Math.max(12, window.innerWidth - 68);
         if (typeof userSettings.btnY !== "number") userSettings.btnY = Math.max(80, Math.round(window.innerHeight * 0.2));
         if (typeof userSettings.panelX !== "number") userSettings.panelX = Math.max(8, Math.round((window.innerWidth - Math.min(window.innerWidth - 16, 540)) / 2));
         if (typeof userSettings.panelY !== "number") userSettings.panelY = 46;
-
-        // 兼容图片缓存对象读取与写入
-        const importedImageRegistry = new Proxy({}, {
-            get(_, prop) { return importedImgCache.get(normalizeImgKey(prop)); },
-            set(_, prop, val) { importedImgCache.set(normalizeImgKey(prop), val); return true; },
-            ownKeys() { return Array.from(importedImgCache.keys()); },
-            getOwnPropertyDescriptor() { return { enumerable: true, configurable: true }; }
-        });
-        async function idbPutImage(key, dataUrl) {
-            return saveDataUrlToDB(key, dataUrl);
+        if (typeof userSettings.autoGenOnMajorChange !== "boolean") userSettings.autoGenOnMajorChange = false;
+        if (typeof userSettings.autoGenCooldownSec !== "number") userSettings.autoGenCooldownSec = 30;
+        if (!userSettings.autoGenItemMap || typeof userSettings.autoGenItemMap !== "object") {
+            userSettings.autoGenItemMap = { "小穴实况": true, "子宫实况": true, "骚口实况": true, "胸部实况": true, "当前姿势": true, "身份与背景": true };
         }
 
-        // 解析 _.set('路径', 值) 指令
         function setByPath(obj, pathArr, val) {
             let cur = obj;
             for (let i = 0; i < pathArr.length - 1; i++) {
-                const k = pathArr[i];
-                if (!k) continue;
+                const k = pathArr[i]; if (!k) continue;
                 if (typeof cur[k] !== "object" || cur[k] === null) cur[k] = {};
                 cur = cur[k];
             }
@@ -2025,21 +2109,15 @@
             const reg = /_\.set\s*\(\s*(['"`])([^'"`]+)\1\s*,\s*([\s\S]*?)\)\s*;?/g;
             let m;
             while ((m = reg.exec(blockText)) !== null) {
-                const rawPath = m[2].trim();
-                let rawVal = m[3].trim();
+                const rawPath = m[2].trim(); let rawVal = m[3].trim();
                 const parts = rawPath.split(".").map(s => s.trim()).filter(Boolean);
-                if (parts.length > 1 && !(parts[0] in targetVars)) {
-                    parts.shift(); // 自动剥离前面的角色名（如 '伊一.身体.体力' -> '身体.体力'）
-                }
+                if (parts.length > 1 && !(parts[0] in targetVars)) parts.shift();
                 if (!parts.length) continue;
                 let parsedVal = rawVal;
                 if (/^(?:true|false)$/i.test(rawVal)) parsedVal = rawVal.toLowerCase() === "true" ? 1 : 0;
                 else if (/^-?\d+(?:\.\d+)?$/.test(rawVal)) parsedVal = Number(rawVal);
-                else if ((rawVal.startsWith("'") && rawVal.endsWith("'")) || (rawVal.startsWith('"') && rawVal.endsWith('"')) || (rawVal.startsWith("`") && rawVal.endsWith("`"))) {
-                    parsedVal = rawVal.slice(1, -1);
-                } else {
-                    try { parsedVal = JSON.parse(rawVal); } catch (e) { parsedVal = rawVal.replace(/^['"`]|['"`]$/g, ""); }
-                }
+                else if ((rawVal.startsWith("'") && rawVal.endsWith("'")) || (rawVal.startsWith('"') && rawVal.endsWith('"')) || (rawVal.startsWith("`") && rawVal.endsWith("`"))) parsedVal = rawVal.slice(1, -1);
+                else { try { parsedVal = JSON.parse(rawVal); } catch (e) { parsedVal = rawVal.replace(/^['"`]|['"`]$/g, ""); } }
                 setByPath(targetVars, parts, parsedVal);
                 hasSet = true;
             }
@@ -2051,6 +2129,7 @@
             const hasExplicit = /<UpdateVariable>[\s\S]*?<\/UpdateVariable>|_\.set\s*\(/i.test(mesText);
             applyNaturalMetabolism(mesText, targetVars, hasExplicit);
         }
+
         function getFallbackData() {
             const ctx = safeCtx(), trueProtagName = detectProtagonistName(curVars), c = ctx?.name2 || "无角色卡";
             return {
@@ -2067,11 +2146,8 @@
             const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
             if (panel) {
                 panel.className = (tc.cls || "st-theme-succubus") + (userSettings.mobileLiteMode ? " st-lite-mode" : "");
-                panel.style.background = tc.bg;
-                panel.style.border = tc.border;
-                panel.style.borderRadius = tc.radius;
-                panel.style.boxShadow = tc.shadow;
-                panel.style.color = tc.text;
+                panel.style.background = tc.bg; panel.style.border = tc.border; panel.style.borderRadius = tc.radius;
+                panel.style.boxShadow = tc.shadow; panel.style.color = tc.text;
                 panel.style.width = `${Math.min(window.innerWidth - 12, userSettings.width)}px`;
                 panel.style.height = `${Math.min(window.innerHeight - 75, userSettings.height)}px`;
                 panel.style.fontSize = `${Math.round(13.5 * (userSettings.fontScale / 100))}px`;
@@ -2079,10 +2155,7 @@
             }
             if (headerBar && tc.headerBg) headerBar.style.background = tc.headerBg;
             const tb = document.getElementById("st-v5-toggle");
-            if (tb) {
-                tb.style.background = `linear-gradient(135deg, ${tc.prim}, ${tc.sec})`;
-                tb.style.boxShadow = `0 6px 20px ${tc.hi}`;
-            }
+            if (tb) { tb.style.background = `linear-gradient(135deg, ${tc.prim}, ${tc.sec})`; tb.style.boxShadow = `0 6px 20px ${tc.hi}`; }
         }
 
         function getNormalizedEndpoints(rawUrl) {
@@ -2101,22 +2174,7 @@
             let jsonCand = s.slice(firstBrace, lastBrace + 1);
             try { return JSON.parse(jsonCand); } catch (e1) {}
             let fixed = jsonCand.replace(/,\s*([}\]])/g, "$1").replace(/\r?\n/g, " ");
-            try { return JSON.parse(fixed); } catch (e2) {}
-            try {
-                let out = "", inStr = false;
-                for (let i = 0; i < fixed.length; i++) {
-                    const ch = fixed[i];
-                    if (ch === "\\" && i + 1 < fixed.length) { out += ch + fixed[i + 1]; i++; continue; }
-                    if (ch === '"') {
-                        if (!inStr) { inStr = true; out += ch; }
-                        else {
-                            const rest = fixed.slice(i + 1).trimStart();
-                            if (/^[:,}\]]/.test(rest)) { inStr = false; out += ch; } else out += "”";
-                        }
-                    } else out += ch;
-                }
-                return JSON.parse(out);
-            } catch (e3) { return null; }
+            try { return JSON.parse(fixed); } catch (e2) { return null; }
         }
 
         async function callSubApiRaw(systemPrompt, userPrompt) {
@@ -2128,51 +2186,36 @@
                 body: JSON.stringify({ model: userSettings.apiModel || "gpt-4o-mini", messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], temperature: 0.35, stream: false })
             });
             const resText = await res.text();
-            if (resText.trim().startsWith("data:")) {
-                let reply = "";
-                for (const line of resText.split("\n")) {
-                    const t = line.replace(/^data:\s*/, "").trim();
-                    if (!t || t === "[DONE]") continue;
-                    try { const ck = JSON.parse(t); reply += ck?.choices?.[0]?.delta?.content || ck?.choices?.[0]?.message?.content || ""; } catch (e) {}
-                }
-                if (reply) return { reply, source: "副API" };
-            } else {
-                const data = JSON.parse(resText);
-                if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
-                const reply = data?.choices?.[0]?.message?.content || "";
-                if (reply) return { reply, source: "副API" };
-            }
-            throw new Error("副API返回内容为空");
+            const data = JSON.parse(resText);
+            if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+            return { reply: data?.choices?.[0]?.message?.content || "", source: "副API" };
         }
 
         async function requestSingleItemAiGen(itemTitle, userHint, btnEl) {
-            const ctx = safeCtx(), u = detectProtagonistName(curVars), realId = detectRealCharacterIdentity(curVars), corr = safeNum(curVars.核心数值?.淫乱恶堕, 0);
-            const personaAndDesc = safeStr(ctx?.power_user?.persona_description) + "\n" + safeStr(ctx?.characters?.[ctx?.characterId]?.description).slice(0, 800);
-            const recentMes = (personaAndDesc + "\n" + safeStr((ctx?.chat || []).slice(-6).map(m => m?.mes || "").join("\n"))).slice(-3200);
-            const sysPrompt = "你是一个纯粹的 JSON 生成器，必须且只能输出一个标准 JSON 对象！字符串内部严禁出现英文双引号或换行符！";
-            const userPrompt = `请根据当前剧情与【自定义要求】，为主角【${u}（身份：${realId}，恶堕度：${corr}/100，人格模式：${userSettings.personaMode}）】的【${itemTitle}】编写状态描述（120~180字）和第一人称心声（80~130字）：\n【要求】：${userHint || "结合当前最新剧情"}\n【参考】：${recentMes || "无"}\n输出纯JSON：{"title":"${safeStr(itemTitle).replace(/"/g,"")}","stage":"4至6字概括","ratio":"50/100","desc":"【🔬 状态实况】：...","thought":"第一人称内心独白..."}`;
-            const oldTxt = btnEl ? btnEl.textContent : "", isMiniBtn = oldTxt.trim() === "🔄";
-            if (btnEl) { btnEl.textContent = isMiniBtn ? "⏳" : "⏳ 生成中..."; btnEl.disabled = true; }
+            const ctx = safeCtx(), u = detectProtagonistName(curVars), corr = safeNum(curVars.核心数值?.淫乱恶堕, 0);
+            const recentMes = safeStr((ctx?.chat || []).slice(-6).map(m => m?.mes || "").join("\n")).slice(-2800);
+            const sysPrompt = "你是一个纯粹的 JSON 生成器，只输出标准 JSON 对象！";
+            const userPrompt = `请为主角【${u}（恶堕度：${corr}/100）】的【${itemTitle}】编写状态描述和第一人称心声：\n【要求】：${userHint || "结合最新剧情"}\n【参考】：${recentMes || "无"}\n输出纯JSON：{"title":"${safeStr(itemTitle).replace(/"/g,"")}","stage":"4至6字概括","ratio":"50/100","desc":"【🔬 状态实况】：...","thought":"第一人称心声..."}`;
+            const oldTxt = btnEl ? btnEl.textContent : "";
+            if (btnEl) { btnEl.textContent = "⏳ 生成中..."; btnEl.disabled = true; }
             try {
                 const { reply } = await callSubApiRaw(sysPrompt, userPrompt);
                 const parsed = repairAndParseJson(reply);
-                if (parsed && (parsed.desc || parsed.thought)) { showToast("✨ 已刷新该项状态与心声！", "success", 2400); return parsed; }
-                throw new Error("返回格式未能解析为JSON");
-            } catch (err) { showToast("❌ 生成失败：" + (err.message || "请检查副API设置"), "error", 3500); return null; }
-            finally { if (btnEl) { btnEl.textContent = oldTxt || "✨ AI生成"; btnEl.disabled = false; } }
+                if (parsed && (parsed.desc || parsed.thought)) { showToast("✨ 已刷新状态与心声！", "success", 2400); return parsed; }
+                throw new Error("JSON解析失败");
+            } catch (err) { showToast("❌ 生成失败：" + (err.message || "请检查副API"), "error", 3500); return null; }
+            finally { if (btnEl) { btnEl.textContent = oldTxt || "✨ 副API生成"; btnEl.disabled = false; } }
         }
 
         function buildFullJsonApiPrompt(u, c, rawText) {
-            const realId = detectRealCharacterIdentity(curVars), allRecentText = (safeCtx()?.chat || []).slice(-5).map(m => safeStr(m?.mes)).join("\n");
-            return `[SYSTEM OVERRIDE: 纯粹JSON生成器，严禁双引号或换行符]\n请阅读下方正文，重构更新主角【${u}（${realId}）】全部状态栏数值与历史计数：\n${safeStr(allRecentText || rawText).slice(-3500)}\n输出纯JSON：{"当前认知名字":"${u}","种族与体质":"${realId}","生理周期阶段":"危险排卵期或正常生理期","受孕概率":50,"体力":75,"对肉棒好感度":75,"性欲程度":80,"淫乱恶堕":78,"羞耻度":22,"服从度":74,"沦陷度":70,"快感累积":65,"口内毫升":0,"小穴毫升":5,"子宫毫升":15,"屁眼毫升":0,"体表痕迹":"无","淫纹与刻印":"无","穿刺与环饰":"无","体内道具":"无","计数":{"口":0,"小穴":0,"屁眼":0,"乳穴":0,"足腿":0,"高潮":0,"强制高潮":0,"寸止":0,"内射":0,"颜射":0,"吞精次数":0,"吞精毫升":0,"喷乳次数":0,"喷乳毫升":0,"自慰":0,"失禁":0,"喷潮":0,"露出":0,"接客":0,"轮奸":0,"睡奸":0},"当前姿势":"简短概括","恩客图鉴":{},"按钮详情":{}}`;
+            const diff = getDifficultyProfile(), allRecentText = (safeCtx()?.chat || []).slice(-5).map(m => safeStr(m?.mes)).join("\n");
+            return `[SYSTEM OVERRIDE: 纯粹JSON生成器]\n请阅读下方正文，重构更新目标【${u}（难度：${diff.mult}x）】全部状态栏数值与计数：\n${safeStr(allRecentText || rawText).slice(-3200)}\n输出纯JSON：{"当前认知名字":"${u}","生理周期阶段":"危险排卵期或正常生理期","受孕概率":50,"体力":75,"对肉棒好感度":75,"性欲程度":80,"淫乱恶堕":78,"羞耻度":22,"服从度":74,"沦陷度":70,"快感累积":65,"口内毫升":0,"小穴毫升":5,"子宫毫升":15,"屁眼毫升":0,"体表痕迹":"无","淫纹与刻印":"无","穿刺与环饰":"无","体内道具":"无","计数":{"口":0,"小穴":0,"屁眼":0,"乳穴":0,"足腿":0,"高潮":0,"强制高潮":0,"寸止":0,"内射":0,"颜射":0,"吞精次数":0,"吞精毫升":0,"喷乳次数":0,"喷乳毫升":0,"自慰":0,"失禁":0,"喷潮":0,"露出":0,"接客":0,"轮奸":0,"睡奸":0},"当前姿势":"简短概括","恩客图鉴":{},"按钮详情":{}}`;
         }
 
-        function applyApiFullResponse(replyText, targetMsg, fid, sourceLabel = "副API") {
+        function applyApiFullResponse(replyText, targetMsg, fid, sourceLabel = "一键API") {
             const data = repairAndParseJson(replyText);
             if (!data || typeof data !== "object") return false;
             const v = curVars;
-            if (!v.档案.手动锁定真名 && data.当前认知名字) v.档案.当前认知名字 = safeStr(data.当前认知名字).trim();
-            if (data.种族与体质) v.档案.种族与体质 = safeStr(data.种族与体质).trim();
             if (data.生理周期阶段) v.受孕与生理.生理周期阶段 = safeStr(data.生理周期阶段);
             if (typeof data.受孕概率 === "number") v.受孕与生理.受孕概率 = data.受孕概率;
             if (data.计数 && typeof data.计数 === "object") {
@@ -2203,15 +2246,10 @@
             if (typeof data.子宫毫升 === "number") v.体内精液存量.子宫毫升 = data.子宫毫升;
             if (typeof data.屁眼毫升 === "number") v.体内精液存量.屁眼毫升 = data.屁眼毫升;
             if (data.当前姿势) v.实况.当前姿势 = safeStr(data.当前姿势);
-            if (data.体表痕迹) v.痕迹与标记.体表痕迹 = safeStr(data.体表痕迹);
-            if (data.淫纹与刻印) v.痕迹与标记.淫纹与刻印 = safeStr(data.淫纹与刻印);
-            if (data.穿刺与环饰) v.痕迹与标记.穿刺与环饰 = safeStr(data.穿刺与环饰);
-            if (data.体内道具) v.体内道具与权限.体内道具 = safeStr(data.体内道具);
-            if (data.恩客图鉴 && typeof data.恩客图鉴 === "object") v.恩客图鉴 = { ...(v.恩客图鉴 || {}), ...data.恩客图鉴 };
             if (data.按钮详情 && typeof data.按钮详情 === "object") {
                 Object.keys(data.按钮详情).forEach(k => {
                     const prev = v.按钮详情?.[k] || {};
-                    v.按钮详情[k] = { ...data.按钮详情[k], ...(prev.customTitle ? { customTitle: prev.customTitle } : {}), ...(prev.imgUrl ? { imgUrl: prev.imgUrl } : {}) };
+                    v.按钮详情[k] = { ...prev, ...data.按钮详情[k], imgUrl: prev.imgUrl, stageImgs: prev.stageImgs, forceLatestImg: prev.forceLatestImg };
                 });
             }
             saveChatCache(v); latestStatus = getFallbackData(); renderBody();
@@ -2224,14 +2262,14 @@
             const ctx = safeCtx(), chat = ctx?.chat || [], fid = chat.length - 1, targetMsg = chat[fid], rawText = safeStr(targetMsg?.mes);
             const u = detectProtagonistName(curVars), c = ctx?.name2 || "角色", oldTxt = btnEl ? btnEl.textContent : "";
             if (btnEl) btnEl.textContent = "⏳ 重绘中...";
-            showToast(`⏳ 正在通过副 API 为【${u}】重绘状态...`, "info", 3800);
+            showToast(`⏳ 正在为【${u}】执行一键API重绘...`, "info", 3500);
             try {
-                const { reply, source } = await callSubApiRaw("只输出标准 JSON 对象的状态栏实时重绘引擎。", buildFullJsonApiPrompt(u, c, rawText));
+                const { reply, source } = await callSubApiRaw("只输出标准 JSON 对象。", buildFullJsonApiPrompt(u, c, rawText));
                 const ok = applyApiFullResponse(reply, targetMsg, fid, source);
-                if (btnEl) btnEl.textContent = ok ? "✅ 重绘成功" : "⚠️ 已自动修复";
+                if (btnEl) btnEl.textContent = ok ? "✅ 重绘成功" : "⚠️ 已修复";
             } catch (err) {
                 if (btnEl) btnEl.textContent = "❌ 失败";
-                showToast("❌ 副API重绘失败：" + (err.message || "请检查设置"), "error", 3800);
+                showToast("❌ 一键API重绘失败：" + (err.message || "请检查设置"), "error", 3800);
             }
             if (btnEl && oldTxt) setTimeout(() => { btnEl.textContent = oldTxt; }, 2500);
         }
@@ -2239,7 +2277,7 @@
         async function fetchModelList(btnEl, selectEl, inputEl) {
             const rawUrl = inputEl ? inputEl.value.trim() : userSettings.apiUrl, apiKey = document.getElementById("st-api-key")?.value.trim() || userSettings.apiKey;
             const { modelsUrl } = getNormalizedEndpoints(rawUrl);
-            if (!modelsUrl) { showToast("⚠️ 请先填写有效的副 API 地址！", "error"); return; }
+            if (!modelsUrl) { showToast("⚠️ 请先填写有效的 API 地址！", "error"); return; }
             if (btnEl) btnEl.textContent = "⏳ 拉取中...";
             try {
                 const headers = { "Accept": "application/json" };
@@ -2247,38 +2285,81 @@
                 const res = await fetch(modelsUrl, { method: "GET", headers }), data = JSON.parse(await res.text());
                 const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []);
                 const ids = list.map(m => typeof m === "string" ? m : (m?.id || m?.name || "")).filter(Boolean);
-                if (!ids.length) throw new Error("未找到可用模型");
+                if (!ids.length) throw new Error("未找到模型");
                 userSettings.modelList = ids;
                 if (!userSettings.apiModel || !ids.includes(userSettings.apiModel)) userSettings.apiModel = ids[0];
                 saveSettings();
                 if (selectEl) { selectEl.innerHTML = ids.map(id => `<option value="${id}" ${id === userSettings.apiModel ? "selected" : ""}>${id}</option>`).join(""); selectEl.style.display = "block"; }
                 const modInput = document.getElementById("st-api-mod"); if (modInput) modInput.value = userSettings.apiModel;
                 if (btnEl) btnEl.textContent = `✅ 已拉取(${ids.length})`;
-                showToast(`✅ 成功拉取 ${ids.length} 个模型！`, "success");
-            } catch (err) { if (btnEl) btnEl.textContent = "❌ 失败"; showToast("❌ 拉取模型失败：" + (err.message || "网络错误"), "error", 3800); }
+            } catch (err) { if (btnEl) btnEl.textContent = "❌ 失败"; showToast("❌ 拉取失败：" + err.message, "error"); }
         }
 
+        // =========================================================================
+        // 🖼️ 6. 修复初始有图时重新生图不替换的问题：新画的图拥有最高置顶权！
+        // =========================================================================
         function getStageImageCandidates(item) {
-            const manualUrl = safeStr(item.isCustom ? curVars.自定义条目?.[item.catTitle]?.find(x => x.id === item.editKey)?.imgUrl : curVars.按钮详情?.[item.editKey]?.imgUrl).trim();
-            if (manualUrl) { const hitManual = queryImportedImage(manualUrl); return hitManual ? [hitManual, manualUrl] : [manualUrl]; }
             if (!item.editKey) return [];
             const pct = (item.pct !== null && item.pct !== undefined) ? item.pct : 0;
             const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
-            const stageIdx = item.hasStageBar ? tier6(pct, isRev) : 0, stageNum = stageIdx + 1, baseFolder = `${PLUGIN_BASE_PATH}/images`, candidates = [];
-            for (let s = stageNum; s >= 1; s--) { const fh = queryImportedImage(`${item.editKey}_${s}`); if (fh && !candidates.includes(fh)) candidates.push(fh); }
-            const hg = queryImportedImage(item.editKey); if (hg && !candidates.includes(hg)) candidates.push(hg);
-            const presetArr = DEFAULT_STAGE_IMAGES[item.editKey];
-            if (Array.isArray(presetArr)) {
-                for (let s = stageIdx; s >= 0; s--) {
-                    const entry = safeStr(presetArr[s]).trim(); if (!entry) continue;
-                    const hp = queryImportedImage(entry); if (hp && !candidates.includes(hp)) candidates.push(hp);
-                    if (entry.startsWith("http") || entry.startsWith("data:") || entry.startsWith("/")) candidates.push(entry);
-                    else if (/\.(?:webp|png|gif|jpg|jpeg)$/i.test(entry)) candidates.push(`${baseFolder}/${entry}`);
-                    else candidates.push(`${baseFolder}/${entry}.webp`, `${baseFolder}/${entry}.png`, `${baseFolder}/${entry}.gif`, `${baseFolder}/${entry}.jpg`);
-                }
+            const stageIdx = item.hasStageBar ? tier6(pct, isRev) : 0, stageNum = stageIdx + 1;
+            const baseFolder = `${PLUGIN_BASE_PATH}/images`, candidates = [];
+            const btnRec = curVars.按钮详情?.[item.editKey] || {};
+            const stageMap = btnRec.stageImgs || {};
+
+            // 【最高优先级 1】：当前主角在该阶段最新生成或上传的专属图片（直接压倒一切初始默认图！）
+            const scopedKeyNow = getProtagScopedImgKey(item.editKey, stageNum);
+            const hitScopedNow = queryImportedImage(scopedKeyNow);
+            if (hitScopedNow) candidates.push(hitScopedNow);
+            if (stageMap[stageNum] && !candidates.includes(stageMap[stageNum])) candidates.push(stageMap[stageNum]);
+            if (btnRec.forceLatestImg && !candidates.includes(btnRec.forceLatestImg)) candidates.push(btnRec.forceLatestImg);
+
+            // 【优先级 2】：用户在输入框手动填写的图片或最新生图 URL
+            const manualUrl = safeStr(item.isCustom ? curVars.自定义条目?.[item.catTitle]?.find(x => x.id === item.editKey)?.imgUrl : btnRec.imgUrl).trim();
+            if (manualUrl) {
+                const hitManual = queryImportedImage(manualUrl);
+                if (hitManual && !candidates.includes(hitManual)) candidates.push(hitManual);
+                if (!candidates.includes(manualUrl)) candidates.push(manualUrl);
             }
+
+            // 【优先级 3】：状态回退时，读取当前主角低阶段曾保存过的图
+            for (let s = stageNum; s >= 1; s--) {
+                const fScoped = queryImportedImage(getProtagScopedImgKey(item.editKey, s));
+                if (fScoped && !candidates.includes(fScoped)) candidates.push(fScoped);
+                if (stageMap[s] && !candidates.includes(stageMap[s])) candidates.push(stageMap[s]);
+            }
+
+            // 【最低兜底优先级】：初始导入的全局图包与本地文件夹默认图
+            for (let s = stageNum; s >= 1; s--) {
+                const fh = queryImportedImage(`${item.editKey}_${s}`);
+                if (fh && !candidates.includes(fh)) candidates.push(fh);
+            }
+            const hg = queryImportedImage(item.editKey);
+            if (hg && !candidates.includes(hg)) candidates.push(hg);
             candidates.push(`${baseFolder}/${item.editKey}_${stageNum}.webp`, `${baseFolder}/${item.editKey}_${stageNum}.png`, `${baseFolder}/${item.editKey}.webp`, `${baseFolder}/${item.editKey}.png`);
             return [...new Set(candidates)];
+        }
+
+        async function clearCurrentProtagImages() {
+            const u = detectProtagonistName(curVars) || "主角";
+            if (!confirm(`🧹 确定要一键清理目标【${u}】在当前会话中生成和绑定的所有图片吗？`)) return;
+            const prefix = normalizeImgKey(`${getChatStoreKey().replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, "_").slice(-20)}_${u}_`);
+            try {
+                const db = await openImageDB();
+                const tx = db.transaction(IDB_STORE, "readwrite"), store = tx.objectStore(IDB_STORE);
+                for (const k of Array.from(importedImgCache.keys())) {
+                    if (k.startsWith(prefix)) { store.delete(k); importedImgCache.delete(k); }
+                }
+            } catch (e) {}
+            if (curVars.按钮详情) {
+                Object.keys(curVars.按钮详情).forEach(k => {
+                    delete curVars.按钮详情[k].imgUrl;
+                    delete curVars.按钮详情[k].stageImgs;
+                    delete curVars.按钮详情[k].forceLatestImg;
+                });
+            }
+            saveChatCache(curVars); latestStatus = getFallbackData(); renderBody();
+            showToast(`🧹 已一键清理【${u}】的本局全部配图！`, "success", 3000);
         }
 
         function openTrueFullscreenImage(imgSrc) {
@@ -2286,48 +2367,37 @@
             let lb = document.getElementById("st-v25-fullscreen-lightbox");
             if (!lb) {
                 lb = document.createElement("div"); lb.id = "st-v25-fullscreen-lightbox";
-                lb.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483647;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center;overflow:auto;touch-action:pan-x pan-y pinch-zoom;";
+                lb.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483647;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center;overflow:auto;";
                 document.body.appendChild(lb);
             }
-            lb.innerHTML = `<div style="position:fixed;top:14px;right:14px;z-index:2147483647;display:flex;gap:8px;"><button id="st-lb-mode-btn" type="button" style="background:rgba(243,139,168,0.94);color:#11111b;border:none;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:bold;cursor:pointer;">🔍 切换比例</button><button id="st-lb-close-btn" type="button" style="background:rgba(20,16,32,0.88);color:#fff;border:1.5px solid #f38ba8;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:bold;cursor:pointer;">关闭 ✕</button></div><img id="st-lb-full-img" src="${imgSrc}" style="width:100vw;height:auto;object-fit:contain;display:block;margin:auto;">`;
+            lb.innerHTML = `<div style="position:fixed;top:14px;right:14px;z-index:2147483647;display:flex;gap:8px;"><button id="st-lb-close-btn" type="button" style="background:rgba(20,16,32,0.88);color:#fff;border:1.5px solid #f38ba8;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:bold;cursor:pointer;">关闭 ✕</button></div><img id="st-lb-full-img" src="${imgSrc}" style="width:100vw;height:auto;object-fit:contain;display:block;margin:auto;">`;
             lb.style.display = "flex";
-            const fullImg = lb.querySelector("#st-lb-full-img"), modeBtn = lb.querySelector("#st-lb-mode-btn");
-            let curMode = 0;
-            modeBtn.onclick = (e) => {
-                e.stopPropagation(); curMode = (curMode + 1) % 3;
-                if (curMode === 0) { fullImg.style.width = "100vw"; fullImg.style.height = "auto"; fullImg.style.objectFit = "contain"; modeBtn.textContent = "🔍 铺满屏幕"; }
-                else if (curMode === 1) { fullImg.style.width = "100vw"; fullImg.style.height = "100vh"; fullImg.style.objectFit = "cover"; modeBtn.textContent = "🔍 200%特写"; }
-                else { fullImg.style.width = "200vw"; fullImg.style.height = "auto"; modeBtn.textContent = "🔄 恢复原始"; }
-            };
             lb.querySelector("#st-lb-close-btn").onclick = (e) => { e.stopPropagation(); lb.style.display = "none"; };
-            fullImg.onclick = () => { lb.style.display = "none"; };
+            lb.querySelector("#st-lb-full-img").onclick = () => { lb.style.display = "none"; };
         }
-        // =========================================================================
-        // 👻 智绘姬后台静默生图引擎（不盖楼、不污染正文，直接生图进插件卡片！）
-        // =========================================================================
-        // =========================================================================
-        // 👻 正文借壳隐身生图引擎（100%走正文同款生图软件通道，隐身生成后吸入插件并擦除正文痕迹！）
-        // =========================================================================
+
+        let isGeneratingImageBusy = false, lastImageGenFinishTime = 0;
+        const autoGenQueue = [];
+        let prevRecordedTiersForAutoGen = {};
+
         function parsePromptFromImageBlock(blockTxt) {
             const sceneMatch = blockTxt.match(/image###([\s\S]*?)###/i);
             const rawPrompt = sceneMatch ? sceneMatch[1] : blockTxt;
             const ucMatch = rawPrompt.match(/UC:([^;]+);/i);
-            const negPrompt = ucMatch ? ucMatch[1].replace(/\d+(?:\.\d+)?::|::/g, "").trim() : "lowres, bad anatomy, text, watermark, blurry";
-            const posPrompt = rawPrompt.replace(/Char1\s*UC:[^;]+;?/gi, "")
-                .replace(/Scene:|Char1:|centers:[A-Z0-9]+|\|/gi, ", ")
-                .replace(/\d+(?:\.\d+)?::|::/g, "")
-                .replace(/[;\n\r]+/g, ", ")
-                .replace(/,\s*,+/g, ", ").trim();
+            const negPrompt = ucMatch ? ucMatch[1].replace(/\d+(?:\.\d+)?::|::/g, "").trim() : "lowres, bad anatomy, text, watermark";
+            const posPrompt = rawPrompt.replace(/Char1\s*UC:[^;]+;?/gi, "").replace(/Scene:|Char1:|centers:[A-Z0-9]+|\|/gi, ", ").replace(/\d+(?:\.\d+)?::|::/g, "").replace(/[;\n\r]+/g, ", ").trim();
             return { posPrompt, negPrompt, rawInner: sceneMatch ? sceneMatch[1].trim() : blockTxt };
         }
 
         async function silentBackgroundGenerateImage(item, curStageIdx, u, btnEl = null) {
+            if (isGeneratingImageBusy) { showToast("⏳ 当前已有图片正在后台绘制中，请稍候喵～", "warn", 2500); return false; }
+            isGeneratingImageBusy = true;
             const blockTxt = buildDanbooruImageBlock(item, curStageIdx, u);
             const { posPrompt, negPrompt, rawInner } = parsePromptFromImageBlock(blockTxt);
-            const stageKey = `${item.editKey || "custom"}_${curStageIdx}`;
+            const scopedStageKey = getProtagScopedImgKey(item.editKey || "custom", curStageIdx);
             const oldBtnTxt = btnEl ? btnEl.textContent : "";
-            if (btnEl) { btnEl.textContent = "⏳ 正在借壳隐身生图..."; btnEl.disabled = true; }
-            showToast(`🎨 正在调用正文生图软件后台绘制【${item.cleanTitle || item.editKey} (第${curStageIdx}阶)】...`, "info", 4500);
+            if (btnEl) { btnEl.textContent = "⏳ 正在生图替换..."; btnEl.disabled = true; }
+            showToast(`🎨 正在后台为【${u}】绘制并替换【${item.cleanTitle || item.editKey} (第${curStageIdx}阶)】...`, "info", 4000);
 
             const saveAndMountImg = async (imgSrc) => {
                 if (!imgSrc) return false;
@@ -2335,182 +2405,159 @@
                 if (!finalSrc.startsWith("data:") && !finalSrc.startsWith("http") && !finalSrc.startsWith("blob:") && !finalSrc.startsWith("/")) {
                     finalSrc = `data:image/png;base64,${finalSrc}`;
                 }
-                // 如果是 blob 或本地同源链接，尝试转为持久化 WebP DataURL
                 if (finalSrc.startsWith("blob:") || finalSrc.startsWith("http") || finalSrc.startsWith("/")) {
                     try {
                         const resp = await fetch(finalSrc);
                         const blob = await resp.blob();
-                        finalSrc = await compressImageToWebpDataUrl(blob, 768, 0.85);
+                        finalSrc = await blobToDataUrl(blob, "gen.webp");
                     } catch (e) {}
                 }
+                // 强制覆盖写入 IndexedDB（同时覆盖当前主角专属Key与通用阶段Key，彻底压过旧图！）
                 if (finalSrc.startsWith("data:")) {
-                    await saveDataUrlToDB(stageKey, finalSrc).catch(() => {});
+                    await saveDataUrlToDB(scopedStageKey, finalSrc).catch(() => {});
+                    await saveDataUrlToDB(`${item.editKey}_${curStageIdx}`, finalSrc).catch(() => {});
                 }
                 if (item.isCustom && item.catTitle) {
                     const found = (curVars.自定义条目?.[item.catTitle] || []).find(x => x.id === item.editKey);
                     if (found) found.imgUrl = finalSrc;
                 } else {
                     curVars.按钮详情 = curVars.按钮详情 || {};
-                    curVars.按钮详情[item.editKey] = { ...(curVars.按钮详情[item.editKey] || {}), imgUrl: finalSrc };
+                    const prevObj = curVars.按钮详情[item.editKey] || {};
+                    const stageImgs = { ...(prevObj.stageImgs || {}), [curStageIdx]: finalSrc };
+                    curVars.按钮详情[item.editKey] = { ...prevObj, imgUrl: finalSrc, forceLatestImg: finalSrc, stageImgs };
                 }
                 saveChatCache(curVars);
                 latestStatus = getFallbackData();
-                renderBody();
+                renderBody(); // 立即同步刷新外面的卡片缩略图！
+
+                // 立即刷新当前打开的详情弹窗图片与输入框！
                 const modalImg = document.getElementById("st-det-stage-img");
                 const modalPh = document.getElementById("st-det-img-placeholder");
+                const edImgInp = document.getElementById("st-ed-img");
                 if (modalImg) { modalImg.src = finalSrc; modalImg.style.display = "block"; }
                 if (modalPh) modalPh.style.display = "none";
-                showToast(`✅ 【${item.cleanTitle || item.editKey}】生图完成！已自动收入插件卡片并抹除正文痕迹喵！`, "success", 3500);
+                if (edImgInp) edImgInp.value = finalSrc;
+
+                lastImageGenFinishTime = Date.now();
+                showToast(`✅ 【${item.cleanTitle || item.editKey}】新图已生成并直接替换旧图喵！`, "success", 3200);
                 return true;
             };
 
-            // 注入隐身样式，确保借用正文生图时，正文里绝对看不到代码和生成过程
             let stealthStyle = document.getElementById("st-zhj-stealth-css");
             if (!stealthStyle) {
-                stealthStyle = document.createElement("style");
-                stealthStyle.id = "st-zhj-stealth-css";
+                stealthStyle = document.createElement("style"); stealthStyle.id = "st-zhj-stealth-css";
                 document.head.appendChild(stealthStyle);
             }
-            stealthStyle.textContent = `
-                .st-zhj-parasite-box { position:fixed !important; left:-9999px !important; top:-9999px !important; width:1px !important; height:1px !important; opacity:0.001 !important; pointer-events:none !important; overflow:hidden !important; z-index:-9999 !important; }
-            `;
+            stealthStyle.textContent = `.st-zhj-parasite-box { position:fixed !important; left:-9999px !important; top:-9999px !important; width:1px !important; height:1px !important; opacity:0.001 !important; pointer-events:none !important; overflow:hidden !important; z-index:-9999 !important; }`;
 
             try {
-                // 1. 先检查是否有显式暴露的全局函数
                 const customFnName = safeStr(userSettings.zhihuijiGlobalFn).trim();
                 const candFns = [customFnName, "zhihuijiGenerate", "generateZhihuijiImage", "stZhihuijiGenerate"].filter(Boolean);
                 for (const fnName of candFns) {
                     if (typeof window[fnName] === "function") {
                         const res = await window[fnName](rawInner, blockTxt, { silent: true, prompt: posPrompt, negative_prompt: negPrompt });
-                        if (typeof res === "string" && res.length > 16) {
-                            await saveAndMountImg(res);
-                            return;
-                        } else if (res && (res.url || res.data || res.base64 || res.image)) {
-                            await saveAndMountImg(res.url || res.data || res.base64 || res.image);
-                            return;
-                        }
+                        if (typeof res === "string" && res.length > 16) return await saveAndMountImg(res);
+                        else if (res && (res.url || res.data || res.base64 || res.image)) return await saveAndMountImg(res.url || res.data || res.base64 || res.image);
                     }
                 }
 
-                // 2. 【核心大招：最新楼层正文借壳隐身生图】
-                // 直接挂载到当前最后一条真实聊天消息 (.mes_text) 内部，并同步写入 chat[last].mes 触发正文生图插件监听！
-                const ctx = safeCtx();
-                const chatArr = ctx?.chat || [];
-                const lastIdx = chatArr.length - 1;
+                const ctx = safeCtx(), chatArr = ctx?.chat || [], lastIdx = chatArr.length - 1;
                 const allMesEls = document.querySelectorAll("#chat .mes");
                 const lastMesEl = allMesEls.length ? allMesEls[allMesEls.length - 1] : null;
                 const lastMesTextEl = lastMesEl ? lastMesEl.querySelector(".mes_text") : null;
 
                 if (lastMesTextEl) {
-                    pendingZhjTarget = { editKey: item.editKey, stageKey, title: item.cleanTitle || item.editKey, isCustom: item.isCustom, catTitle: item.catTitle, ts: Date.now() };
-
-                    // 记录当前最新楼层里已有的图片 URL，方便精准识别新画出来的那张图
-                    const existingSrcs = new Set(
-                        Array.from(lastMesEl.querySelectorAll("img")).map(img => img.getAttribute("src") || img.src || "")
-                    );
-
-                    // 记录原始消息文本，生完图后无痕还原（临时剥离正文里的旧 <image> 块防止串台！）
+                    pendingZhjTarget = { editKey: item.editKey, stageKey: scopedStageKey, stageIdx: curStageIdx, title: item.cleanTitle || item.editKey, isCustom: item.isCustom, catTitle: item.catTitle, ts: Date.now() };
+                    const existingSrcs = new Set(Array.from(lastMesEl.querySelectorAll("img")).map(img => img.getAttribute("src") || img.src || ""));
                     const origMesRaw = (lastIdx >= 0 && chatArr[lastIdx]) ? String(chatArr[lastIdx].mes || "") : null;
                     if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null) {
                         const cleanOrig = origMesRaw.replace(/<image>[\s\S]*?<\/image>/gi, "").replace(/image###[\s\S]*?###/gi, "");
                         chatArr[lastIdx].mes = cleanOrig + "\n" + blockTxt;
                     }
-
-                    // 在真实 .mes_text 里塞入隐身寄生节点（同时放置原始 <image> 标签和纯文本，通杀所有正则/DOM型生图插件）
                     let parasite = document.createElement("div");
                     parasite.className = "st-zhj-parasite-box";
                     parasite.innerHTML = `${blockTxt}\n<div>image###${rawInner}###</div>`;
                     lastMesTextEl.appendChild(parasite);
 
-                    // 触发酒馆所有的消息渲染/更新事件，唤醒你的正文生图插件！
                     if (ctx?.eventSource && ctx?.event_types) {
-                        const evs = [ctx.event_types.CHARACTER_MESSAGE_RENDERED, ctx.event_types.MESSAGE_UPDATED, ctx.event_types.USER_MESSAGE_RENDERED].filter(Boolean);
-                        for (const ev of evs) {
+                        [ctx.event_types.CHARACTER_MESSAGE_RENDERED, ctx.event_types.MESSAGE_UPDATED, ctx.event_types.USER_MESSAGE_RENDERED].filter(Boolean).forEach(ev => {
                             try { ctx.eventSource.emit(ev, Math.max(0, lastIdx)); } catch (e) {}
-                        }
+                        });
                     }
-                    // 同时如果存在生图插件的扫描按钮或重绘触发器，自动静默点一下
-                    try {
-                        const zhjBtns = lastMesEl.querySelectorAll("[class*='zhihuiji'], [class*='sd_gen'], [id*='zhihuiji'], .mes_img_gen");
-                        zhjBtns.forEach(b => { if (typeof b.click === "function") b.click(); });
-                    } catch (e) {}
 
-                    // 轮询等待正文生图插件把新图片画进 lastMesEl（最长等待 60 秒）
                     const capturedSrc = await new Promise((resolve) => {
                         let ticks = 0;
                         const timer = setInterval(() => {
                             ticks++;
-                            // 检查全局捕获器是否已经先一步抓到了
-                            if (!pendingZhjTarget) {
-                                clearInterval(timer);
-                                resolve("__CAPTURED_BY_OBSERVER__");
-                                return;
-                            }
                             const imgs = Array.from(lastMesEl.querySelectorAll("img"));
                             for (const im of imgs) {
                                 const s = im.getAttribute("src") || im.src || "";
-                                if (!s || existingSrcs.has(s)) continue;
-                                if (s.includes("loading") || s.includes("spinner") || s.includes("avatar") || s.includes("user-avatar")) continue;
-                                if (im.closest(".avatar")) continue;
-                                // 抓到新画出来的图了！立刻把这个图片所在的生图容器也隐藏并移除
+                                if (!s || existingSrcs.has(s) || s.includes("loading") || s.includes("spinner") || s.includes("avatar") || im.closest(".avatar")) continue;
                                 const wrapper = im.closest(".st-zhj-parasite-box") || im.closest("details") || im.parentElement;
-                                if (wrapper && wrapper !== lastMesTextEl && wrapper !== lastMesEl) {
-                                    wrapper.style.display = "none";
-                                    setTimeout(() => { try { wrapper.remove(); } catch (e) {} }, 200);
-                                } else {
-                                    im.style.display = "none";
-                                    setTimeout(() => { try { im.remove(); } catch (e) {} }, 200);
-                                }
-                                clearInterval(timer);
-                                resolve(s);
-                                return;
+                                if (wrapper && wrapper !== lastMesTextEl && wrapper !== lastMesEl) { wrapper.style.display = "none"; setTimeout(() => { try { wrapper.remove(); } catch (e) {} }, 200); }
+                                else { im.style.display = "none"; setTimeout(() => { try { im.remove(); } catch (e) {} }, 200); }
+                                clearInterval(timer); resolve(s); return;
                             }
-                            // 检查是否有 background-image 形式生成的图
-                            const bgEls = Array.from(parasite.querySelectorAll("[style*='background-image']"));
-                            for (const bel of bgEls) {
-                                const m = (bel.style.backgroundImage || "").match(/url\(["']?(.*?)["']?\)/i);
-                                if (m && m[1] && !existingSrcs.has(m[1])) {
-                                    clearInterval(timer);
-                                    resolve(m[1]);
-                                    return;
-                                }
-                            }
-                            if (ticks >= 120) {
-                                clearInterval(timer);
-                                resolve("");
-                            }
+                            if (ticks >= 120) { clearInterval(timer); resolve(""); }
                         }, 500);
                     });
 
-                    // 清理寄生节点并还原 chat[last].mes 原文，做到 100% 雁过无痕！
                     try { parasite.remove(); } catch (e) {}
-                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null) {
-                        chatArr[lastIdx].mes = origMesRaw;
-                    }
-                    // 顺手清理正文里可能残留的裸 <image> 文本
+                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null) chatArr[lastIdx].mes = origMesRaw;
                     if (lastMesTextEl.innerHTML.includes("image###")) {
                         lastMesTextEl.innerHTML = lastMesTextEl.innerHTML.replace(/<image>[\s\S]*?<\/image>/gi, "").replace(/image###[\s\S]*?###/gi, "");
                     }
-
-                    if (capturedSrc === "__CAPTURED_BY_OBSERVER__") {
-                        return;
-                    }
-                    if (capturedSrc) {
-                        pendingZhjTarget = null;
-                        await saveAndMountImg(capturedSrc);
-                        return;
-                    }
+                    if (capturedSrc) { pendingZhjTarget = null; return await saveAndMountImg(capturedSrc); }
                 }
-
-                showToast("⚠️ 等待正文生图超时喵！请确认你的生图插件已开启「自动生成图片」，或者点右侧【📋复制Tag】手动触发一次看看喵～", "warn", 4500);
+                showToast("⚠️ 等待生图超时喵！请确认生图软件已开启自动生图～", "warn", 3800);
+                return false;
             } catch (err) {
                 showToast("❌ 后台生图出错：" + (err.message || "未知错误"), "error", 3500);
+                return false;
             } finally {
+                isGeneratingImageBusy = false;
                 if (btnEl) { btnEl.textContent = oldBtnTxt || "🎨 智绘姬静默生图"; btnEl.disabled = false; }
             }
         }
 
-        // 卡片缩略图智能异步加载器（带缓存回退）
+        function checkAndQueueMajorChangeAutoGen(categories, u) {
+            if (!userSettings.autoGenOnMajorChange || viewingHistoryFloor !== null) return;
+            const allItems = [];
+            (categories || []).forEach(c => (c.items || []).forEach(it => allItems.push(it)));
+            const curTierSnap = {};
+            allItems.forEach(item => {
+                if (!item.editKey) return;
+                const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
+                curTierSnap[item.editKey] = (item.hasStageBar ? tier6(item.pct || 0, isRev) : 0) + 1;
+            });
+            if (Object.keys(prevRecordedTiersForAutoGen).length === 0) { prevRecordedTiersForAutoGen = curTierSnap; return; }
+            allItems.forEach(item => {
+                const k = item.editKey;
+                if (!k || !userSettings.autoGenItemMap?.[k]) return;
+                const newStg = curTierSnap[k] || 1, oldStg = prevRecordedTiersForAutoGen[k] || 1;
+                if (newStg !== oldStg) {
+                    const scopedKey = getProtagScopedImgKey(k, newStg);
+                    const alreadyHasStageImg = Boolean(curVars.按钮详情?.[k]?.stageImgs?.[newStg] || queryImportedImage(scopedKey));
+                    if (!alreadyHasStageImg && !autoGenQueue.some(q => q.editKey === k && q.stageIdx === newStg)) {
+                        autoGenQueue.push({ item, stageIdx: newStg, u, editKey: k });
+                    }
+                }
+            });
+            prevRecordedTiersForAutoGen = curTierSnap;
+            processAutoGenQueue();
+        }
+
+        async function processAutoGenQueue() {
+            if (!userSettings.autoGenOnMajorChange || isGeneratingImageBusy || !autoGenQueue.length) return;
+            const cooldownMs = Math.max(5, safeNum(userSettings.autoGenCooldownSec, 30)) * 1000;
+            const elapsed = Date.now() - lastImageGenFinishTime;
+            if (elapsed < cooldownMs) { setTimeout(processAutoGenQueue, cooldownMs - elapsed + 500); return; }
+            const task = autoGenQueue.shift();
+            if (!task) return;
+            await silentBackgroundGenerateImage(task.item, task.stageIdx, task.u, null);
+            if (autoGenQueue.length > 0) setTimeout(processAutoGenQueue, cooldownMs);
+        }
+
         function bindCardThumbnailElement(thumbWrapEl, item) {
             if (!thumbWrapEl) return;
             const candidates = getStageImageCandidates(item);
@@ -2523,18 +2570,14 @@
             };
             imgEl.onload = () => { thumbWrapEl.style.display = "flex"; };
             imgEl.onerror = tryNext;
-            thumbWrapEl.onclick = (e) => {
-                e.stopPropagation();
-                openTrueFullscreenImage(imgEl.src);
-            };
+            thumbWrapEl.onclick = (e) => { e.stopPropagation(); openTrueFullscreenImage(imgEl.src); };
             tryNext();
         }
 
         function showDetailPopup(item) {
             const modal = document.getElementById("st-v5-modal");
             if (!modal) return;
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
-            const u = detectProtagonistName(curVars);
+            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"], u = detectProtagonistName(curVars);
             const parts = safeStr(item.desc).split("💭"), objText = safeStr(parts[0]).trim();
             const thoughtText = parts[1] ? cleanThoughtText(parts[1].replace(/【.*?实时心声】：/g, "").replace(/[“”"]/g, "").trim()) : "……";
             const customRec = item.isCustom ? curVars.自定义条目?.[item.catTitle]?.find(x => x.id === item.editKey) : null;
@@ -2544,11 +2587,10 @@
             const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
             const curStageIdx = (item.hasStageBar ? tier6(curPct, isRev) : 0) + 1;
             const lockedVal = typeof curVars.上帝强制锁定?.[item.editKey] === "number" ? curVars.上帝强制锁定[item.editKey] : null;
+            const isAutoGenChecked = Boolean(userSettings.autoGenItemMap?.[item.editKey]);
 
             const box = modal.querySelector(".st-modal-box");
-            box.style.background = tc.bg;
-            box.style.border = tc.border;
-            box.style.color = tc.text;
+            box.style.background = tc.bg; box.style.border = tc.border; box.style.color = tc.text;
             box.innerHTML = `
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.12);">
                     <div style="font-size:15px;font-weight:bold;color:#f9e2af;word-break:break-word;">${item.cleanTitle || item.rawKey}</div>
@@ -2557,16 +2599,20 @@
                 ${item.barHTML || ""}
                 <div id="st-det-img-wrap" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,0.32);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
-                        <span style="font-size:11.5px;color:${tc.prim};font-weight:bold;">🖼️ 部位实况配图（第 ${curStageIdx} 阶）</span>
+                        <span style="font-size:11.5px;color:${tc.prim};font-weight:bold;">🖼️ 【${u}】第 ${curStageIdx} 阶配图</span>
                         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-                            <button id="st-det-zhj-gen" type="button" style="background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:bold;cursor:pointer;">🎨 智绘姬静默生图</button>
-                            <button id="st-det-local-up" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">📂 传图绑定</button>
+                            <button id="st-det-zhj-gen" type="button" style="background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:bold;cursor:pointer;">🎨 智绘姬生图替换</button>
+                            <button id="st-det-local-up" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">📂 传图替换</button>
                             <input id="st-det-local-file" type="file" accept="image/*" style="display:none;">
                             <button id="st-det-copy-tag" type="button" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">📋 复制Tag</button>
                         </div>
                     </div>
+                    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#fde047;cursor:pointer;background:rgba(251,191,36,0.1);padding:4px 8px;border-radius:6px;">
+                        <input id="st-det-autogen-chk" type="checkbox" ${isAutoGenChecked ? "checked" : ""}>
+                        <span>⚡ 当此项发生【跨阶段重大变化】时自动后台生图</span>
+                    </label>
                     <img id="st-det-stage-img" style="display:none;width:100%;max-height:240px;object-fit:contain;border-radius:8px;cursor:zoom-in;background:#0a0612;" alt="部位实况">
-                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无配图，点上方「🎨 智绘姬静默生图」将借用正文生图通道在后台画进插件（正文不留痕），或点「📂 传图绑定」上传图片。</div>
+                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无第 ${curStageIdx} 阶配图，点上方「🎨 智绘姬生图替换」将在后台生成并直接替换显示。</div>
                 </div>
                 <div style="margin-top:10px;background:rgba(0,0,0,0.28);border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,0.08);line-height:1.65;font-size:12.5px;white-space:pre-wrap;word-break:break-word;">${objText}</div>
                 <div style="margin-top:8px;background:rgba(243,139,168,0.1);border-left:3px solid ${tc.prim};border-radius:0 8px 8px 0;padding:8px 10px;font-size:12.5px;line-height:1.6;color:#ffd6e4;">
@@ -2587,19 +2633,18 @@
                         <button id="st-det-ai-btn" type="button" style="background:rgba(203,166,247,0.2);color:#cba6f7;border:1px solid #cba6f7;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;">✨ 副API生成</button>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-                        <input id="st-ed-stage" value="${safeStr(overrideRec.stage).replace(/"/g, "&quot;")}" placeholder="阶位标签（如：彻底崩坏）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
+                        <input id="st-ed-stage" value="${safeStr(overrideRec.stage).replace(/"/g, "&quot;")}" placeholder="阶位标签" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
                         <input id="st-ed-img" value="${safeStr(overrideRec.imgUrl).replace(/"/g, "&quot;")}" placeholder="绑定图片名/URL" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
                     </div>
-                    <textarea id="st-ed-desc" rows="3" placeholder="自定义详细实况描述..." style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;margin-bottom:6px;">${safeStr(overrideRec.desc || objText)}</textarea>
-                    <textarea id="st-ed-thought" rows="2" placeholder="自定义第一人称心声..." style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;margin-bottom:8px;">${safeStr(overrideRec.thought || thoughtText)}</textarea>
+                    <textarea id="st-ed-desc" rows="3" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;margin-bottom:6px;">${safeStr(overrideRec.desc || objText)}</textarea>
+                    <textarea id="st-ed-thought" rows="2" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;margin-bottom:8px;">${safeStr(overrideRec.thought || thoughtText)}</textarea>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
                         ${item.isClient ? `<button id="st-det-block-client" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;margin-right:auto;">🚫 屏蔽此恩客</button>` : ""}
                         ${item.isCustom ? `<button id="st-det-del-custom" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;margin-right:auto;">🗑️ 删除自定义</button>` : ""}
                         <button id="st-det-reset" type="button" style="background:rgba(255,255,255,0.1);color:#cdd6f4;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">↩️ 恢复默认</button>
                         <button id="st-det-save" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:6px;padding:5px 14px;font-size:11.5px;font-weight:bold;cursor:pointer;">💾 保存修改</button>
                     </div>
-                </div>
-            `;
+                </div>`;
             modal.style.display = "flex";
 
             const imgEl = box.querySelector("#st-det-stage-img"), phEl = box.querySelector("#st-det-img-placeholder");
@@ -2613,8 +2658,16 @@
             imgEl.onclick = () => openTrueFullscreenImage(imgEl.src);
             if (candidates.length > 0) tryNextImg();
 
-            const godSlider = box.querySelector("#st-god-slider");
-            const godLabel = box.querySelector("#st-god-val-label");
+            const autoGenChk = box.querySelector("#st-det-autogen-chk");
+            if (autoGenChk) {
+                autoGenChk.onchange = () => {
+                    userSettings.autoGenItemMap = userSettings.autoGenItemMap || {};
+                    userSettings.autoGenItemMap[item.editKey] = autoGenChk.checked;
+                    saveSettings();
+                };
+            }
+
+            const godSlider = box.querySelector("#st-god-slider"), godLabel = box.querySelector("#st-god-val-label");
             let tempGodVal = lockedVal;
             if (godSlider) {
                 godSlider.oninput = () => {
@@ -2626,7 +2679,6 @@
                     if (curVars.上帝强制锁定) delete curVars.上帝强制锁定[item.editKey];
                     if (godLabel) godLabel.textContent = `${curPct}% (已解除锁定)`;
                     saveChatCache(curVars); latestStatus = getFallbackData(); renderBody();
-                    showToast("🔓 已解除该项数值锁定", "info");
                 };
             }
 
@@ -2634,14 +2686,19 @@
             if (upBtn && fileInp) {
                 upBtn.onclick = () => fileInp.click();
                 fileInp.onchange = async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    const stageKey = `${item.editKey}_${curStageIdx}`;
-                    const res = await saveSingleImageToDB(stageKey, f);
+                    const f = e.target.files?.[0]; if (!f) return;
+                    const scopedKey = getProtagScopedImgKey(item.editKey, curStageIdx);
+                    const res = await saveSingleImageToDB(scopedKey, f);
                     if (res?.dUrl) {
+                        await saveDataUrlToDB(`${item.editKey}_${curStageIdx}`, res.dUrl).catch(() => {});
+                        curVars.按钮详情 = curVars.按钮详情 || {};
+                        const prev = curVars.按钮详情[item.editKey] || {};
+                        curVars.按钮详情[item.editKey] = { ...prev, imgUrl: res.dUrl, forceLatestImg: res.dUrl, stageImgs: { ...(prev.stageImgs || {}), [curStageIdx]: res.dUrl } };
+                        saveChatCache(curVars);
                         imgEl.src = res.dUrl; imgEl.style.display = "block"; phEl.style.display = "none";
+                        box.querySelector("#st-ed-img").value = res.dUrl;
                         latestStatus = getFallbackData(); renderBody();
-                        showToast(`✅ 已将图片绑定至【${stageKey}】！`, "success");
+                        showToast(`✅ 已成功替换【${item.cleanTitle}】配图！`, "success");
                     }
                 };
             }
@@ -2649,14 +2706,11 @@
             box.querySelector("#st-det-close").onclick = () => { modal.style.display = "none"; };
             box.querySelector("#st-det-copy-tag").onclick = async () => {
                 const block = buildDanbooruImageBlock(item, curStageIdx, u);
-                try { await navigator.clipboard.writeText(block); showToast("📋 已复制智绘姬 <image> Tag 块！", "success"); }
-                catch (e) { showToast("⚠️ 复制失败", "error"); }
+                try { await navigator.clipboard.writeText(block); showToast("📋 已复制 Tag 块！", "success"); } catch (e) {}
             };
-            box.querySelector("#st-det-zhj-gen").onclick = (e) => {
-                silentBackgroundGenerateImage(item, curStageIdx, u, e.target);
-            };
+            box.querySelector("#st-det-zhj-gen").onclick = (e) => { silentBackgroundGenerateImage(item, curStageIdx, u, e.target); };
             box.querySelector("#st-det-ai-btn").onclick = async (e) => {
-                const hint = prompt("输入希望副API侧重描写的方向（可留空直接按当前剧情生成）：", "");
+                const hint = prompt("输入希望副API侧重描写的方向（可留空）：", "");
                 if (hint === null) return;
                 const res = await requestSingleItemAiGen(item.cleanTitle || item.rawKey, hint, e.target);
                 if (res) {
@@ -2676,114 +2730,99 @@
                     if (stg) customRec.stage = stg;
                     customRec.imgUrl = im; customRec.desc = dsc; customRec.thought = tht;
                 } else {
-                    curVars.按钮详情[item.editKey] = { ...(curVars.按钮详情[item.editKey] || {}), stage: stg, imgUrl: im, desc: dsc, thought: tht };
+                    const prev = curVars.按钮详情?.[item.editKey] || {};
+                    curVars.按钮详情[item.editKey] = { ...prev, stage: stg, imgUrl: im || prev.imgUrl, desc: dsc, thought: tht };
                 }
                 saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast("💾 已保存数值与文案修改！", "success");
+                showToast("💾 已保存修改！", "success");
+                checkAndQueueMajorChangeAutoGen(latestStatus.categories, u);
             };
             box.querySelector("#st-det-reset").onclick = () => {
                 if (curVars.按钮详情?.[item.editKey]) delete curVars.按钮详情[item.editKey];
                 if (curVars.上帝强制锁定?.[item.editKey] !== undefined) delete curVars.上帝强制锁定[item.editKey];
                 saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast("↩️ 已恢复系统动态计算描述", "info");
-            };
-            const blkBtn = box.querySelector("#st-det-block-client");
-            if (blkBtn) blkBtn.onclick = () => {
-                if (!curVars.已屏蔽恩客.includes(item.clientName)) curVars.已屏蔽恩客.push(item.clientName);
-                saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast(`🚫 已屏蔽恩客【${item.clientName}】`, "info");
-            };
-            const delBtn = box.querySelector("#st-det-del-custom");
-            if (delBtn) delBtn.onclick = () => {
-                curVars.自定义条目[item.catTitle] = (curVars.自定义条目[item.catTitle] || []).filter(x => x.id !== item.editKey);
-                saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast("🗑️ 已删除自定义条目", "info");
+                showToast("↩️ 已恢复默认", "info");
             };
         }
 
-        // 新增自定义条目弹窗（补齐！）
         function openAddCustomItemModal(catTitle) {
-            const modal = document.getElementById("st-v5-modal");
-            if (!modal) return;
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
-            const box = modal.querySelector(".st-modal-box");
+            const modal = document.getElementById("st-v5-modal"); if (!modal) return;
+            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"], box = modal.querySelector(".st-modal-box");
             box.style.background = tc.bg; box.style.border = tc.border; box.style.color = tc.text;
-            box.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.12);">
-                    <div style="font-size:14px;font-weight:bold;color:#f9e2af;">➕ 在【${catTitle}】新增自定义条目</div>
-                    <button id="st-add-close" type="button" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:3px 9px;cursor:pointer;">✕</button>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
-                    <div style="display:flex;gap:6px;">
-                        <input id="st-new-title" placeholder="条目名称（如：魅魔尾环 / 专属烙印）" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                        <button id="st-new-aigen" type="button" style="background:rgba(203,166,247,0.2);color:#cba6f7;border:1px solid #cba6f7;border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;">✨ 副API补全</button>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                        <input id="st-new-stage" placeholder="状态标签（如：深入骨髓）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                        <input id="st-new-pct" type="number" min="0" max="100" placeholder="进度百分比 (0-100，选填)" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                    </div>
-                    <input id="st-new-img" placeholder="配图名称或URL（选填）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                    <textarea id="st-new-desc" rows="3" placeholder="详细客观实况描写..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea>
-                    <textarea id="st-new-thought" rows="2" placeholder="第一人称实时心声..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea>
-                    <button id="st-new-submit" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:8px;padding:8px;font-size:12.5px;font-weight:bold;cursor:pointer;">✅ 确认添加</button>
-                </div>`;
+            box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.12);"><div style="font-size:14px;font-weight:bold;color:#f9e2af;">➕ 在【${catTitle}】新增自定义条目</div><button id="st-add-close" type="button" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:3px 9px;cursor:pointer;">✕</button></div><div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"><input id="st-new-title" placeholder="条目名称" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"><input id="st-new-stage" placeholder="状态标签" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"><textarea id="st-new-desc" rows="3" placeholder="详细实况描写..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea><textarea id="st-new-thought" rows="2" placeholder="第一人称心声..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;"></textarea><button id="st-new-submit" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:8px;padding:8px;font-size:12.5px;font-weight:bold;cursor:pointer;">✅ 确认添加</button></div>`;
             modal.style.display = "flex";
             box.querySelector("#st-add-close").onclick = () => { modal.style.display = "none"; };
-            box.querySelector("#st-new-aigen").onclick = async (e) => {
-                const t = box.querySelector("#st-new-title").value.trim();
-                if (!t) { showToast("⚠️ 请先输入条目名称喵！", "warn"); return; }
-                const res = await requestSingleItemAiGen(t, `所属分类：${catTitle}`, e.target);
-                if (res) {
-                    if (res.stage) box.querySelector("#st-new-stage").value = res.stage;
-                    if (res.desc) box.querySelector("#st-new-desc").value = res.desc;
-                    if (res.thought) box.querySelector("#st-new-thought").value = res.thought;
-                }
-            };
             box.querySelector("#st-new-submit").onclick = () => {
-                const title = box.querySelector("#st-new-title").value.trim();
-                if (!title) { showToast("⚠️ 条目名称不能为空", "warn"); return; }
-                const pctRaw = box.querySelector("#st-new-pct").value.trim();
+                const title = box.querySelector("#st-new-title").value.trim(); if (!title) return;
                 curVars.自定义条目 = curVars.自定义条目 || {};
                 curVars.自定义条目[catTitle] = curVars.自定义条目[catTitle] || [];
-                curVars.自定义条目[catTitle].push({
-                    id: "cust_" + Date.now(),
-                    title,
-                    stage: box.querySelector("#st-new-stage").value.trim() || "新增记录",
-                    pct: pctRaw !== "" ? clamp(Number(pctRaw), 0, 100) : null,
-                    imgUrl: box.querySelector("#st-new-img").value.trim(),
-                    desc: box.querySelector("#st-new-desc").value.trim() || "暂无详细描述。",
-                    thought: box.querySelector("#st-new-thought").value.trim() || "……"
-                });
+                curVars.自定义条目[catTitle].push({ id: "cust_" + Date.now(), title, stage: box.querySelector("#st-new-stage").value.trim() || "新增", desc: box.querySelector("#st-new-desc").value.trim(), thought: box.querySelector("#st-new-thought").value.trim() });
                 saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast(`✅ 已添加【${title}】`, "success");
             };
         }
 
-        // 设置面板视图（补齐！）
+        // 🎯 快捷切换状态栏监控目标弹窗函数（支持主角/角色卡/任意角色名）
+        function promptSwitchTargetCharacter() {
+            const ctx = safeCtx(), uName = safeStr(ctx?.name1, "主角"), cName = safeStr(ctx?.name2, "角色卡");
+            const curTarget = detectProtagonistName(curVars);
+            const inp = prompt(
+                `🎯 【选定状态栏监控目标】\n当前目标：${curTarget}\n\n💡 输入快捷指令或任意角色名字：\n• 输入 user 或留空 👉 绑定主角自己（${uName}）\n• 输入 char 👉 绑定对面角色卡（${cName}，男主调教女主必选！）\n• 直接输入任意名字 👉 绑定指定角色（如：柳如烟）`,
+                userSettings.customTargetName || curTarget
+            );
+            if (inp === null) return;
+            const val = inp.trim();
+            userSettings.customTargetName = val;
+            let resolved = val;
+            if (!val || val.toLowerCase() === "user" || val === "主角") resolved = uName;
+            else if (val.toLowerCase() === "char" || val === "角色卡") resolved = cName;
+            curVars.档案.手动锁定真名 = resolved;
+            curVars.档案.当前认知名字 = resolved;
+            saveSettings(); saveChatCache(curVars);
+            latestStatus = getFallbackData(); renderBody();
+            showToast(`🎯 状态栏监控目标已切换为：【${resolved}】！`, "success", 3000);
+        }
+
         function renderSettingsView(bodyEl) {
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
+            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"], u = detectProtagonistName(curVars);
             const themeOpts = Object.keys(THEMES).map(k => `<option value="${k}" ${userSettings.theme === k ? "selected" : ""}>${k}</option>`).join("");
             const modeOpts = Object.entries(RUIN_PERSONA_MODES).map(([k, v]) => `<option value="${k}" ${userSettings.personaMode === k ? "selected" : ""}>${v.label}</option>`).join("");
             const diffOpts = Object.entries(DIFFICULTY_PROFILES).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.label || v.fullLabel}</option>`).join("");
             bodyEl.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:10px;padding:4px;">
                     <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:${tc.prim};margin-bottom:8px;font-size:13px;">🎨 外观、排版与手机流畅优化</div>
+                        <div style="font-weight:bold;color:${tc.prim};margin-bottom:8px;font-size:13px;">🎨 外观、目标选定与难度设置</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
                             <label>皮肤主题<select id="st-set-theme" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${themeOpts}</select></label>
                             <label>心声人格<select id="st-set-persona" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${modeOpts}</select></label>
                             <label>崩坏难度<select id="st-set-diff" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${diffOpts}</select></label>
-                            <label>字体缩放(${userSettings.fontScale}%)<input id="st-set-fscale" type="range" min="80" max="130" value="${userSettings.fontScale}" style="width:100%;margin-top:6px;"></label>
+                            <label>🎯 监控目标(填char绑对面)<input id="st-set-target" value="${safeStr(userSettings.customTargetName || u)}" placeholder="默认主角，填char绑角色卡" style="width:100%;box-sizing:border-box;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;"></label>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px;">
                             <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-compact" type="checkbox" ${userSettings.compactCards ? "checked" : ""}> 隐藏卡片缩略图</label>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-lite" type="checkbox" ${userSettings.mobileLiteMode ? "checked" : ""}> 手机省电模式(关特效)</label>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-lite" type="checkbox" ${userSettings.mobileLiteMode ? "checked" : ""}> 手机省电模式</label>
                             <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-revprompt" type="checkbox" ${userSettings.injectReversePrompt ? "checked" : ""}> 注入肉体铁律</label>
                             <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-cmpprompt" type="checkbox" ${userSettings.compactPromptMode ? "checked" : ""}> 省Token提示词</label>
                         </div>
                     </div>
                     <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:#f9e2af;margin-bottom:8px;font-size:13px;">🤖 副API 实时解析与重绘设置</div>
+                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🧬 外貌锁定与自动生图控制（已缓存 ${importedImgCache.size} 张）</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;margin-bottom:8px;">
+                            <input id="st-set-apptags" value="${safeStr(userSettings.lockedAppearanceTags).replace(/"/g, "&quot;")}" placeholder="固定主角外貌Tag（如：silver hair, long hair, red eyes）" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                <label style="display:flex;align-items:center;gap:4px;color:#fde047;font-weight:bold;"><input id="st-set-autogen" type="checkbox" ${userSettings.autoGenOnMajorChange ? "checked" : ""}> ⚡ 开启跨阶重大变化自动生图</label>
+                                <label>⏱️ 冷却(秒)：<input id="st-set-cooldown" type="number" min="5" max="300" value="${safeNum(userSettings.autoGenCooldownSec, 30)}" style="width:58px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:3px 6px;"></label>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 导入图片/ZIP</button>
+                            <input id="st-import-imgs-input" type="file" multiple accept="image/*,.zip" style="display:none;">
+                            <button id="st-clear-protag-imgs-btn" type="button" style="background:rgba(251,146,60,0.2);color:#fdba74;border:1px solid #fb923c;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🧹 清理【${u}】配图</button>
+                            <button id="st-clear-imgs-btn" type="button" style="background:rgba(243,139,168,0.15);color:#f38ba8;border:1px solid rgba(243,139,168,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🗑️ 清空全局图库</button>
+                            <button id="st-reset-vars-btn" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🔄 重置变量</button>
+                        </div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+                        <div style="font-weight:bold;color:#f9e2af;margin-bottom:8px;font-size:13px;">🤖 一键API重绘（副API）设置</div>
                         <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
                             <input id="st-api-url" value="${safeStr(userSettings.apiUrl)}" placeholder="API 地址（如 https://api.openai.com/v1）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
                             <input id="st-api-key" type="password" value="${safeStr(userSettings.apiKey)}" placeholder="API Key (sk-...)" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
@@ -2792,20 +2831,7 @@
                                 <button id="st-fetch-models" type="button" style="background:rgba(137,180,250,0.2);color:#89b4fa;border:1px solid #89b4fa;border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;">拉取模型</button>
                             </div>
                             <select id="st-model-sel" style="display:none;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px;"></select>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-autoapi" type="checkbox" ${userSettings.autoCallApiOnNewMsg ? "checked" : ""}> 新消息自动触发副API重绘</label>
-                        </div>
-                    </div>
-                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🎨 智绘姬与本地图包管理（已缓存 ${importedImgCache.size} 张）</div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-                            <input id="st-zhj-fn" value="${safeStr(userSettings.zhihuijiGlobalFn)}" placeholder="智绘姬全局函数名(选填)" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
-                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 导入图片/ZIP包</button>
-                            <input id="st-import-imgs-input" type="file" multiple accept="image/*,.zip" style="display:none;">
-                        </div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <button id="st-lock-name-btn" type="button" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🔒 锁定真名(${detectProtagonistName(curVars)})</button>
-                            <button id="st-clear-imgs-btn" type="button" style="background:rgba(243,139,168,0.15);color:#f38ba8;border:1px solid rgba(243,139,168,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🗑️ 清空图包</button>
-                            <button id="st-reset-vars-btn" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🧹 重置本会话变量</button>
+                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-autoapi" type="checkbox" ${userSettings.autoCallApiOnNewMsg ? "checked" : ""}> 新消息自动触发一键API重绘</label>
                         </div>
                     </div>
                     <button id="st-save-all-settings" type="button" style="background:linear-gradient(135deg,${tc.prim},${tc.sec});color:#11111b;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:bold;cursor:pointer;">💾 保存所有设置并返回面板</button>
@@ -2816,59 +2842,42 @@
             selEl.onchange = () => { modEl.value = selEl.value; };
             bodyEl.querySelector("#st-import-imgs-btn").onclick = () => bodyEl.querySelector("#st-import-imgs-input").click();
             bodyEl.querySelector("#st-import-imgs-input").onchange = async (e) => {
-                const files = e.target.files;
-                if (!files || !files.length) return;
-                showToast("⏳ 正在解压并压缩转码 WebP 图包...", "info", 3000);
-                try {
-                    const cnt = await importFilesOrZipToDB(files);
-                    showToast(`✅ 成功导入并压缩持久化 ${cnt} 张本地图片！`, "success");
-                    renderSettingsView(bodyEl);
-                } catch (err) {
-                    showToast("❌ 导入失败：" + (err.message || "文件格式有误"), "error");
-                }
+                const files = e.target.files; if (!files || !files.length) return;
+                const cnt = await importFilesOrZipToDB(files);
+                showToast(`✅ 成功导入 ${cnt} 张图片！`, "success"); renderSettingsView(bodyEl);
             };
+            bodyEl.querySelector("#st-clear-protag-imgs-btn").onclick = () => clearCurrentProtagImages();
             bodyEl.querySelector("#st-clear-imgs-btn").onclick = async () => {
-                if (!confirm("确定要清空 IndexedDB 中缓存的所有本地导入图片吗？")) return;
-                await clearAllImportedImagesDB();
-                showToast("🗑️ 已清空本地缓存图包", "info");
-                renderSettingsView(bodyEl);
-            };
-            bodyEl.querySelector("#st-lock-name-btn").onclick = () => {
-                const n = prompt("输入要手动锁定的主角真名（留空则解除锁定）：", curVars.档案.手动锁定真名 || detectProtagonistName(curVars));
-                if (n === null) return;
-                curVars.档案.手动锁定真名 = n.trim();
-                if (n.trim()) curVars.档案.当前认知名字 = n.trim();
-                saveChatCache(curVars); latestStatus = getFallbackData(); showToast(n.trim() ? `🔒 已锁定真名：${n.trim()}` : "🔓 已解除真名锁定", "success");
-                renderSettingsView(bodyEl);
+                if (!confirm("确定要清空所有全局缓存图片吗？")) return;
+                await clearAllImportedImagesDB(); renderSettingsView(bodyEl);
             };
             bodyEl.querySelector("#st-reset-vars-btn").onclick = () => {
-                if (!confirm("确定要清空当前对话的全部状态栏缓存数据并从头计算吗？")) return;
+                if (!confirm("确定要清空当前对话的全部状态栏数据吗？")) return;
                 curVars = createDefaultVars(); saveChatCache(curVars); latestStatus = getFallbackData();
-                isSettingsOpen = false; renderBody(); showToast("🧹 已重置当前会话状态栏数据", "info");
+                isSettingsOpen = false; renderBody();
             };
             bodyEl.querySelector("#st-save-all-settings").onclick = () => {
                 userSettings.theme = bodyEl.querySelector("#st-set-theme").value;
                 userSettings.personaMode = bodyEl.querySelector("#st-set-persona").value;
                 userSettings.difficultyMode = bodyEl.querySelector("#st-set-diff").value;
-                userSettings.fontScale = parseInt(bodyEl.querySelector("#st-set-fscale").value, 10) || 100;
+                userSettings.customTargetName = bodyEl.querySelector("#st-set-target").value.trim();
                 userSettings.compactCards = bodyEl.querySelector("#st-set-compact").checked;
                 userSettings.mobileLiteMode = bodyEl.querySelector("#st-set-lite").checked;
                 userSettings.injectReversePrompt = bodyEl.querySelector("#st-set-revprompt").checked;
                 userSettings.compactPromptMode = bodyEl.querySelector("#st-set-cmpprompt").checked;
+                userSettings.lockedAppearanceTags = bodyEl.querySelector("#st-set-apptags").value.trim();
+                userSettings.autoGenOnMajorChange = bodyEl.querySelector("#st-set-autogen").checked;
+                userSettings.autoGenCooldownSec = Math.max(5, parseInt(bodyEl.querySelector("#st-set-cooldown").value, 10) || 30);
                 userSettings.apiUrl = bodyEl.querySelector("#st-api-url").value.trim();
                 userSettings.apiKey = bodyEl.querySelector("#st-api-key").value.trim();
                 userSettings.apiModel = modEl.value.trim();
                 userSettings.autoCallApiOnNewMsg = bodyEl.querySelector("#st-set-autoapi").checked;
-                userSettings.zhihuijiGlobalFn = bodyEl.querySelector("#st-zhj-fn").value.trim();
                 saveSettings(); applyThemeAndSize(); isSettingsOpen = false;
                 latestStatus = getFallbackData(); renderBody();
-                showToast("💾 设置已保存并应用！", "success");
+                showToast("💾 设置已保存！", "success");
             };
         }
 
-        // =========================================================================
-        // 🖼️ 经典「左侧垂直快速分栏 Tab + 卡片外显缩略图」双栏渲染引擎
-        // =========================================================================
         function renderBody() {
             const bodyEl = document.getElementById("st-v5-body");
             if (!bodyEl) return;
@@ -2879,67 +2888,39 @@
             const titleEl = document.getElementById("st-v5-title-text");
             if (titleEl) titleEl.innerHTML = `<span style="color:${tc.prim};">👑 ${u}</span> <span style="font-size:11px;color:#a6adc8;font-weight:normal;">(${statusData.floorId})</span>`;
 
-            if (isSettingsOpen) {
-                renderSettingsView(bodyEl);
-                return;
-            }
+            if (isSettingsOpen) { renderSettingsView(bodyEl); return; }
 
-            const dev = computeAllOrganDevelopments(curVars);
-            const caps = calcHoleCapacities(curVars);
-            const buffs = computeActiveBuffs(curVars, dev);
+            const dev = computeAllOrganDevelopments(curVars), caps = calcHoleCapacities(curVars), buffs = computeActiveBuffs(curVars, dev);
             const cats = statusData.categories || [];
             if (!activeCat && cats.length > 0) activeCat = cats[0].title;
 
-            const buffBarHTML = buffs.length > 0 ? `
-                <div class="st-buff-strip" style="display:flex;flex-wrap:wrap;gap:5px;padding:5px 8px;margin-bottom:6px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
-                    ${buffs.map(b => `<span title="${safeStr(b.desc)}" style="background:${b.bg};border:1px solid ${b.border};color:${b.color};padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</span>`).join("")}
-                </div>` : "";
-
-            const asmrQuote = generateLiveASMRQuote(curVars, u);
-            const asmrBarHTML = `
-                <div id="st-asmr-bar" title="点击开关水声/高潮音效" style="margin-bottom:6px;padding:6px 10px;background:linear-gradient(135deg,rgba(244,114,182,0.16),rgba(192,132,252,0.1));border-left:3.5px solid ${tc.prim};border-radius:0 9px 9px 0;font-size:11.5px;color:#ffe4e6;line-height:1.45;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                    <span style="font-style:italic;">🎧 ${asmrQuote}</span>
-                    <span style="font-size:11px;opacity:0.8;flex-shrink:0;">${userSettings.soundEnabled ? "🔊" : "🔇"}</span>
-                </div>`;
-
-            const pMode = userSettings.personaMode || "evolution";
-            const contrastToggleHTML = pMode === "contrast" ? `
-                <button id="st-contrast-toggle" type="button" class="st-pill-btn" style="background:${userSettings.contrastInnerActive ? "linear-gradient(135deg,#ff0055,#7a003c)" : "rgba(255,255,255,0.12)"};border-color:${tc.prim};">
-                    ${userSettings.contrastInnerActive ? "🎭 私下母畜态" : "🎭 表面端庄态"}
-                </button>` : "";
+            const topXrayCenterHTML = userSettings.showXrayOnHome ? buildEnhancedTopXRayCenter(curVars, dev, caps, u) : "";
+            const buffBarHTML = buffs.length > 0 ? `<div class="st-buff-strip" style="display:flex;flex-wrap:wrap;gap:5px;padding:5px 8px;margin-bottom:6px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">${buffs.map(b => `<span title="${safeStr(b.desc)}" style="background:${b.bg};border:1px solid ${b.border};color:${b.color};padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</span>`).join("")}</div>` : "";
+            const asmrBarHTML = `<div id="st-asmr-bar" title="点击开关音效" style="margin-bottom:6px;padding:6px 10px;background:linear-gradient(135deg,rgba(244,114,182,0.16),rgba(192,132,252,0.1));border-left:3.5px solid ${tc.prim};border-radius:0 9px 9px 0;font-size:11.5px;color:#ffe4e6;line-height:1.45;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;"><span style="font-style:italic;">🎧 ${generateLiveASMRQuote(curVars, u)}</span><span style="font-size:11px;opacity:0.8;flex-shrink:0;">${userSettings.soundEnabled ? "🔊" : "🔇"}</span></div>`;
 
             const toolbarHTML = `
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;padding:2px 2px 6px 2px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                        <span style="font-size:11px;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;color:#f9e2af;">${RUIN_PERSONA_MODES[pMode]?.short || "进化树"}</span>
-                        ${contrastToggleHTML}
-                        <button id="st-xray-toggle" type="button" class="st-pill-btn">🔬 透视:${userSettings.showXrayOnHome ? "开" : "关"}</button>
+                        <button id="st-switch-target-btn" type="button" class="st-pill-btn" title="点击切换状态栏监控的角色目标（男主开局可切为女角色）" style="background:rgba(249,226,175,0.18);color:#fde047;border-color:rgba(249,226,175,0.45);">🎯 目标:${u.slice(0, 5)}</button>
+                        <button id="st-xray-toggle" type="button" class="st-pill-btn">🔬 内窥:${userSettings.showXrayOnHome ? "置顶" : "关"}</button>
+                        <button id="st-autogen-toggle" type="button" class="st-pill-btn" style="color:${userSettings.autoGenOnMajorChange ? "#fde047" : "#f8fafc"};">⚡ 自动图:${userSettings.autoGenOnMajorChange ? "开" : "关"}</button>
+                        <button id="st-lock-dna-btn" type="button" class="st-pill-btn">👩 锁外貌</button>
                     </div>
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                        <button id="st-compact-toggle" type="button" class="st-pill-btn">${userSettings.compactCards ? "🖼️ 显缩略图" : "📑 紧凑无图"}</button>
-                        <button id="st-subapi-redraw" type="button" class="st-pill-btn" style="background:rgba(203,166,247,0.2);color:#cba6f7;border-color:rgba(203,166,247,0.45);">⚡ 副API重绘</button>
+                        <button id="st-quick-clear-imgs" type="button" class="st-pill-btn" style="color:#fda4af;">🧹 清图</button>
+                        <button id="st-subapi-redraw" type="button" class="st-pill-btn" style="background:rgba(203,166,247,0.2);color:#cba6f7;border-color:rgba(203,166,247,0.45);">⚡ 一键API重绘</button>
                     </div>
                 </div>`;
 
             const tabsHTML = [
                 ...cats.map(c => {
-                    const isAct = (activeCat === c.title);
-                    const shortName = SHORT_NAMES[c.title] || c.title.slice(0, 2);
-                    return `<button class="st-left-tab" data-cat="${c.title}" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${isAct ? tc.prim : "rgba(255,255,255,0.08)"};background:${isAct ? tc.hi : "rgba(0,0,0,0.32)"};color:${isAct ? "#fff" : "#cdd6f4"};cursor:pointer;font-size:11px;font-weight:${isAct ? "bold" : "normal"};transition:all 0.15s;">
-                        <span style="font-size:15px;line-height:1;">${c.icon}</span>
-                        <span>${shortName}</span>
-                    </button>`;
+                    const isAct = (activeCat === c.title), shortName = SHORT_NAMES[c.title] || c.title.slice(0, 2);
+                    return `<button class="st-left-tab" data-cat="${c.title}" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${isAct ? tc.prim : "rgba(255,255,255,0.08)"};background:${isAct ? tc.hi : "rgba(0,0,0,0.32)"};color:${isAct ? "#fff" : "#cdd6f4"};cursor:pointer;font-size:11px;font-weight:${isAct ? "bold" : "normal"};"><span style="font-size:15px;line-height:1;">${c.icon}</span><span>${shortName}</span></button>`;
                 }),
-                `<button class="st-left-tab" data-cat="__ALL__" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${activeCat === "__ALL__" ? tc.prim : "rgba(255,255,255,0.08)"};background:${activeCat === "__ALL__" ? tc.hi : "rgba(0,0,0,0.32)"};color:${activeCat === "__ALL__" ? "#fff" : "#f9e2af"};cursor:pointer;font-size:11px;font-weight:bold;">
-                    <span style="font-size:14px;line-height:1;">📜</span>
-                    <span>全部</span>
-                </button>`
+                `<button class="st-left-tab" data-cat="__ALL__" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${activeCat === "__ALL__" ? tc.prim : "rgba(255,255,255,0.08)"};background:${activeCat === "__ALL__" ? tc.hi : "rgba(0,0,0,0.32)"};color:#f9e2af;cursor:pointer;font-size:11px;font-weight:bold;"><span style="font-size:14px;">📜</span><span>全部</span></button>`
             ].join("");
 
             const visibleCats = activeCat === "__ALL__" ? cats : cats.filter(c => c.title === activeCat);
-            const xrayHTML = (userSettings.showXrayOnHome && (activeCat === "六孔与储精" || activeCat === "苗床与受孕" || activeCat === "__ALL__")) ? `
-                <div style="margin-bottom:8px;">${buildDynamicXRaySVG(curVars, dev, caps)}</div>` : "";
-
             let rightCardsHTML = "";
             visibleCats.forEach((cat) => {
                 const cIdx = cats.indexOf(cat);
@@ -2949,7 +2930,6 @@
                     const corruptCls = t === 5 ? "st-corrupted-card-lv6" : (t === 4 ? "st-corrupted-card-lv5" : "");
                     const compactCls = userSettings.compactCards ? "st-compact-card" : "";
                     const firstPara = safeStr(item.desc).split("💭")[0].replace(/【[^】]+】：?\s*/g, "").trim().slice(0, 62);
-
                     return `
                     <div class="st-item-card st-v28-card ${corruptCls} ${compactCls}" data-cidx="${cIdx}" data-iidx="${iIdx}" style="background:${tc.card};border:${tc.cardBorder};border-radius:12px;padding:9px 11px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">
                         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
@@ -2957,93 +2937,73 @@
                             ${item.barHTML || ""}
                             <div class="st-card-preview" style="font-size:11px;color:#cbd5e1;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${firstPara}</div>
                         </div>
-                        <div class="st-card-thumb-wrap" data-cidx="${cIdx}" data-iidx="${iIdx}" title="点击全屏放大配图" style="display:none;width:68px;height:68px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1.5px solid ${tc.prim};background:#090510;box-shadow:0 4px 12px rgba(0,0,0,0.6);position:relative;">
+                        <div class="st-card-thumb-wrap" data-cidx="${cIdx}" data-iidx="${iIdx}" title="点击全屏放大配图" style="display:none;width:68px;height:68px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1.5px solid ${tc.prim};background:#090510;position:relative;">
                             <img style="width:100%;height:100%;object-fit:cover;display:block;" alt="thumb">
                             <span style="position:absolute;bottom:2px;right:3px;background:rgba(0,0,0,0.7);color:#f9e2af;font-size:9px;padding:0 4px;border-radius:4px;">🔍</span>
                         </div>
                     </div>`;
                 }).join("");
 
-                rightCardsHTML += `
-                    <div style="margin-bottom:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px 6px 6px;">
-                            <div style="font-weight:bold;font-size:13px;color:${tc.prim};display:flex;align-items:center;gap:5px;">
-                                <span>${cat.icon} ${cat.title}</span>
-                                <span style="font-size:11px;color:#a6adc8;font-weight:normal;">(${cat.summary || ""})</span>
-                            </div>
-                            <button class="st-cat-add-btn" data-cat="${cat.title}" type="button" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:1px solid rgba(249,226,175,0.35);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">＋ 新增条目</button>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:7px;">${itemsHTML}</div>
-                    </div>`;
+                rightCardsHTML += `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px 6px 6px;"><div style="font-weight:bold;font-size:13px;color:${tc.prim};display:flex;align-items:center;gap:5px;"><span>${cat.icon} ${cat.title}</span><span style="font-size:11px;color:#a6adc8;font-weight:normal;">(${cat.summary || ""})</span></div><button class="st-cat-add-btn" data-cat="${cat.title}" type="button" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:1px solid rgba(249,226,175,0.35);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">＋ 新增</button></div><div style="display:flex;flex-direction:column;gap:7px;">${itemsHTML}</div></div>`;
             });
 
-            bodyEl.innerHTML = `
-                ${buffBarHTML}
-                ${asmrBarHTML}
-                ${toolbarHTML}
-                <div style="display:flex;gap:8px;align-items:flex-start;min-height:360px;">
-                    <div id="st-v5-tabs" style="width:58px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;max-height:68vh;overflow-y:auto;padding-right:2px;">
-                        ${tabsHTML}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        ${xrayHTML}
-                        ${rightCardsHTML}
-                    </div>
-                </div>`;
+            bodyEl.innerHTML = `${topXrayCenterHTML}${buffBarHTML}${asmrBarHTML}${toolbarHTML}<div style="display:flex;gap:8px;align-items:flex-start;min-height:360px;"><div id="st-v5-tabs" style="width:58px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;max-height:68vh;overflow-y:auto;">${tabsHTML}</div><div style="flex:1;min-width:0;">${rightCardsHTML}</div></div>`;
+
+            bodyEl.querySelectorAll(".st-xray-hotspot").forEach(spot => {
+                spot.onclick = (e) => {
+                    e.stopPropagation(); playSynthSound("squelch");
+                    const targetKey = spot.getAttribute("data-key");
+                    for (const c of cats) {
+                        const found = (c.items || []).find(it => it.editKey === targetKey);
+                        if (found) { showDetailPopup(found); return; }
+                    }
+                };
+            });
 
             if (!userSettings.compactCards) {
                 bodyEl.querySelectorAll(".st-card-thumb-wrap").forEach(wrap => {
-                    const cIdx = parseInt(wrap.getAttribute("data-cidx"), 10);
-                    const iIdx = parseInt(wrap.getAttribute("data-iidx"), 10);
+                    const cIdx = parseInt(wrap.getAttribute("data-cidx"), 10), iIdx = parseInt(wrap.getAttribute("data-iidx"), 10);
                     const item = cats[cIdx]?.items?.[iIdx];
                     if (item) bindCardThumbnailElement(wrap, item);
                 });
             }
 
             bodyEl.querySelectorAll(".st-left-tab").forEach(tab => {
-                tab.onclick = () => {
-                    playSynthSound("squelch");
-                    activeCat = tab.getAttribute("data-cat");
-                    renderBody();
-                };
+                tab.onclick = () => { playSynthSound("squelch"); activeCat = tab.getAttribute("data-cat"); renderBody(); };
             });
 
+            const tgtBtn = bodyEl.querySelector("#st-switch-target-btn");
+            if (tgtBtn) tgtBtn.onclick = () => promptSwitchTargetCharacter();
             const asmrEl = bodyEl.querySelector("#st-asmr-bar");
-            if (asmrEl) asmrEl.onclick = () => {
-                userSettings.soundEnabled = !userSettings.soundEnabled;
-                saveSettings();
-                if (userSettings.soundEnabled) playSynthSound(safeNum(curVars.精神与心理?.快感累积) >= 75 ? "climax" : "squelch");
-                renderBody();
-            };
+            if (asmrEl) asmrEl.onclick = () => { userSettings.soundEnabled = !userSettings.soundEnabled; saveSettings(); renderBody(); };
             const xrayBtn = bodyEl.querySelector("#st-xray-toggle");
-            if (xrayBtn) xrayBtn.onclick = () => {
-                userSettings.showXrayOnHome = !userSettings.showXrayOnHome;
+            if (xrayBtn) xrayBtn.onclick = () => { userSettings.showXrayOnHome = !userSettings.showXrayOnHome; saveSettings(); renderBody(); };
+            const autoGenBtn = bodyEl.querySelector("#st-autogen-toggle");
+            if (autoGenBtn) autoGenBtn.onclick = () => {
+                userSettings.autoGenOnMajorChange = !userSettings.autoGenOnMajorChange;
                 saveSettings(); renderBody();
+                showToast(userSettings.autoGenOnMajorChange ? `⚡ 已开启跨阶重大变化自动生图` : "🔕 已关闭自动生图", "info", 2200);
             };
-            const cBtn = bodyEl.querySelector("#st-contrast-toggle");
-            if (cBtn) cBtn.onclick = () => {
-                userSettings.contrastInnerActive = !userSettings.contrastInnerActive;
-                saveSettings(); latestStatus = getFallbackData(); renderBody();
+            const lockDnaBtn = bodyEl.querySelector("#st-lock-dna-btn");
+            if (lockDnaBtn) lockDnaBtn.onclick = () => {
+                const curDna = userSettings.lockedAppearanceTags || getLockedAppearanceTags(u, curVars);
+                const nextDna = prompt(`🧬 设置【${u}】的固定外貌 Tag（确保每次画的都是同一个人）：`, curDna);
+                if (nextDna === null) return;
+                userSettings.lockedAppearanceTags = nextDna.trim(); saveSettings();
+                showToast(`👩 已锁定【${u}】外貌 DNA！`, "success", 2500);
             };
-            const cmpBtn = bodyEl.querySelector("#st-compact-toggle");
-            if (cmpBtn) cmpBtn.onclick = () => {
-                userSettings.compactCards = !userSettings.compactCards;
-                saveSettings(); renderBody();
-            };
+            const clrImgBtn = bodyEl.querySelector("#st-quick-clear-imgs");
+            if (clrImgBtn) clrImgBtn.onclick = () => clearCurrentProtagImages();
             const apiBtn = bodyEl.querySelector("#st-subapi-redraw");
             if (apiBtn) apiBtn.onclick = (e) => triggerSubApiUpdate(e.target);
 
             bodyEl.querySelectorAll(".st-cat-add-btn").forEach(btn => {
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    openAddCustomItemModal(btn.getAttribute("data-cat"));
-                };
+                btn.onclick = (e) => { e.stopPropagation(); openAddCustomItemModal(btn.getAttribute("data-cat")); };
             });
             bodyEl.querySelectorAll(".st-item-card").forEach(card => {
                 card.onclick = () => {
                     playSynthSound("squelch");
-                    const cIdx = parseInt(card.getAttribute("data-cidx"), 10);
-                    const iIdx = parseInt(card.getAttribute("data-iidx"), 10);
+                    const cIdx = parseInt(card.getAttribute("data-cidx"), 10), iIdx = parseInt(card.getAttribute("data-iidx"), 10);
                     const item = cats[cIdx]?.items?.[iIdx];
                     if (item) showDetailPopup(item);
                 };
@@ -3078,32 +3038,28 @@
             mergeUserCustomizations(freshVars, cached, maxLen);
             calibrateMentalMetrics(freshVars);
             curVars = freshVars;
+            latestStatus = getFallbackData();
             if (forceUpToFloor === null) {
                 saveChatCache(curVars);
                 computeAndShowDeltaToast(curVars, computeAllOrganDevelopments(curVars));
+                checkAndQueueMajorChangeAutoGen(latestStatus.categories, latestStatus.charName);
             }
-            latestStatus = getFallbackData();
             renderBody();
             cleanDOM();
         }
 
         function mountUI() {
-            if (document.getElementById("st-v5-root")) {
-                applyThemeAndSize();
-                renderBody();
-                return;
-            }
-            const root = document.createElement("div");
-            root.id = "st-v5-root";
+            if (document.getElementById("st-v5-root")) { applyThemeAndSize(); renderBody(); return; }
+            const root = document.createElement("div"); root.id = "st-v5-root";
             root.innerHTML = `
-                <button id="st-v5-toggle" type="button" title="打开/收起神域状态栏 2.0" style="position:fixed;left:${userSettings.btnX}px;top:${userSettings.btnY}px;z-index:2147483640;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,0.65);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;touch-action:none;">💗</button>
+                <button id="st-v5-toggle" type="button" title="打开/收起状态栏 2.0" style="position:fixed;left:${userSettings.btnX}px;top:${userSettings.btnY}px;z-index:2147483640;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,0.65);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;touch-action:none;">💗</button>
                 <div id="st-v5-panel" style="position:fixed;left:${userSettings.panelX}px;top:${userSettings.panelY}px;z-index:2147483639;display:${isPanelOpen ? "flex" : "none"};flex-direction:column;overflow:hidden;">
                     <div id="st-v5-header" style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;cursor:move;user-select:none;touch-action:none;border-bottom:1px solid rgba(255,255,255,0.12);">
                         <div id="st-v5-title-text" style="font-weight:bold;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">状态栏 2.0</div>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <button id="st-hdr-prev" type="button" title="回溯上一层" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;">◀</button>
                             <button id="st-hdr-live" type="button" title="回到最新实时层" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:none;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;">实时</button>
-                            <button id="st-hdr-settings" type="button" title="打开/关闭设置" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;">⚙️</button>
+                            <button id="st-hdr-settings" type="button" title="打开设置" style="background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;">⚙️</button>
                             <button id="st-hdr-close" type="button" title="最小化面板" style="background:rgba(243,139,168,0.25);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;">✕</button>
                         </div>
                     </div>
@@ -3114,23 +3070,17 @@
                 </div>`;
             document.body.appendChild(root);
 
-            const toggleBtn = document.getElementById("st-v5-toggle");
-            const panelEl = document.getElementById("st-v5-panel");
-            const headerEl = document.getElementById("st-v5-header");
-            const modalEl = document.getElementById("st-v5-modal");
-
+            const toggleBtn = document.getElementById("st-v5-toggle"), panelEl = document.getElementById("st-v5-panel"), headerEl = document.getElementById("st-v5-header"), modalEl = document.getElementById("st-v5-modal");
             modalEl.onclick = (e) => { if (e.target === modalEl) modalEl.style.display = "none"; };
             document.getElementById("st-hdr-close").onclick = () => { isPanelOpen = false; panelEl.style.display = "none"; };
             document.getElementById("st-hdr-settings").onclick = () => { isSettingsOpen = !isSettingsOpen; renderBody(); };
             document.getElementById("st-hdr-prev").onclick = () => {
-                const chatLen = (safeCtx()?.chat || []).length;
-                if (!chatLen) return;
+                const chatLen = (safeCtx()?.chat || []).length; if (!chatLen) return;
                 viewingHistoryFloor = viewingHistoryFloor === null ? Math.max(0, chatLen - 2) : Math.max(0, viewingHistoryFloor - 1);
                 scanHistory(viewingHistoryFloor);
             };
             document.getElementById("st-hdr-live").onclick = () => {
-                viewingHistoryFloor = null;
-                scanHistory(null);
+                viewingHistoryFloor = null; scanHistory(null);
                 showToast("⚡ 已同步至最新实时楼层", "info", 1800);
             };
 
@@ -3138,8 +3088,7 @@
                 let dragging = false, moved = false, startX = 0, startY = 0, origX = 0, origY = 0;
                 handleEl.onpointerdown = (e) => {
                     if (e.target.closest("button") && handleEl !== toggleBtn) return;
-                    dragging = true; moved = false;
-                    startX = e.clientX; startY = e.clientY;
+                    dragging = true; moved = false; startX = e.clientX; startY = e.clientY;
                     origX = targetEl.offsetLeft; origY = targetEl.offsetTop;
                     handleEl.setPointerCapture(e.pointerId);
                 };
@@ -3147,8 +3096,7 @@
                     if (!dragging) return;
                     const dx = e.clientX - startX, dy = e.clientY - startY;
                     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
-                    const nx = Math.max(0, Math.min(window.innerWidth - 48, origX + dx));
-                    const ny = Math.max(0, Math.min(window.innerHeight - 48, origY + dy));
+                    const nx = Math.max(0, Math.min(window.innerWidth - 48, origX + dx)), ny = Math.max(0, Math.min(window.innerHeight - 48, origY + dy));
                     targetEl.style.left = nx + "px"; targetEl.style.top = ny + "px";
                     userSettings[xKey] = nx; userSettings[yKey] = ny;
                 };
@@ -3160,25 +3108,20 @@
                     else if (onClickCb) onClickCb();
                 };
             };
-
             bindDrag(toggleBtn, toggleBtn, "btnX", "btnY", () => {
-                isPanelOpen = !isPanelOpen;
-                panelEl.style.display = isPanelOpen ? "flex" : "none";
+                isPanelOpen = !isPanelOpen; panelEl.style.display = isPanelOpen ? "flex" : "none";
                 if (isPanelOpen) renderBody();
             });
             bindDrag(headerEl, panelEl, "panelX", "panelY", null);
-
-            applyThemeAndSize();
-            renderBody();
+            applyThemeAndSize(); renderBody();
         }
 
         function setupTavernHooks() {
             if (window.__ST_V20_HOOKS_BOUND__) return;
             window.__ST_V20_HOOKS_BOUND__ = true;
-            const ctx = safeCtx();
-            const ev = ctx?.eventSource, et = ctx?.event_types;
+            const ctx = safeCtx(), ev = ctx?.eventSource, et = ctx?.event_types;
             if (ev && et) {
-                if (et.CHAT_CHANGED) ev.on(et.CHAT_CHANGED, () => { viewingHistoryFloor = null; setTimeout(() => scanHistory(null), 200); });
+                if (et.CHAT_CHANGED) ev.on(et.CHAT_CHANGED, () => { viewingHistoryFloor = null; prevRecordedTiersForAutoGen = {}; setTimeout(() => scanHistory(null), 200); });
                 if (et.MESSAGE_RECEIVED) ev.on(et.MESSAGE_RECEIVED, () => {
                     viewingHistoryFloor = null;
                     setTimeout(() => {
@@ -3194,9 +3137,7 @@
                             if (!userSettings.enabled || !checkCardAvailable(true)) return;
                             const u = detectProtagonistName(curVars);
                             const sysInject = buildFullSystemPrompt(u, curVars);
-                            if (eventData && Array.isArray(eventData.chat)) {
-                                eventData.chat.push({ role: "system", content: sysInject });
-                            }
+                            if (eventData && Array.isArray(eventData.chat)) eventData.chat.push({ role: "system", content: sysInject });
                         } catch (e) {}
                     });
                 }
@@ -3212,7 +3153,7 @@
         setInterval(scanChatImagesForZhiHuiJi, 2500);
         window.ST_V20_COMPLETE_FLAG = true;
         window.ST_V10_COMPLETE_FLAG = true;
-        console.log("✅ [状态栏 2.0 · 神域终极完全体] 初始化完成喵！");
+        console.log("✅ [状态栏 2.0 · 终极完全体] 初始化完成喵！");
     } catch (err) {
         showDiagnosticError("初始化崩溃", err, "请检查代码是否完整拼接。");
     }
