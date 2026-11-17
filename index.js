@@ -2424,7 +2424,7 @@
             const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
             const themeOpts = Object.keys(THEMES).map(k => `<option value="${k}" ${userSettings.theme === k ? "selected" : ""}>${k}</option>`).join("");
             const modeOpts = Object.entries(RUIN_PERSONA_MODES).map(([k, v]) => `<option value="${k}" ${userSettings.personaMode === k ? "selected" : ""}>${v.label}</option>`).join("");
-            const diffOpts = Object.entries(DIFFICULTY_PROFILES).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.fullLabel}</option>`).join("");
+            const diffOpts = Object.entries(DIFFICULTY_PROFILES).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.label || v.fullLabel}</option>`).join("");
             bodyEl.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:10px;padding:4px;">
                     <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
@@ -2456,14 +2456,15 @@
                         </div>
                     </div>
                     <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🎨 智绘姬与本地图包管理（已缓存 ${Object.keys(importedImageRegistry).length} 张）</div>
+                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🎨 智绘姬与本地图包管理（已缓存 ${importedImgCache.size} 张）</div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
                             <input id="st-zhj-fn" value="${safeStr(userSettings.zhihuijiGlobalFn)}" placeholder="智绘姬全局函数名(选填)" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
-                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 批量导入图片</button>
-                            <input id="st-import-imgs-input" type="file" multiple accept="image/*" style="display:none;">
+                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 导入图片/ZIP包</button>
+                            <input id="st-import-imgs-input" type="file" multiple accept="image/*,.zip" style="display:none;">
                         </div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
                             <button id="st-lock-name-btn" type="button" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🔒 锁定真名(${detectProtagonistName(curVars)})</button>
+                            <button id="st-clear-imgs-btn" type="button" style="background:rgba(243,139,168,0.15);color:#f38ba8;border:1px solid rgba(243,139,168,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🗑️ 清空图包</button>
                             <button id="st-reset-vars-btn" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🧹 重置本会话变量</button>
                         </div>
                     </div>
@@ -2475,15 +2476,22 @@
             selEl.onchange = () => { modEl.value = selEl.value; };
             bodyEl.querySelector("#st-import-imgs-btn").onclick = () => bodyEl.querySelector("#st-import-imgs-input").click();
             bodyEl.querySelector("#st-import-imgs-input").onchange = async (e) => {
-                const files = Array.from(e.target.files || []);
-                if (!files.length) return;
-                let okCnt = 0;
-                for (const f of files) {
-                    const key = f.name.replace(/\.[^.]+$/, "").trim();
-                    const dataUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(""); fr.readAsDataURL(f); });
-                    if (dataUrl) { importedImageRegistry[key] = dataUrl; await idbPutImage(key, dataUrl); okCnt++; }
+                const files = e.target.files;
+                if (!files || !files.length) return;
+                showToast("⏳ 正在解压并压缩转码 WebP 图包...", "info", 3000);
+                try {
+                    const cnt = await importFilesOrZipToDB(files);
+                    showToast(`✅ 成功导入并压缩持久化 ${cnt} 张本地图片！`, "success");
+                    renderSettingsView(bodyEl);
+                } catch (err) {
+                    showToast("❌ 导入失败：" + (err.message || "文件格式有误"), "error");
                 }
-                showToast(`✅ 成功导入并持久化 ${okCnt} 张本地图片！`, "success");
+            };
+            bodyEl.querySelector("#st-clear-imgs-btn").onclick = async () => {
+                if (!confirm("确定要清空 IndexedDB 中缓存的所有本地导入图片吗？")) return;
+                await clearAllImportedImagesDB();
+                showToast("🗑️ 已清空本地缓存图包", "info");
+                renderSettingsView(bodyEl);
             };
             bodyEl.querySelector("#st-lock-name-btn").onclick = () => {
                 const n = prompt("输入要手动锁定的主角真名（留空则解除锁定）：", curVars.档案.手动锁定真名 || detectProtagonistName(curVars));
@@ -2491,6 +2499,7 @@
                 curVars.档案.手动锁定真名 = n.trim();
                 if (n.trim()) curVars.档案.当前认知名字 = n.trim();
                 saveChatCache(curVars); latestStatus = getFallbackData(); showToast(n.trim() ? `🔒 已锁定真名：${n.trim()}` : "🔓 已解除真名锁定", "success");
+                renderSettingsView(bodyEl);
             };
             bodyEl.querySelector("#st-reset-vars-btn").onclick = () => {
                 if (!confirm("确定要清空当前对话的全部状态栏缓存数据并从头计算吗？")) return;
@@ -2846,6 +2855,11 @@
         window.ST_V20_COMPLETE_FLAG = true;
         window.ST_V10_COMPLETE_FLAG = true;
         console.log("✅ [状态栏 2.0 · 神域终极完全体] 初始化完成喵！");
+    } catch (err) {
+        showDiagnosticError("初始化崩溃", err, "请检查代码是否完整拼接。");
+    }
+})();
+
 
 
 
