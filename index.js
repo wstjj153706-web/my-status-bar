@@ -2247,6 +2247,163 @@
             lb.querySelector("#st-lb-close-btn").onclick = (e) => { e.stopPropagation(); lb.style.display = "none"; };
             fullImg.onclick = () => { lb.style.display = "none"; };
         }
+        // =========================================================================
+        // 👻 智绘姬后台静默生图引擎（不盖楼、不污染正文，直接生图进插件卡片！）
+        // =========================================================================
+        function parsePromptFromImageBlock(blockTxt) {
+            const sceneMatch = blockTxt.match(/image###([\s\S]*?)###/i);
+            const rawPrompt = sceneMatch ? sceneMatch[1] : blockTxt;
+            const ucMatch = rawPrompt.match(/UC:([^;]+);/i);
+            const negPrompt = ucMatch ? ucMatch[1].replace(/\d+(?:\.\d+)?::|::/g, "").trim() : "lowres, bad anatomy, text, watermark, blurry";
+            const posPrompt = rawPrompt.replace(/Char1\s*UC:[^;]+;?/gi, "")
+                .replace(/Scene:|Char1:|centers:[A-Z0-9]+|\|/gi, ", ")
+                .replace(/\d+(?:\.\d+)?::|::/g, "")
+                .replace(/[;\n\r]+/g, ", ")
+                .replace(/,\s*,+/g, ", ").trim();
+            return { posPrompt, negPrompt, rawInner: sceneMatch ? sceneMatch[1].trim() : blockTxt };
+        }
+
+        async function silentBackgroundGenerateImage(item, curStageIdx, u, btnEl = null) {
+            const blockTxt = buildDanbooruImageBlock(item, curStageIdx, u);
+            const { posPrompt, negPrompt, rawInner } = parsePromptFromImageBlock(blockTxt);
+            const stageKey = `${item.editKey || "custom"}_${curStageIdx}`;
+            const oldBtnTxt = btnEl ? btnEl.textContent : "";
+            if (btnEl) { btnEl.textContent = "⏳ 后台绘图中..."; btnEl.disabled = true; }
+            showToast(`🎨 正在后台静默绘制【${item.cleanTitle || item.editKey} (第${curStageIdx}阶)】，不污染正文...`, "info", 3800);
+
+            const saveAndMountImg = async (imgSrc) => {
+                if (!imgSrc) return false;
+                let finalSrc = imgSrc;
+                if (!finalSrc.startsWith("data:") && !finalSrc.startsWith("http") && !finalSrc.startsWith("blob:") && !finalSrc.startsWith("/")) {
+                    finalSrc = `data:image/png;base64,${finalSrc}`;
+                }
+                if (finalSrc.startsWith("data:")) {
+                    await saveDataUrlToDB(stageKey, finalSrc).catch(() => {});
+                }
+                if (item.isCustom && item.catTitle) {
+                    const found = (curVars.自定义条目?.[item.catTitle] || []).find(x => x.id === item.editKey);
+                    if (found) found.imgUrl = finalSrc;
+                } else {
+                    curVars.按钮详情 = curVars.按钮详情 || {};
+                    curVars.按钮详情[item.editKey] = { ...(curVars.按钮详情[item.editKey] || {}), imgUrl: finalSrc };
+                }
+                saveChatCache(curVars);
+                latestStatus = getFallbackData();
+                renderBody();
+                const modalImg = document.getElementById("st-det-stage-img");
+                const modalPh = document.getElementById("st-det-img-placeholder");
+                if (modalImg) { modalImg.src = finalSrc; modalImg.style.display = "block"; }
+                if (modalPh) modalPh.style.display = "none";
+                showToast(`✅ 【${item.cleanTitle || item.editKey}】后台生图完成并已自动挂载至插件卡片！`, "success", 3200);
+                return true;
+            };
+
+            try {
+                // 通道 1：检测用户配置的智绘姬全局函数或常见智绘姬内部直连 API
+                const customFnName = safeStr(userSettings.zhihuijiGlobalFn).trim();
+                const candFns = [customFnName, "zhihuijiGenerate", "generateZhihuijiImage", "stZhihuijiGenerate"].filter(Boolean);
+                for (const fnName of candFns) {
+                    if (typeof window[fnName] === "function") {
+                        const res = await window[fnName](rawInner, blockTxt, { silent: true, prompt: posPrompt, negative_prompt: negPrompt });
+                        if (typeof res === "string" && res.length > 16) {
+                            await saveAndMountImg(res);
+                            return;
+                        } else if (res && (res.url || res.data || res.base64 || res.image)) {
+                            await saveAndMountImg(res.url || res.data || res.base64 || res.image);
+                            return;
+                        }
+                    }
+                }
+
+                // 通道 2：尝试静默调用酒馆原生 SD / NovelAI / 智绘姬后端生图接口 (/api/sd/generate)
+                try {
+                    const headers = { "Content-Type": "application/json" };
+                    if (typeof window.getRequestHeaders === "function") Object.assign(headers, window.getRequestHeaders());
+                    const sdRes = await fetch("/api/sd/generate", {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({ prompt: posPrompt, negative_prompt: negPrompt, width: 512, height: 512, steps: 24, cfg_scale: 7 })
+                    });
+                    if (sdRes.ok) {
+                        const sdData = await sdRes.json();
+                        const b64 = sdData?.data || sdData?.images?.[0] || sdData?.image || "";
+                        if (b64) {
+                            await saveAndMountImg(b64);
+                            return;
+                        }
+                    }
+                } catch (sdErr) {}
+
+                // 通道 3：隐藏沙盒 DOM 诱捕模式（在聊天区底部挂载一个 0 高度透明虚拟楼层触发智绘姬渲染，抓到图立刻销毁沙盒！）
+                const chatEl = document.getElementById("chat");
+                if (chatEl) {
+                    pendingZhjTarget = { editKey: item.editKey, stageKey, title: item.cleanTitle || item.editKey, isCustom: item.isCustom, catTitle: item.catTitle, ts: Date.now() };
+                    let sandbox = document.getElementById("st-zhj-silent-sandbox");
+                    if (sandbox) sandbox.remove();
+                    sandbox = document.createElement("div");
+                    sandbox.id = "st-zhj-silent-sandbox";
+                    sandbox.className = "mes";
+                    sandbox.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;";
+                    sandbox.innerHTML = `<div class="mes_block"><div class="mes_text">${blockTxt.replace(/\n/g, "<br>")}</div></div>`;
+                    chatEl.appendChild(sandbox);
+
+                    // 触发酒馆消息渲染事件让智绘姬扫描沙盒
+                    const ctx = safeCtx();
+                    if (ctx?.eventSource && ctx?.event_types?.CHARACTER_MESSAGE_RENDERED) {
+                        try { ctx.eventSource.emit(ctx.event_types.CHARACTER_MESSAGE_RENDERED, (ctx.chat?.length || 1) - 1); } catch (e) {}
+                    }
+
+                    // 监听沙盒内部是否被智绘姬插入了 <img>
+                    const capturedSrc = await new Promise((resolve) => {
+                        let checks = 0;
+                        const timer = setInterval(() => {
+                            checks++;
+                            const img = sandbox.querySelector("img");
+                            const src = img ? (img.getAttribute("src") || img.src) : "";
+                            if (src && !src.includes("loading") && !src.includes("spinner")) {
+                                clearInterval(timer);
+                                resolve(src);
+                            } else if (checks >= 90) { // 最长后台等待 45 秒
+                                clearInterval(timer);
+                                resolve("");
+                            }
+                        }, 500);
+                    });
+                    sandbox.remove();
+                    if (capturedSrc) {
+                        await saveAndMountImg(capturedSrc);
+                        return;
+                    }
+                }
+
+                showToast("⚠️ 后台未检测到智绘姬响应，请检查酒馆生图后端或智绘姬扩展是否已开启自动渲染喵！", "warn", 4000);
+            } catch (err) {
+                showToast("❌ 后台生图出错：" + (err.message || "未知错误"), "error", 3500);
+            } finally {
+                if (btnEl) { btnEl.textContent = oldBtnTxt || "🎨 智绘姬静默生图"; btnEl.disabled = false; }
+            }
+        }
+
+        // 卡片缩略图智能异步加载器（带缓存回退）
+        function bindCardThumbnailElement(thumbWrapEl, item) {
+            if (!thumbWrapEl) return;
+            const candidates = getStageImageCandidates(item);
+            if (!candidates.length) { thumbWrapEl.style.display = "none"; return; }
+            const imgEl = thumbWrapEl.querySelector("img");
+            let idx = 0;
+            const tryNext = () => {
+                if (idx >= candidates.length) { thumbWrapEl.style.display = "none"; return; }
+                imgEl.src = candidates[idx++];
+            };
+            imgEl.onload = () => { thumbWrapEl.style.display = "flex"; };
+            imgEl.onerror = tryNext;
+            thumbWrapEl.onclick = (e) => {
+                e.stopPropagation();
+                openTrueFullscreenImage(imgEl.src);
+            };
+            tryNext();
+        }
+
         function showDetailPopup(item) {
             const modal = document.getElementById("st-v5-modal");
             if (!modal) return;
@@ -2260,6 +2417,7 @@
             const curPct = (item.pct !== null && item.pct !== undefined) ? item.pct : 0;
             const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
             const curStageIdx = (item.hasStageBar ? tier6(curPct, isRev) : 0) + 1;
+            const lockedVal = typeof curVars.上帝强制锁定?.[item.editKey] === "number" ? curVars.上帝强制锁定[item.editKey] : null;
 
             const box = modal.querySelector(".st-modal-box");
             box.style.background = tc.bg;
@@ -2275,12 +2433,14 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="font-size:11.5px;color:${tc.prim};font-weight:bold;">🖼️ 部位实况配图（第 ${curStageIdx} 阶）</span>
                         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-                            <button id="st-det-zhj-gen" type="button" style="background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:bold;cursor:pointer;">🎨 智绘姬重绘</button>
+                            <button id="st-det-zhj-gen" type="button" style="background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:bold;cursor:pointer;">🎨 智绘姬静默生图</button>
+                            <button id="st-det-local-up" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">📂 传图绑定</button>
+                            <input id="st-det-local-file" type="file" accept="image/*" style="display:none;">
                             <button id="st-det-copy-tag" type="button" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">📋 复制Tag</button>
                         </div>
                     </div>
                     <img id="st-det-stage-img" style="display:none;width:100%;max-height:240px;object-fit:contain;border-radius:8px;cursor:zoom-in;background:#0a0612;" alt="部位实况">
-                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无本地或缓存实况图，可点击「🎨 智绘姬重绘」直接生成，或在下方填入图片链接/导入图片包。</div>
+                    <div id="st-det-img-placeholder" style="font-size:11.5px;color:#a6adc8;padding:12px 8px;text-align:center;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;">暂无配图，点上方「🎨 智绘姬静默生图」将在后台直接画进插件（不发到正文），或点「📂 传图绑定」上传本地图片。</div>
                 </div>
                 <div style="margin-top:10px;background:rgba(0,0,0,0.28);border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,0.08);line-height:1.65;font-size:12.5px;white-space:pre-wrap;word-break:break-word;">${objText}</div>
                 <div style="margin-top:8px;background:rgba(243,139,168,0.1);border-left:3px solid ${tc.prim};border-radius:0 8px 8px 0;padding:8px 10px;font-size:12.5px;line-height:1.6;color:#ffd6e4;">
@@ -2288,8 +2448,16 @@
                     <div>“*${thoughtText}*”</div>
                 </div>
                 <div style="margin-top:12px;border-top:1px dashed rgba(255,255,255,0.12);padding-top:10px;">
+                    ${item.hasStageBar ? `
+                    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:7px 10px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#fde047;font-weight:bold;">
+                            <span>👑 上帝模式强制锁定数值：<b id="st-god-val-label">${lockedVal !== null ? lockedVal + "% (已锁定)" : curPct + "% (自动)"}</b></span>
+                            <button id="st-god-unlock" type="button" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:5px;padding:1px 7px;font-size:10.5px;cursor:pointer;">解除锁定</button>
+                        </div>
+                        <input id="st-god-slider" type="range" min="0" max="100" value="${lockedVal !== null ? lockedVal : curPct}" style="width:100%;margin-top:5px;cursor:pointer;">
+                    </div>` : ""}
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:bold;color:#f9e2af;">✏️ 编辑 / 上帝覆写 / 副API微调</span>
+                        <span style="font-size:12px;font-weight:bold;color:#f9e2af;">✏️ 编辑文案 / 绑定图片 / 副API微调</span>
                         <button id="st-det-ai-btn" type="button" style="background:rgba(203,166,247,0.2);color:#cba6f7;border:1px solid #cba6f7;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;">✨ 副API生成</button>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
@@ -2302,7 +2470,7 @@
                         ${item.isClient ? `<button id="st-det-block-client" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;margin-right:auto;">🚫 屏蔽此恩客</button>` : ""}
                         ${item.isCustom ? `<button id="st-det-del-custom" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;margin-right:auto;">🗑️ 删除自定义</button>` : ""}
                         <button id="st-det-reset" type="button" style="background:rgba(255,255,255,0.1);color:#cdd6f4;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">↩️ 恢复默认</button>
-                        <button id="st-det-save" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:6px;padding:5px 14px;font-size:11.5px;font-weight:bold;cursor:pointer;">💾 保存覆写</button>
+                        <button id="st-det-save" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:6px;padding:5px 14px;font-size:11.5px;font-weight:bold;cursor:pointer;">💾 保存修改</button>
                     </div>
                 </div>
             `;
@@ -2319,14 +2487,49 @@
             imgEl.onclick = () => openTrueFullscreenImage(imgEl.src);
             if (candidates.length > 0) tryNextImg();
 
+            // 绑定上帝滑块
+            const godSlider = box.querySelector("#st-god-slider");
+            const godLabel = box.querySelector("#st-god-val-label");
+            let tempGodVal = lockedVal;
+            if (godSlider) {
+                godSlider.oninput = () => {
+                    tempGodVal = parseInt(godSlider.value, 10);
+                    if (godLabel) godLabel.textContent = `${tempGodVal}% (待保存锁定)`;
+                };
+                box.querySelector("#st-god-unlock").onclick = () => {
+                    tempGodVal = null;
+                    if (curVars.上帝强制锁定) delete curVars.上帝强制锁定[item.editKey];
+                    if (godLabel) godLabel.textContent = `${curPct}% (已解除锁定)`;
+                    saveChatCache(curVars); latestStatus = getFallbackData(); renderBody();
+                    showToast("🔓 已解除该项数值锁定", "info");
+                };
+            }
+
+            // 单项直接上传本地图片绑定当前阶段
+            const upBtn = box.querySelector("#st-det-local-up"), fileInp = box.querySelector("#st-det-local-file");
+            if (upBtn && fileInp) {
+                upBtn.onclick = () => fileInp.click();
+                fileInp.onchange = async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const stageKey = `${item.editKey}_${curStageIdx}`;
+                    const res = await saveSingleImageToDB(stageKey, f);
+                    if (res?.dUrl) {
+                        imgEl.src = res.dUrl; imgEl.style.display = "block"; phEl.style.display = "none";
+                        latestStatus = getFallbackData(); renderBody();
+                        showToast(`✅ 已将图片绑定至【${ stageKey }】！`, "success");
+                    }
+                };
+            }
+
             box.querySelector("#st-det-close").onclick = () => { modal.style.display = "none"; };
             box.querySelector("#st-det-copy-tag").onclick = async () => {
                 const block = buildDanbooruImageBlock(item, curStageIdx, u);
                 try { await navigator.clipboard.writeText(block); showToast("📋 已复制智绘姬 <image> Tag 块！", "success"); }
-                catch (e) { showToast("⚠️ 复制失败，请手动触发智绘姬生成", "error"); }
+                catch (e) { showToast("⚠️ 复制失败", "error"); }
             };
-            box.querySelector("#st-det-zhj-gen").onclick = () => {
-                sendPromptToZhiHuiJi(item, curStageIdx, u);
+            box.querySelector("#st-det-zhj-gen").onclick = (e) => {
+                silentBackgroundGenerateImage(item, curStageIdx, u, e.target);
             };
             box.querySelector("#st-det-ai-btn").onclick = async (e) => {
                 const hint = prompt("输入希望副API侧重描写的方向（可留空直接按当前剧情生成）：", "");
@@ -2341,6 +2544,10 @@
             box.querySelector("#st-det-save").onclick = () => {
                 const stg = box.querySelector("#st-ed-stage").value.trim(), im = box.querySelector("#st-ed-img").value.trim();
                 const dsc = box.querySelector("#st-ed-desc").value.trim(), tht = box.querySelector("#st-ed-thought").value.trim();
+                if (tempGodVal !== null && !isNaN(tempGodVal)) {
+                    curVars.上帝强制锁定 = curVars.上帝强制锁定 || {};
+                    curVars.上帝强制锁定[item.editKey] = tempGodVal;
+                }
                 if (item.isCustom && customRec) {
                     if (stg) customRec.stage = stg;
                     customRec.imgUrl = im; customRec.desc = dsc; customRec.thought = tht;
@@ -2348,10 +2555,11 @@
                     curVars.按钮详情[item.editKey] = { ...(curVars.按钮详情[item.editKey] || {}), stage: stg, imgUrl: im, desc: dsc, thought: tht };
                 }
                 saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast("💾 已保存该条目覆写！", "success");
+                showToast("💾 已保存数值与文案修改！", "success");
             };
             box.querySelector("#st-det-reset").onclick = () => {
                 if (curVars.按钮详情?.[item.editKey]) delete curVars.按钮详情[item.editKey];
+                if (curVars.上帝强制锁定?.[item.editKey] !== undefined) delete curVars.上帝强制锁定[item.editKey];
                 saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
                 showToast("↩️ 已恢复系统动态计算描述", "info");
             };
@@ -2369,180 +2577,9 @@
             };
         }
 
-        function openAddCustomItemModal(catTitle) {
-            const modal = document.getElementById("st-v5-modal");
-            if (!modal) return;
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
-            const box = modal.querySelector(".st-modal-box");
-            box.style.background = tc.bg; box.style.border = tc.border; box.style.color = tc.text;
-            box.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.12);">
-                    <div style="font-size:15px;font-weight:bold;color:#f9e2af;">➕ 新增自定义条目（${catTitle}）</div>
-                    <button id="st-add-close" type="button" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;">✕</button>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
-                    <input id="st-add-title" placeholder="条目标题（如：✨ 特殊纹身烙印）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:7px 9px;color:#fff;font-size:12.5px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                        <input id="st-add-stage" placeholder="阶段徽章（如：深度刻痕）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                        <input id="st-add-ratio" placeholder="进度比例（如：65/100，可留空）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;font-size:12px;">
-                    </div>
-                    <textarea id="st-add-desc" rows="3" placeholder="详细生理或心理状态描述..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:7px 9px;color:#fff;font-size:12px;"></textarea>
-                    <textarea id="st-add-thought" rows="2" placeholder="第一人称实时心声..." style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:7px 9px;color:#fff;font-size:12px;"></textarea>
-                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-                        <button id="st-add-ai" type="button" style="background:rgba(203,166,247,0.2);color:#cba6f7;border:1px solid #cba6f7;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">✨ 副API生成</button>
-                        <button id="st-add-save" type="button" style="background:${tc.prim};color:#11111b;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:bold;cursor:pointer;">💾 添加条目</button>
-                    </div>
-                </div>`;
-            modal.style.display = "flex";
-            box.querySelector("#st-add-close").onclick = () => { modal.style.display = "none"; };
-            box.querySelector("#st-add-ai").onclick = async (e) => {
-                const t = box.querySelector("#st-add-title").value.trim() || "自定义状态";
-                const res = await requestSingleItemAiGen(t, "请结合当前最新剧情创作", e.target);
-                if (res) {
-                    if (res.stage) box.querySelector("#st-add-stage").value = res.stage;
-                    if (res.ratio) box.querySelector("#st-add-ratio").value = res.ratio;
-                    if (res.desc) box.querySelector("#st-add-desc").value = res.desc;
-                    if (res.thought) box.querySelector("#st-add-thought").value = res.thought;
-                }
-            };
-            box.querySelector("#st-add-save").onclick = () => {
-                const title = box.querySelector("#st-add-title").value.trim() || "✨ 自定义条目";
-                curVars.自定义条目[catTitle] = curVars.自定义条目[catTitle] || [];
-                curVars.自定义条目[catTitle].push({
-                    id: "custom_" + Date.now(), title,
-                    stage: box.querySelector("#st-add-stage").value.trim(),
-                    ratio: box.querySelector("#st-add-ratio").value.trim(),
-                    desc: box.querySelector("#st-add-desc").value.trim(),
-                    thought: box.querySelector("#st-add-thought").value.trim()
-                });
-                saveChatCache(curVars); latestStatus = getFallbackData(); renderBody(); modal.style.display = "none";
-                showToast("✅ 已新增自定义状态条目！", "success");
-            };
-        }
-
-        function renderSettingsView(bodyEl) {
-            const tc = THEMES[userSettings.theme] || THEMES["魅魔粉"];
-            const themeOpts = Object.keys(THEMES).map(k => `<option value="${k}" ${userSettings.theme === k ? "selected" : ""}>${k}</option>`).join("");
-            const modeOpts = Object.entries(RUIN_PERSONA_MODES).map(([k, v]) => `<option value="${k}" ${userSettings.personaMode === k ? "selected" : ""}>${v.label}</option>`).join("");
-            const diffOpts = Object.entries(DIFFICULTY_PROFILES).map(([k, v]) => `<option value="${k}" ${userSettings.difficultyMode === k ? "selected" : ""}>${v.label || v.fullLabel}</option>`).join("");
-            bodyEl.innerHTML = `
-                <div style="display:flex;flex-direction:column;gap:10px;padding:4px;">
-                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:${tc.prim};margin-bottom:8px;font-size:13px;">🎨 外观、排版与手机流畅优化</div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-                            <label>皮肤主题<select id="st-set-theme" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${themeOpts}</select></label>
-                            <label>心声人格<select id="st-set-persona" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${modeOpts}</select></label>
-                            <label>崩坏难度<select id="st-set-diff" style="width:100%;margin-top:3px;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px;">${diffOpts}</select></label>
-                            <label>字体缩放(${userSettings.fontScale}%)<input id="st-set-fscale" type="range" min="80" max="130" value="${userSettings.fontScale}" style="width:100%;margin-top:6px;"></label>
-                        </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px;">
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-compact" type="checkbox" ${userSettings.compactCards ? "checked" : ""}> 紧凑双列卡片</label>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-lite" type="checkbox" ${userSettings.mobileLiteMode ? "checked" : ""}> 手机省电模式(关特效)</label>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-revprompt" type="checkbox" ${userSettings.injectReversePrompt ? "checked" : ""}> 注入肉体铁律</label>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-cmpprompt" type="checkbox" ${userSettings.compactPromptMode ? "checked" : ""}> 省Token提示词</label>
-                        </div>
-                    </div>
-                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:#f9e2af;margin-bottom:8px;font-size:13px;">🤖 副API 实时解析与重绘设置</div>
-                        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
-                            <input id="st-api-url" value="${safeStr(userSettings.apiUrl)}" placeholder="API 地址（如 https://api.openai.com/v1）" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
-                            <input id="st-api-key" type="password" value="${safeStr(userSettings.apiKey)}" placeholder="API Key (sk-...)" style="background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
-                            <div style="display:flex;gap:6px;">
-                                <input id="st-api-mod" value="${safeStr(userSettings.apiModel)}" placeholder="模型名称" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 8px;color:#fff;">
-                                <button id="st-fetch-models" type="button" style="background:rgba(137,180,250,0.2);color:#89b4fa;border:1px solid #89b4fa;border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;">拉取模型</button>
-                            </div>
-                            <select id="st-model-sel" style="display:none;background:#1a1525;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px;"></select>
-                            <label style="display:flex;align-items:center;gap:4px;"><input id="st-set-autoapi" type="checkbox" ${userSettings.autoCallApiOnNewMsg ? "checked" : ""}> 新消息自动触发副API重绘</label>
-                        </div>
-                    </div>
-                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
-                        <div style="font-weight:bold;color:#f59e0b;margin-bottom:6px;font-size:13px;">🎨 智绘姬与本地图包管理（已缓存 ${importedImgCache.size} 张）</div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-                            <input id="st-zhj-fn" value="${safeStr(userSettings.zhihuijiGlobalFn)}" placeholder="智绘姬全局函数名(选填)" style="flex:1;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;color:#fff;font-size:12px;">
-                            <button id="st-import-imgs-btn" type="button" style="background:rgba(166,227,161,0.2);color:#a6e3a1;border:1px solid #a6e3a1;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">📁 导入图片/ZIP包</button>
-                            <input id="st-import-imgs-input" type="file" multiple accept="image/*,.zip" style="display:none;">
-                        </div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <button id="st-lock-name-btn" type="button" style="background:rgba(249,226,175,0.15);color:#f9e2af;border:1px solid rgba(249,226,175,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🔒 锁定真名(${detectProtagonistName(curVars)})</button>
-                            <button id="st-clear-imgs-btn" type="button" style="background:rgba(243,139,168,0.15);color:#f38ba8;border:1px solid rgba(243,139,168,0.4);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🗑️ 清空图包</button>
-                            <button id="st-reset-vars-btn" type="button" style="background:rgba(243,139,168,0.2);color:#ff85a1;border:1px solid #ff4d6d;border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;">🧹 重置本会话变量</button>
-                        </div>
-                    </div>
-                    <button id="st-save-all-settings" type="button" style="background:linear-gradient(135deg,${tc.prim},${tc.sec});color:#11111b;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:bold;cursor:pointer;">💾 保存所有设置并返回面板</button>
-                </div>`;
-
-            const selEl = bodyEl.querySelector("#st-model-sel"), modEl = bodyEl.querySelector("#st-api-mod");
-            bodyEl.querySelector("#st-fetch-models").onclick = (e) => fetchModelList(e.target, selEl, bodyEl.querySelector("#st-api-url"));
-            selEl.onchange = () => { modEl.value = selEl.value; };
-            bodyEl.querySelector("#st-import-imgs-btn").onclick = () => bodyEl.querySelector("#st-import-imgs-input").click();
-            bodyEl.querySelector("#st-import-imgs-input").onchange = async (e) => {
-                const files = e.target.files;
-                if (!files || !files.length) return;
-                showToast("⏳ 正在解压并压缩转码 WebP 图包...", "info", 3000);
-                try {
-                    const cnt = await importFilesOrZipToDB(files);
-                    showToast(`✅ 成功导入并压缩持久化 ${cnt} 张本地图片！`, "success");
-                    renderSettingsView(bodyEl);
-                } catch (err) {
-                    showToast("❌ 导入失败：" + (err.message || "文件格式有误"), "error");
-                }
-            };
-            bodyEl.querySelector("#st-clear-imgs-btn").onclick = async () => {
-                if (!confirm("确定要清空 IndexedDB 中缓存的所有本地导入图片吗？")) return;
-                await clearAllImportedImagesDB();
-                showToast("🗑️ 已清空本地缓存图包", "info");
-                renderSettingsView(bodyEl);
-            };
-            bodyEl.querySelector("#st-lock-name-btn").onclick = () => {
-                const n = prompt("输入要手动锁定的主角真名（留空则解除锁定）：", curVars.档案.手动锁定真名 || detectProtagonistName(curVars));
-                if (n === null) return;
-                curVars.档案.手动锁定真名 = n.trim();
-                if (n.trim()) curVars.档案.当前认知名字 = n.trim();
-                saveChatCache(curVars); latestStatus = getFallbackData(); showToast(n.trim() ? `🔒 已锁定真名：${n.trim()}` : "🔓 已解除真名锁定", "success");
-                renderSettingsView(bodyEl);
-            };
-            bodyEl.querySelector("#st-reset-vars-btn").onclick = () => {
-                if (!confirm("确定要清空当前对话的全部状态栏缓存数据并从头计算吗？")) return;
-                curVars = createDefaultVars(); saveChatCache(curVars); latestStatus = getFallbackData();
-                isSettingsOpen = false; renderBody(); showToast("🧹 已重置当前会话状态栏数据", "info");
-            };
-            bodyEl.querySelector("#st-save-all-settings").onclick = () => {
-                userSettings.theme = bodyEl.querySelector("#st-set-theme").value;
-                userSettings.personaMode = bodyEl.querySelector("#st-set-persona").value;
-                userSettings.difficultyMode = bodyEl.querySelector("#st-set-diff").value;
-                userSettings.fontScale = parseInt(bodyEl.querySelector("#st-set-fscale").value, 10) || 100;
-                userSettings.compactCards = bodyEl.querySelector("#st-set-compact").checked;
-                userSettings.mobileLiteMode = bodyEl.querySelector("#st-set-lite").checked;
-                userSettings.injectReversePrompt = bodyEl.querySelector("#st-set-revprompt").checked;
-                userSettings.compactPromptMode = bodyEl.querySelector("#st-set-cmpprompt").checked;
-                userSettings.apiUrl = bodyEl.querySelector("#st-api-url").value.trim();
-                userSettings.apiKey = bodyEl.querySelector("#st-api-key").value.trim();
-                userSettings.apiModel = modEl.value.trim();
-                userSettings.autoCallApiOnNewMsg = bodyEl.querySelector("#st-set-autoapi").checked;
-                userSettings.zhihuijiGlobalFn = bodyEl.querySelector("#st-zhj-fn").value.trim();
-                saveSettings(); applyThemeAndSize(); isSettingsOpen = false;
-                latestStatus = getFallbackData(); renderBody();
-                showToast("💾 设置已保存并应用！", "success");
-            };
-        }
-        // 放在 renderSettingsView 内部：修复 ZIP 图包与 WebP 自动压缩导入
-        // （把 renderSettingsView 里的 accept="image/*" 改成 accept="image/*,.zip"，并把 onchange 换成下面这样）：
-        /*
-            bodyEl.querySelector("#st-import-imgs-input").setAttribute("accept", "image/*,.zip");
-            bodyEl.querySelector("#st-import-imgs-input").onchange = async (e) => {
-                const files = e.target.files;
-                if (!files || !files.length) return;
-                showToast("⏳ 正在解压并转码 WebP 图包...", "info", 3000);
-                try {
-                    const cnt = await importFilesOrZipToDB(files);
-                    showToast(`✅ 成功导入并压缩持久化 ${cnt} 张图片（含ZIP）！`, "success");
-                    renderSettingsView(bodyEl);
-                } catch (err) {
-                    showToast("❌ 导入失败：" + (err.message || "文件格式有误"), "error");
-                }
-            };
-        */
-
+        // =========================================================================
+        // 🖼️ 经典「左侧垂直快速分栏 Tab + 卡片外显缩略图」双栏渲染引擎
+        // =========================================================================
         function renderBody() {
             const bodyEl = document.getElementById("st-v5-body");
             if (!bodyEl) return;
@@ -2561,28 +2598,22 @@
             const dev = computeAllOrganDevelopments(curVars);
             const caps = calcHoleCapacities(curVars);
             const buffs = computeActiveBuffs(curVars, dev);
+            const cats = statusData.categories || [];
+            if (!activeCat && cats.length > 0) activeCat = cats[0].title;
 
-            // 1. 顶部黄油级 Buff 状态胶囊栏
+            // 1. 顶部黄油级 Buff 胶囊栏 + ASMR 实时娇喘栏 + 快捷工具栏
             const buffBarHTML = buffs.length > 0 ? `
-                <div class="st-buff-strip" style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 8px;margin-bottom:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+                <div class="st-buff-strip" style="display:flex;flex-wrap:wrap;gap:5px;padding:5px 8px;margin-bottom:6px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
                     ${buffs.map(b => `<span title="${safeStr(b.desc)}" style="background:${b.bg};border:1px solid ${b.border};color:${b.color};padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</span>`).join("")}
                 </div>` : "";
 
-            // 2. 动态 18+ ASMR 实时娇喘台词栏 + 音效触发
             const asmrQuote = generateLiveASMRQuote(curVars, u);
             const asmrBarHTML = `
-                <div id="st-asmr-bar" title="点击播放水声/高潮合成音效" style="margin-bottom:8px;padding:7px 10px;background:linear-gradient(135deg,rgba(244,114,182,0.16),rgba(192,132,252,0.1));border-left:3.5px solid ${tc.prim};border-radius:0 9px 9px 0;font-size:11.5px;color:#ffe4e6;line-height:1.5;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <div id="st-asmr-bar" title="点击开关水声/高潮音效" style="margin-bottom:6px;padding:6px 10px;background:linear-gradient(135deg,rgba(244,114,182,0.16),rgba(192,132,252,0.1));border-left:3.5px solid ${tc.prim};border-radius:0 9px 9px 0;font-size:11.5px;color:#ffe4e6;line-height:1.45;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;">
                     <span style="font-style:italic;">🎧 ${asmrQuote}</span>
-                    <span style="font-size:11px;opacity:0.75;flex-shrink:0;">${userSettings.soundEnabled ? "🔊" : "🔇"}</span>
+                    <span style="font-size:11px;opacity:0.8;flex-shrink:0;">${userSettings.soundEnabled ? "🔊" : "🔇"}</span>
                 </div>`;
 
-            // 3. 动态可折叠 X-Ray 体内透视断面图
-            const xrayHTML = userSettings.showXrayOnHome ? `
-                <div style="margin-bottom:8px;position:relative;">
-                    ${buildDynamicXRaySVG(curVars, dev, caps)}
-                </div>` : "";
-
-            // 4. 快捷控制台工具栏（含反差切换、X-Ray开关、音效开关、单双列、副API重绘）
             const pMode = userSettings.personaMode || "evolution";
             const contrastToggleHTML = pMode === "contrast" ? `
                 <button id="st-contrast-toggle" type="button" class="st-pill-btn" style="background:${userSettings.contrastInnerActive ? "linear-gradient(135deg,#ff0055,#7a003c)" : "rgba(255,255,255,0.12)"};border-color:${tc.prim};">
@@ -2590,57 +2621,109 @@
                 </button>` : "";
 
             const toolbarHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;padding:4px 2px 8px 2px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;padding:2px 2px 6px 2px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:8px;">
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                         <span style="font-size:11px;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;color:#f9e2af;">${RUIN_PERSONA_MODES[pMode]?.short || "进化树"}</span>
                         ${contrastToggleHTML}
-                        <button id="st-xray-toggle" type="button" class="st-pill-btn" title="显示/隐藏体内X-Ray断面图">🔬 透视:${userSettings.showXrayOnHome ? "开" : "关"}</button>
+                        <button id="st-xray-toggle" type="button" class="st-pill-btn">🔬 透视:${userSettings.showXrayOnHome ? "开" : "关"}</button>
                     </div>
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                        <button id="st-compact-toggle" type="button" class="st-pill-btn" title="切换单列/双列紧凑排版">${userSettings.compactCards ? "📑 单列" : "⊞ 双列"}</button>
+                        <button id="st-compact-toggle" type="button" class="st-pill-btn">${userSettings.compactCards ? "🖼️ 显缩略图" : "📑 紧凑无图"}</button>
                         <button id="st-subapi-redraw" type="button" class="st-pill-btn" style="background:rgba(203,166,247,0.2);color:#cba6f7;border-color:rgba(203,166,247,0.45);">⚡ 副API重绘</button>
                     </div>
                 </div>`;
 
-            // 5. 九大分类与高定主题卡片渲染（支持 Lv5/Lv6 崩坏呼吸特效类名）
-            const cats = statusData.categories || [];
-            let catsHTML = "";
-            cats.forEach((cat, cIdx) => {
-                const isOpen = openCategorySet.has(cat.title);
-                const gridCols = (userSettings.compactCards && cat.items.length > 1) ? "grid-template-columns:repeat(auto-fill,minmax(210px,1fr));" : "grid-template-columns:1fr;";
+            // 2. 左侧垂直快速分栏导航 (#st-v5-tabs)
+            const tabsHTML = [
+                ...cats.map(c => {
+                    const isAct = (activeCat === c.title);
+                    const shortName = SHORT_NAMES[c.title] || c.title.slice(0, 2);
+                    return `<button class="st-left-tab" data-cat="${c.title}" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${isAct ? tc.prim : "rgba(255,255,255,0.08)"};background:${isAct ? tc.hi : "rgba(0,0,0,0.32)"};color:${isAct ? "#fff" : "#cdd6f4"};cursor:pointer;font-size:11px;font-weight:${isAct ? "bold" : "normal"};transition:all 0.15s;">
+                        <span style="font-size:15px;line-height:1;">${c.icon}</span>
+                        <span>${shortName}</span>
+                    </button>`;
+                }),
+                `<button class="st-left-tab" data-cat="__ALL__" type="button" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border-radius:10px;border:1px solid ${activeCat === "__ALL__" ? tc.prim : "rgba(255,255,255,0.08)"};background:${activeCat === "__ALL__" ? tc.hi : "rgba(0,0,0,0.32)"};color:${activeCat === "__ALL__" ? "#fff" : "#f9e2af"};cursor:pointer;font-size:11px;font-weight:bold;">
+                    <span style="font-size:14px;line-height:1;">📜</span>
+                    <span>全部</span>
+                </button>`
+            ].join("");
+
+            // 3. 右侧主内容区（带卡片右侧外显缩略图 .st-card-thumb-wrap）
+            const visibleCats = activeCat === "__ALL__" ? cats : cats.filter(c => c.title === activeCat);
+            const xrayHTML = (userSettings.showXrayOnHome && (activeCat === "六孔与储精" || activeCat === "苗床与受孕" || activeCat === "__ALL__")) ? `
+                <div style="margin-bottom:8px;">${buildDynamicXRaySVG(curVars, dev, caps)}</div>` : "";
+
+            let rightCardsHTML = "";
+            visibleCats.forEach((cat) => {
+                const cIdx = cats.indexOf(cat);
                 const itemsHTML = cat.items.map((item, iIdx) => {
                     const isRev = (item.editKey === "shame" || item.editKey === "sta" || item.editKey === "当前姿势");
                     const t = item.hasStageBar ? tier6(item.pct || 0, isRev) : 0;
                     const corruptCls = t === 5 ? "st-corrupted-card-lv6" : (t === 4 ? "st-corrupted-card-lv5" : "");
+                    const compactCls = userSettings.compactCards ? "st-compact-card" : "";
+                    const firstPara = safeStr(item.desc).split("💭")[0].replace(/【[^】]+】：?\s*/g, "").trim().slice(0, 62);
+
                     return `
-                    <div class="st-item-card st-v28-card ${corruptCls}" data-cidx="${cIdx}" data-iidx="${iIdx}" style="background:${tc.card};border:${tc.cardBorder};border-radius:12px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;">
-                        ${item.keyHTML}
-                        ${item.barHTML || ""}
+                    <div class="st-item-card st-v28-card ${corruptCls} ${compactCls}" data-cidx="${cIdx}" data-iidx="${iIdx}" style="background:${tc.card};border:${tc.cardBorder};border-radius:12px;padding:9px 11px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">
+                        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+                            ${item.keyHTML}
+                            ${item.barHTML || ""}
+                            <div class="st-card-preview" style="font-size:11px;color:#cbd5e1;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${firstPara}</div>
+                        </div>
+                        <div class="st-card-thumb-wrap" data-cidx="${cIdx}" data-iidx="${iIdx}" title="点击全屏放大配图" style="display:none;width:68px;height:68px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1.5px solid ${tc.prim};background:#090510;box-shadow:0 4px 12px rgba(0,0,0,0.6);position:relative;">
+                            <img style="width:100%;height:100%;object-fit:cover;display:block;" alt="thumb">
+                            <span style="position:absolute;bottom:2px;right:3px;background:rgba(0,0,0,0.7);color:#f9e2af;font-size:9px;padding:0 4px;border-radius:4px;">🔍</span>
+                        </div>
                     </div>`;
                 }).join("");
 
-                catsHTML += `
-                    <div class="st-cat-section" style="margin-bottom:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
-                        <div class="st-cat-header" data-cat="${cat.title}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;cursor:pointer;background:rgba(0,0,0,0.28);user-select:none;">
-                            <div style="display:flex;align-items:center;gap:6px;font-weight:bold;font-size:13px;color:${tc.prim};">
-                                <span>${cat.icon}</span>
-                                <span>${cat.title}</span>
+                rightCardsHTML += `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px 6px 6px;">
+                            <div style="font-weight:bold;font-size:13px;color:${tc.prim};display:flex;align-items:center;gap:5px;">
+                                <span>${cat.icon} ${cat.title}</span>
+                                <span style="font-size:11px;color:#a6adc8;font-weight:normal;">(${cat.summary || ""})</span>
                             </div>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <span style="font-size:11px;color:#a6adc8;max-width:165px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat.summary || ""}</span>
-                                <button class="st-cat-add-btn" data-cat="${cat.title}" type="button" title="在此分类新增自定义条目" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:none;border-radius:5px;padding:1px 6px;font-size:11px;cursor:pointer;">＋</button>
-                                <span style="font-size:11px;color:#cdd6f4;transform:rotate(${isOpen ? "90deg" : "0deg"});transition:transform 0.2s;">▶</span>
-                            </div>
+                            <button class="st-cat-add-btn" data-cat="${cat.title}" type="button" style="background:rgba(255,255,255,0.1);color:#f9e2af;border:1px solid rgba(249,226,175,0.35);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">＋ 新增条目</button>
                         </div>
-                        <div class="st-cat-body" style="display:${isOpen ? "grid" : "none"};${gridCols}gap:7px;padding:8px;">
-                            ${itemsHTML}
-                        </div>
+                        <div style="display:flex;flex-direction:column;gap:7px;">${itemsHTML}</div>
                     </div>`;
             });
 
-            bodyEl.innerHTML = buffBarHTML + asmrBarHTML + xrayHTML + toolbarHTML + catsHTML;
+            bodyEl.innerHTML = `
+                ${buffBarHTML}
+                ${asmrBarHTML}
+                ${toolbarHTML}
+                <div style="display:flex;gap:8px;align-items:flex-start;min-height:360px;">
+                    <div id="st-v5-tabs" style="width:58px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;max-height:68vh;overflow-y:auto;padding-right:2px;">
+                        ${tabsHTML}
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        ${xrayHTML}
+                        ${rightCardsHTML}
+                    </div>
+                </div>`;
 
-            // 绑定 ASMR 语音条点击切换音效并试听
+            // 异步挂载每张卡片右侧的外显缩略图
+            if (!userSettings.compactCards) {
+                bodyEl.querySelectorAll(".st-card-thumb-wrap").forEach(wrap => {
+                    const cIdx = parseInt(wrap.getAttribute("data-cidx"), 10);
+                    const iIdx = parseInt(wrap.getAttribute("data-iidx"), 10);
+                    const item = cats[cIdx]?.items?.[iIdx];
+                    if (item) bindCardThumbnailElement(wrap, item);
+                });
+            }
+
+            // 绑定左侧快速分栏导航点击
+            bodyEl.querySelectorAll(".st-left-tab").forEach(tab => {
+                tab.onclick = () => {
+                    playSynthSound("squelch");
+                    activeCat = tab.getAttribute("data-cat");
+                    renderBody();
+                };
+            });
+
             const asmrEl = bodyEl.querySelector("#st-asmr-bar");
             if (asmrEl) asmrEl.onclick = () => {
                 userSettings.soundEnabled = !userSettings.soundEnabled;
@@ -2666,15 +2749,6 @@
             const apiBtn = bodyEl.querySelector("#st-subapi-redraw");
             if (apiBtn) apiBtn.onclick = (e) => triggerSubApiUpdate(e.target);
 
-            bodyEl.querySelectorAll(".st-cat-header").forEach(h => {
-                h.onclick = (e) => {
-                    if (e.target.closest(".st-cat-add-btn")) return;
-                    const title = h.getAttribute("data-cat");
-                    if (openCategorySet.has(title)) openCategorySet.delete(title);
-                    else openCategorySet.add(title);
-                    renderBody();
-                };
-            });
             bodyEl.querySelectorAll(".st-cat-add-btn").forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
