@@ -1439,16 +1439,30 @@
         }
 
         function buildDanbooruImageBlock(item, curStageIdx, u) {
-            const key = item.editKey || "custom", stageNames = ["初绽完好", "初步驯化", "深度开发", "括约肌松弛", "重度畸变", "彻底崩坏"];
-            const idx = Math.min(5, Math.max(0, curStageIdx - 1)), stgTag = stageNames[idx];
-            const presets = {
+            const key = item.editKey || "custom";
+            const stageNames = ["初绽完好", "初步驯化", "深度开发", "括约肌松弛", "重度畸变", "彻底崩坏"];
+            const idx = Math.min(5, Math.max(0, curStageIdx - 1));
+            const stgTag = stageNames[idx];
+
+            // 根据 1~6 阶段自动匹配人物神态表情
+            const faceExpr = [
+                "calm expression, pure clear eyes, noble and composed aura, slight natural blush",
+                "shy expression, embarrassed blush, biting lower lip, watery eyes, flustered",
+                "heavy breathing, misty eyes, needy blushing face, parted glossy lips",
+                "aroused expression, heart-shaped pupils, drooling slightly, submissive hot gaze",
+                "ahegao, rolled back eyes, tongue hanging out, heavy flush, trembling in ecstasy",
+                "mind break expression, empty heart eyes, profuse drooling, completely corrupted lewd smile"
+            ][idx];
+
+            // 六孔专属 1~6 阶微距词条（仅点六孔时禁用脸部并聚焦私处！）
+            const holePresets = {
                 "骚口实况": [
-                    { zh: "微距莹润红唇微启与晶莹拉丝津液", think: "第一阶段初始状态，双唇娇嫩饱满微启，舌尖轻抵下唇，牵出晶莹唾液丝线。", tag: "macro shot, mouth and lips focus, parted glossy pink lips, pink tongue tip, clear saliva strings", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距红肿唇瓣外翻与浓稠白浊挂丝", think: "第二阶段初步驯化，双唇微肿充血，舌头伸出承接黏稠乳白精液顺下巴滑落。", tag: "macro shot, open mouth and tongue focus, swollen red lips, protruding wet tongue, thick white cum on tongue", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距深喉扩口悬雍垂颤动与白沫满溢", think: "第三阶段深度开发，口腔大幅撑开，舌头压平，深处悬雍垂与充血喉口完全暴露，白沫咕嘟冒泡。", tag: "macro shot, wide open mouth focus, deep throat view, flattened tongue, visible uvula, frothy cum pooling in throat", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距咽喉肉环松弛洞开与澄黄圣水漩涡", think: "第四阶段括约肌松弛，咽喉深处呈圆筒状松弛肉穴，澄黄尿液与白浊在喉口交融满溢。", tag: "macro shot, gaping mouth and relaxed throat hole focus, numb everted lips, yellow urine and white cum swirling in deep throat", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "微距下颚半脱臼软肉外翻与浓稠浊液喷涌", think: "第五阶段重度畸变，下颚半脱臼无法闭拢，紫红唇肉外翻，食道反流喷涌混杂黄尿的白沫。", tag: "macro shot, dislocated gaping mouth focus, swollen purple-red everted lips, limp tongue hanging out, regurgitating frothy cum and yellow fluid", uc: "eyes, full face, upper body, closed mouth" },
-                    { zh: "彻底崩坏微距脱臼漏斗状肉洞与腐熟白浊泡沫满溢", think: "第六阶段终极崩坏，下颚永久半脱臼洞开，咽喉扩张成漏斗状排泄口器，大量混杂黄色尿液与浓稠精液的白沫喷涌。", tag: "macro shot, corrupted gaping mouth focus, dilated throat hole, permanently gaping dislocated jaw, bruised swollen everted lips, paralyzed limp tongue hanging to side, overflowing thick cum and yellow fluid, completely ruined oral meat hole", uc: "eyes, forehead, full face, head, hair, upper body, breasts, boy, male, penis" }
+                    { zh: "微距莹润红唇微启与晶莹拉丝津液", think: "第一阶段初始状态，双唇娇嫩饱满微启，舌尖轻抵下唇。", tag: "macro shot, mouth and lips focus, parted glossy pink lips, pink tongue tip, clear saliva strings", uc: "eyes, full face, upper body, closed mouth" },
+                    { zh: "微距红肿唇瓣外翻与浓稠白浊挂丝", think: "第二阶段初步驯化，双唇微肿充血，舌头伸出承接乳白精液。", tag: "macro shot, open mouth and tongue focus, swollen red lips, protruding wet tongue, thick white cum on tongue", uc: "eyes, full face, upper body, closed mouth" },
+                    { zh: "微距深喉扩口悬雍垂颤动与白沫满溢", think: "第三阶段深度开发，口腔大幅撑开，舌头压平，深处悬雍垂暴露。", tag: "macro shot, wide open mouth focus, deep throat view, flattened tongue, visible uvula, frothy cum pooling in throat", uc: "eyes, full face, upper body, closed mouth" },
+                    { zh: "微距咽喉肉环松弛洞开与澄黄圣水漩涡", think: "第四阶段括约肌松弛，咽喉深处呈圆筒状松弛肉穴。", tag: "macro shot, gaping mouth and relaxed throat hole focus, numb everted lips, yellow urine and white cum swirling in deep throat", uc: "eyes, full face, upper body, closed mouth" },
+                    { zh: "微距下颚半脱臼软肉外翻与浓稠浊液喷涌", think: "第五阶段重度畸变，下颚半脱臼无法闭拢，紫红唇肉外翻。", tag: "macro shot, dislocated gaping mouth focus, swollen purple-red everted lips, limp tongue hanging out, regurgitating frothy cum", uc: "eyes, full face, upper body, closed mouth" },
+                    { zh: "彻底崩坏微距脱臼漏斗状肉洞与腐熟白浊泡沫满溢", think: "第六阶段终极崩坏，下颚永久半脱臼洞开，大量白沫喷涌。", tag: "macro shot, corrupted gaping mouth focus, dilated throat hole, permanently gaping dislocated jaw, overflowing thick cum, completely ruined oral meat hole", uc: "eyes, forehead, full face, head, hair, upper body, breasts, boy, male, penis" }
                 ],
                 "小穴实况": [
                     { zh: "微距紧闭粉嫩花唇与晶莹露珠", think: "第一阶段完好处子，两瓣花唇粉嫩紧闭，干爽洁净。", tag: "macro shot, pussy focus, tight closed pink labia, virgin pussy, clean skin", uc: "face, upper body, gaping pussy" },
@@ -1456,7 +1470,7 @@
                     { zh: "微距肥厚外翻黑木耳与白浊咕啾涌出", think: "第三阶段熟稔外翻，大小阴唇肥厚外翻且色素沉淀，浓白精液从穴口涌出。", tag: "macro shot, pussy focus, dark swollen everted labia minora, thick white cum leaking from vagina", uc: "face, upper body, tight pussy" },
                     { zh: "微距括约肌松弛两指洞开与白浆漏淌", think: "第四阶段括约肌松弛，阴道口撑开无法闭合，白浊混着淫水不断漏出。", tag: "macro shot, gaping pussy focus, relaxed open vaginal hole, visible red vaginal interior, overflowing cum", uc: "face, upper body, closed pussy" },
                     { zh: "微距内壁肉褶脱垂外翻与失禁漏精壶", think: "第五阶段肉壁脱垂，阴道内壁充血肉褶向外翻出穴口。", tag: "macro shot, ruined gaping pussy focus, prolapsed vaginal mucosal folds, bruised everted labia, heavy cum and urine overflow", uc: "face, upper body, closed pussy" },
-                    { zh: "彻底崩坏微距外翻紫红烂肉洞与腐熟白浊黄尿满溢", think: "第六阶段终极崩坏，阴唇紫红肿胀外翻，穴口洞开且宫颈下垂外露，混杂黄尿与白沫不断喷涌。", tag: "macro shot, corrupted gaping pussy focus, dilated vaginal hole, permanently gaping ruined pussy, bruised swollen everted labia, prolapsed visible cervix deep inside, overflowing thick cum and yellow urine foam, completely ruined meat hole", uc: "face, head, eyes, upper body, breasts, legs, feet, boy, male, penis" }
+                    { zh: "彻底崩坏微距外翻紫红烂肉洞与腐熟白浊黄尿满溢", think: "第六阶段终极崩坏，阴唇紫红肿胀外翻，穴口洞开且宫颈下垂外露。", tag: "macro shot, corrupted gaping pussy focus, dilated vaginal hole, permanently gaping ruined pussy, prolapsed visible cervix deep inside, overflowing thick cum", uc: "face, head, eyes, upper body, breasts, legs, feet, boy, male, penis" }
                 ],
                 "子宫实况": [
                     { zh: "微距内窥紧闭针尖宫颈口与纯净宫腔", think: "第一阶段紧闭处子，宫颈口紧密闭合。", tag: "macro shot, internal vaginal view, tight closed cervix, clean pink mucosa", uc: "face, external view" },
@@ -1464,15 +1478,15 @@
                     { zh: "微距内窥扩张软肉环宫口与锁精吞吸", think: "第三阶段宫口扩张锁精，宫颈口被顶开呈环形吞吸白浊。", tag: "macro shot, dilated cervix focus, open cervical os, thick cum pouring into womb", uc: "face, external view" },
                     { zh: "微距内窥下坠松弛宫口与浓精倒流", think: "第四阶段宫腔肥大下坠，宫颈口常年微张无法闭合。", tag: "macro shot, gaping cervix focus, relaxed open womb entrance, overflowing semen", uc: "face, external view" },
                     { zh: "微距重度脱垂至穴口边缘的紫红宫颈口", think: "第五阶段宫颈重度脱垂至外阴边缘。", tag: "macro shot, uterine prolapse focus, swollen purple-red cervix protruding near vaginal opening, dripping cum", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距完全掉出体外的外翻死肉宫口喷涌腐精", think: "第六阶段终极崩坏，紫黑色宫颈口彻底掉出体外，喷涌腐熟浓精与黄水。", tag: "macro shot, extreme cervical prolapse focus, bruised purple-black cervix hanging outside gaping pussy, wide open cervical hole, bubbling thick yellow fluid and white cum foam", uc: "face, head, upper body, breasts" }
+                    { zh: "彻底崩坏微距完全掉出体外的外翻死肉宫口喷涌腐精", think: "第六阶段终极崩坏，紫黑色宫颈口彻底掉出体外。", tag: "macro shot, extreme cervical prolapse focus, bruised purple-black cervix hanging outside gaping pussy, wide open cervical hole, bubbling thick cum foam", uc: "face, head, upper body, breasts" }
                 ],
                 "胸部实况": [
-                    { zh: "微距挺拔粉嫩处乳与小巧乳尖", think: "第一阶段娇嫩处乳，乳晕粉嫩紧致。", tag: "macro shot, breasts focus, perky breasts, small pink nipples, clean skin", uc: "face, lower body" },
-                    { zh: "微距充血肿大乳头与晶莹涎液", think: "第二阶段乳尖肥大，乳头充血硬挺。", tag: "macro shot, nipple focus, swollen erect pink nipples, wet saliva on breasts", uc: "face, lower body" },
-                    { zh: "微距黑紫扩张乳晕与渗奶乳孔", think: "第三阶段乳晕扩张色素沉淀，乳尖渗出乳滴。", tag: "macro shot, dark wide areola, puffy nipples, milk droplets leaking", uc: "face, lower body" },
-                    { zh: "微距乳腺失控飙奶与青筋乳房", think: "第四阶段乳腺失控，两条奶柱喷涌而出。", tag: "macro shot, lactating breasts focus, squirting breast milk, visible veins on breasts", uc: "face, lower body" },
-                    { zh: "微距硕大下垂巨乳奶袋与白浊混流", think: "第五阶段下垂巨乳奶袋，乳孔常年漏奶。", tag: "macro shot, huge sagging lactating breasts, dilated nipple holes, heavy milk and cum dripping", uc: "face, lower body" },
-                    { zh: "彻底崩坏微距紫黑下垂泌乳肉囊与血乳狂喷", think: "第六阶段终极崩坏，紫黑泌乳肉囊乳孔大开狂喷浊乳。", tag: "macro shot, corrupted sagging udder breasts focus, bruised purple-black areola, gaping dilated nipple holes, gushing thick yellow milk and foam", uc: "face, head, lower body" }
+                    { zh: "微距挺拔粉嫩处乳与小巧乳尖", think: "第一阶段娇嫩处乳，乳晕粉嫩紧致。", tag: "macro shot, breasts focus, perky breasts, small pink nipples, clean skin", uc: "face, lower body, pussy" },
+                    { zh: "微距充血肿大乳头与晶莹涎液", think: "第二阶段乳尖肥大，乳头充血硬挺。", tag: "macro shot, nipple focus, swollen erect pink nipples, wet saliva on breasts", uc: "face, lower body, pussy" },
+                    { zh: "微距黑紫扩张乳晕与渗奶乳孔", think: "第三阶段乳晕扩张色素沉淀，乳尖渗出乳滴。", tag: "macro shot, dark wide areola, puffy nipples, milk droplets leaking", uc: "face, lower body, pussy" },
+                    { zh: "微距乳腺失控飙奶与青筋乳房", think: "第四阶段乳腺失控，两条奶柱喷涌而出。", tag: "macro shot, lactating breasts focus, squirting breast milk, visible veins on breasts", uc: "face, lower body, pussy" },
+                    { zh: "微距硕大下垂巨乳奶袋与白浊混流", think: "第五阶段下垂巨乳奶袋，乳孔常年漏奶。", tag: "macro shot, huge sagging lactating breasts, dilated nipple holes, heavy milk and cum dripping", uc: "face, lower body, pussy" },
+                    { zh: "彻底崩坏微距紫黑下垂泌乳肉囊与血乳狂喷", think: "第六阶段终极崩坏，紫黑泌乳肉囊乳孔大开狂喷浊乳。", tag: "macro shot, corrupted sagging udder breasts focus, bruised purple-black areola, gaping dilated nipple holes, gushing thick milk", uc: "face, head, lower body, pussy" }
                 ],
                 "阴蒂尿道": [
                     { zh: "微距隐没粉嫩阴蒂包皮与紧闭尿道", think: "第一阶段完好隐没。", tag: "macro shot, clitoris focus, small hooded pink clit, tight urethral opening", uc: "face, upper body" },
@@ -1480,7 +1494,7 @@
                     { zh: "微距花生米大小肥大勃起阴蒂", think: "第三阶段阴蒂异常肥大勃起。", tag: "macro shot, enlarged hyper clitoris, throbbing red clit, wet fluids", uc: "face, upper body" },
                     { zh: "微距扩张尿道口与失控漏尿水柱", think: "第四阶段尿道松弛漏尿。", tag: "macro shot, dilated urethral meatus, leaking yellow urine stream, enlarged clit", uc: "face, upper body" },
                     { zh: "微距肉棒化畸变阴蒂与狂喷潮吹失禁", think: "第五阶段阴蒂肉棒化伴随失禁狂喷。", tag: "macro shot, dicklet clitoris hypertrophy, gaping urethra hole, gushing female ejaculation and urine", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距坏死洞开尿道肉坑与24h失禁黄尿冒泡", think: "第六阶段终极崩坏，阴蒂肿大糜烂，尿道括约肌坏死洞开，黄尿混杂白沫涌出。", tag: "macro shot, extreme clitoris hypertrophy, permanently gaping ruined urethral hole, overflowing yellow urine foam and cum", uc: "face, head, upper body" }
+                    { zh: "彻底崩坏微距坏死洞开尿道肉坑与24h失禁黄尿冒泡", think: "第六阶段终极崩坏，尿道括约肌坏死洞开。", tag: "macro shot, extreme clitoris hypertrophy, permanently gaping ruined urethral hole, overflowing yellow urine foam and cum", uc: "face, head, upper body" }
                 ],
                 "屁眼实况": [
                     { zh: "微距紧闭粉嫩菊蕾褶皱", think: "第一阶段紧闭完好。", tag: "macro shot, anus focus, tight closed pink anus, clean skin", uc: "face, upper body" },
@@ -1488,16 +1502,57 @@
                     { zh: "微距褶皱磨平松弛后庭与白浊渗出", think: "第三阶段褶皱磨平松弛。", tag: "macro shot, relaxed smooth anal ring, cum leaking from anus", uc: "face, upper body" },
                     { zh: "微距圆洞状不合肛口与内壁红肉", think: "第四阶段后庭空洞不合。", tag: "macro shot, gaping anus focus, open anal hole, visible red rectum interior, overflowing cum", uc: "face, upper body" },
                     { zh: "微距直肠粘膜外翻轻度脱肛肉环", think: "第五阶段轻度脱肛翻肉。", tag: "macro shot, anal prolapse focus, everted red rectal mucosa ring, dripping thick cum", uc: "face, upper body" },
-                    { zh: "彻底崩坏微距重度脱肛5厘米烂玫瑰肉管与浊液狂漏", think: "第六阶段终极崩坏，大段紫红糜烂直肠肉管永久翻出体外，白浊与黄水狂漏。", tag: "macro shot, extreme anal prolapse focus, long protruding bruised red rectal tube hanging outside, gaping ruined anal hole, overflowing frothy cum and yellow fluid", uc: "face, head, upper body" }
+                    { zh: "彻底崩坏微距重度脱肛5厘米烂玫瑰肉管与浊液狂漏", think: "第六阶段终极崩坏，大段直肠肉管永久翻出体外。", tag: "macro shot, extreme anal prolapse focus, long protruding bruised red rectal tube hanging outside, gaping ruined anal hole, overflowing frothy cum", uc: "face, head, upper body" }
                 ]
             };
-            const chosen = (presets[key] && presets[key][idx]) || {
-                zh: `${item.cleanTitle || key}第${curStageIdx}阶段${stgTag}微距特写`,
-                think: `第${curStageIdx}阶段（${stgTag}），展现${u}的${item.cleanTitle || key}在当前崩坏度下的极致微距特写细节。`,
-                tag: `macro shot, extreme close-up, ${curStageIdx >= 5 ? "corrupted gaping meat hole, bruised swollen everted mucosa, overflowing thick cum and yellow fluid" : "erotic close-up, wet skin, glistening fluids"}`,
-                uc: "face, upper body, zoomed out, text, watermark"
+
+            // 如果是六孔之一，走六孔微距特写
+            if (holePresets[key]) {
+                const chosen = holePresets[key][idx];
+                return `第${["一","二","三","四","五","六"][idx]}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${chosen.zh}]\n<image_think>\n${chosen.think}\n</image_think>\nimage###Scene:NSFW, 1girl, solo, 1.5::extreme close-up, ${chosen.tag}, filling the frame::, straight-on, dark erotic lighting;\nChar1:1.5::${u}::, pale sweaty skin, 1.8::${chosen.tag}::|centers:C3;\nChar1 UC:1.5::${chosen.uc}, multiple views, zoomed out, text, watermark::;###\n</image>`;
+            }
+
+            // 非六孔按钮：精准对应各自的部位与肖像！（绝不禁脸、绝不画小穴！）
+            const nonHoleMap = {
+                "身份与背景": { zh: `${u}的认知身份与半身人物肖像立绘`, tag: `portrait, upper body, face focus, looking at viewer, detailed hair and eyes, ${faceExpr}`, uc: "extreme close-up of genitals, pussy focus, anus focus, cropped head" },
+                "肉体外貌":   { zh: `${u}的全身外貌与身材曲线立绘`, tag: `full body portrait, standing or sitting pose, curves, detailed skin, ${faceExpr}`, uc: "cropped head, extreme macro" },
+                "表里风评":   { zh: `${u}在外界视线下的神态半身像`, tag: `upper body, medium shot, ${faceExpr}, dramatic lighting, contrasting aura`, uc: "pussy focus, anus focus, cropped head" },
+                "挂牌身价":   { zh: `${u}的身价展示半身立绘`, tag: `cowboy shot, upper body and hips, ${faceExpr}, alluring posture`, uc: "extreme macro, cropped head" },
+                "内心独白":   { zh: `${u}的内心独白面部眼神特写`, tag: `close-up face portrait, expressive eyes, ${faceExpr}, emotional lighting`, uc: "lower body, pussy focus, anus focus" },
+                "当前姿势":   { zh: `${u}的当前全身动作姿态特写`, tag: `full body shot, dynamic posture, limbs and torso focus, ${faceExpr}`, uc: "extreme macro" },
+                "cockLove":   { zh: `${u}对阳具好感神态肖像`, tag: `upper body portrait, face focus, ${faceExpr}, longing gaze`, uc: "cropped head" },
+                "lust":       { zh: `${u}的情欲潮红半身特写`, tag: `upper body, heavy blush, sweaty skin, hot breath, ${faceExpr}`, uc: "cropped head" },
+                "corr":       { zh: `${u}的恶堕神态肖像立绘`, tag: `upper body portrait, dark seductive lighting, ${faceExpr}`, uc: "cropped head" },
+                "shame":      { zh: `${u}的羞耻掩面半身特写`, tag: `upper body, covering face shyly or blushing furiously, ${faceExpr}`, uc: "cropped head" },
+                "obey":       { zh: `${u}的温顺臣服姿态特写`, tag: `kneeling full body or upper body, submissive posture, looking up at viewer, ${faceExpr}`, uc: "cropped head" },
+                "pleas":      { zh: `${u}的快感战栗面部与上半身特写`, tag: `upper body, trembling, arched back, ${faceExpr}`, uc: "cropped head" },
+                "精神沦陷":   { zh: `${u}的眼神迷离催眠面部特写`, tag: `close-up face focus, hypnotic glowing eyes, ${faceExpr}`, uc: "lower body" },
+                "媚药毒瘾":   { zh: `${u}的微醺发热神态半身像`, tag: `upper body, flushed feverish skin, panting, ${faceExpr}`, uc: "cropped head" },
+                "正字涂鸦":   { zh: `${u}身上的涂鸦字迹与肌肤痕迹特写`, tag: `cowboy shot, body writing on skin, tally marks on thigh and belly, ${faceExpr}`, uc: "extreme macro" },
+                "淫纹烙印":   { zh: `${u}小腹上的发光淫纹特写`, tag: `midriff and lower abdomen focus, glowing pink womb tattoo on belly, navel`, uc: "extreme genital macro" },
+                "穿刺环饰":   { zh: `${u}身上的金属穿刺环饰特写`, tag: `torso close-up, body piercing, silver rings and chains glinting on skin`, uc: "text, watermark" },
+                "体内道具":   { zh: `${u}体内道具震动与夹腿忍耐姿态`, tag: `cowboy shot, trembling thighs, pink vibrator cord, hunched over blushing, ${faceExpr}`, uc: "text, watermark" },
+                "穿搭_头饰":  { zh: `${u}的发型头饰与面容特写`, tag: `head and upper body focus, intricate hairstyle, hair ornament, detailed face, ${faceExpr}`, uc: "lower body, pussy, breasts macro" },
+                "穿搭_颈部":  { zh: `${u}的脖颈锁骨与项圈特写`, tag: `neck and collarbone focus, choker or collar, slender neck, chin and lips visible`, uc: "lower body, pussy" },
+                "穿搭_胸罩":  { zh: `${u}的胸衣内衬与上围穿搭特写`, tag: `upper body focus, brassiere or innerwear on chest, cleavage, fabric texture`, uc: "lower body, pussy" },
+                "穿搭_上衣":  { zh: `${u}的上衣外衫穿搭半身立绘`, tag: `upper body and waist focus, detailed top clothing, outfit texture, ${faceExpr}`, uc: "pussy macro, anus macro" },
+                "穿搭_内裤":  { zh: `${u}的底裤穿搭与腰臀特写`, tag: `hips and panties focus, underwear fabric, waist and upper thighs`, uc: "face close-up" },
+                "穿搭_下装":  { zh: `${u}的裙裤下装穿搭特写`, tag: `lower body and waist focus, skirt or pants outfit, fabric folds, hips`, uc: "extreme genital macro" },
+                "穿搭_丝袜":  { zh: `${u}的丝袜与修长双腿特写`, tag: `legs and stockings focus, thighhighs or pantyhose, slender thighs and knees`, uc: "upper body only" },
+                "穿搭_鞋子":  { zh: `${u}的鞋履与足部特写`, tag: `feet and shoes focus, ankles and footwear, lower legs`, uc: "upper body" },
+                "排卵周期":   { zh: `${u}手抚温热小腹的受孕期半身像`, tag: `cowboy shot, hand resting gently on lower abdomen, blushing, ${faceExpr}`, uc: "cropped head" },
+                "受精断面":   { zh: `${u}的小腹微光与受精感应特写`, tag: `lower abdomen and torso focus, warm womb glow, heavy breathing`, uc: "text, watermark" },
+                "精液归属":   { zh: `${u}事后汗湿慵懒的全身姿态`, tag: `full body lying on bed, sweaty glistening skin, exhausted afterglow, ${faceExpr}`, uc: "text, watermark" },
+                "孕肚进度":   { zh: `${u}的孕肚小腹轮廓特写`, tag: `cowboy shot, cradling rounded pregnant belly, maternal blushing expression, ${faceExpr}`, uc: "text, watermark" }
             };
-            return `第${["一","二","三","四","五","六"][idx]}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${chosen.zh}]\n<image_think>\n${chosen.think}\n</image_think>\nimage###Scene:NSFW, 1girl, solo, 1.5::extreme close-up, ${chosen.tag}, filling the frame::, straight-on, dark erotic lighting;\nChar1:1.5::${u}::, pale sweaty skin, 1.8::${chosen.tag}::|centers:C3;\nChar1 UC:1.5::${chosen.uc}, multiple views, zoomed out, text, watermark::;###\n</image>`;
+
+            const chosen = nonHoleMap[key] || {
+                zh: `${u}的【${item.cleanTitle || key}】人物半身肖像立绘`,
+                tag: `upper body portrait, solo, looking at viewer, ${faceExpr}`,
+                uc: "pussy focus, anus focus, cropped head"
+            };
+
+            return `第${["一","二","三","四","五","六"][idx]}阶段：${key}_${curStageIdx}（${stgTag}）\n<image>\n[${chosen.zh}]\n<image_think>\n展现${u}的${chosen.zh}（第${curStageIdx}阶·${stgTag}）。\n</image_think>\nimage###Scene:1girl, solo, 1.5::masterpiece, best quality, ${chosen.tag}::, detailed background;\nChar1:1.5::${u}::, ${chosen.tag}|centers:C3;\nChar1 UC:1.5::${chosen.uc}, multiple views, lowres, bad anatomy, text, watermark::;###\n</image>`;
         }
         function fmtKey(rk, barTheme = "pleas", subBarCfg = null, hideBar = false, stagePctOverride = null) {
             const rawKeyStr = safeStr(rk, "状态项");
@@ -2354,10 +2409,11 @@
                         Array.from(lastMesEl.querySelectorAll("img")).map(img => img.getAttribute("src") || img.src || "")
                     );
 
-                    // 记录原始消息文本，生完图后无痕还原
+                    // 记录原始消息文本，生完图后无痕还原（临时剥离正文里的旧 <image> 块防止串台！）
                     const origMesRaw = (lastIdx >= 0 && chatArr[lastIdx]) ? String(chatArr[lastIdx].mes || "") : null;
-                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null && !origMesRaw.includes(rawInner)) {
-                        chatArr[lastIdx].mes = origMesRaw + "\n" + blockTxt;
+                    if (lastIdx >= 0 && chatArr[lastIdx] && origMesRaw !== null) {
+                        const cleanOrig = origMesRaw.replace(/<image>[\s\S]*?<\/image>/gi, "").replace(/image###[\s\S]*?###/gi, "");
+                        chatArr[lastIdx].mes = cleanOrig + "\n" + blockTxt;
                     }
 
                     // 在真实 .mes_text 里塞入隐身寄生节点（同时放置原始 <image> 标签和纯文本，通杀所有正则/DOM型生图插件）
