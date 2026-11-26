@@ -1,4 +1,4 @@
-// == 状态栏 1.0 · 终极圆满完全体 (11处Bug全根治 · 8大重口恶堕机制 · 6套高定主题 · 手机电脑双端自适应) ==
+// == 状态栏 1.0 · 终极圆满完全体 (全按钮描述直译生图版 · 精准外貌识图 · 8大重口恶堕机制 · 手机电脑双端自适应) ==
 (function () {
     "use strict";
     const DIAG_ID = "st-v10-diag-radar";
@@ -86,7 +86,6 @@
             }
         ];
 
-        // 🪑 玩法5：肉体物化阶级 & 人体家具/家畜化切换库
         const OBJECTIFICATION_TIERS = [
             { id: "free", label: "🌸 自由身", desc: "保留完整人类尊严与自主行动权。", promptRule: "" },
             { id: "pet", label: "⛓️ 私属契约性奴", desc: "签署绝对服从契约，肉体与高潮权限完全归属饲主支配。", promptRule: "已沦为私属契约性奴，面对支配者必须保持温顺跪姿与讨好敬语。" },
@@ -96,7 +95,6 @@
             { id: "furniture", label: "🪑 活体肉垫/排泄痰盂", desc: "彻底剥夺人类身份，作为脚凳、坐垫与活体排泄痰盂供人随意踩踏灌精。", promptRule: "已被彻底物化为『活体肉垫家具与排泄痰盂』，四肢固定成M字开腿，主动张嘴与肉洞承接一切体液排泄。" }
         ];
 
-        // 🐙 玩法6：异种寄生与产卵孵化预设库
         const PARASITE_TYPES = [
             { type: "无寄生", icon: "✨", desc: "体内洁净，无异种寄生生物。" },
             { type: "催情粉红史莱姆", icon: "🫧", desc: "寄生于阴道与宫腔内壁，吞噬精液并反哺百倍快感，不断分泌拉丝粉红催情粘液。" },
@@ -104,7 +102,6 @@
             { type: "产卵魔虫母巢", icon: "🐛", desc: "在宫腔与直肠筑巢，每回合自动产下膨胀透明肉卵撑大腹围，走路偶发排卵失禁。" }
         ];
 
-        // 🔔 玩法1：催眠条件反射与常识改写钢印库
         const HYPNO_PRESET_LIBRARY = [
             "🔔 听觉钢印：听到打响指声 -> 双腿立刻发软夹紧，括约肌松弛分泌大量爱液",
             "🤰 触觉钢印：被抚摸或按压小腹 -> 子宫口条件反射张开，主动挺腰索求无套内射",
@@ -113,7 +110,6 @@
             "🗣️ 语言钢印：每句话句尾必须带上淫荡喘息与母猪敬语(♡)，无法说出任何拒绝词汇"
         ];
 
-        // ✍️ 玩法7：体表淫语涂鸦盖章库
         const BODY_WRITING_STAMPS = [
             "【小腹：内射专用·¥0免费】",
             "【大腿根：正正正正·公用精盆】",
@@ -123,9 +119,6 @@
             "【额头：脑死发情母猪】"
         ];
 
-        // =========================================================================
-        // 🔞 完整 14 项 × 6 阶直白下流形态详述库（六孔6项 + 肉改4项 + 苗床4项全齐！）
-        // =========================================================================
         const ORGAN_STAGE_SHAPES = {
             "骚口实况": [
                 "双唇紧闭呈娇嫩粉樱色，唇珠饱满水润，小巧的粉舌安静缩在齿列内，咽喉紧窄洁净，连一丝异味或多余唾液都没有。",
@@ -242,7 +235,7 @@
         };
 
         // =========================================================================
-        // 📦 千图极限抗压引擎（兼容升级版：LRU 120张防爆内存 + 智能阶位识别 + 全部位入池）
+        // 📦 千图极限抗压引擎
         // =========================================================================
         const IDB_NAME = "st_status_bar_v27_img_db";
         const IDB_STORE = "images_dataurl";
@@ -250,7 +243,6 @@
         const LRU_MAX_BYTES_ITEMS = 600;
         const importedImgCache = new Map();
         const dbKeyIndexSet = new Set();
-        const poolBucketIndex = new Map();
         const deadPhysicalUrlSet = new Set();
 
         function normalizeImgKey(rawName) {
@@ -294,7 +286,6 @@
         }
 
         let _sharedDbPromise = null;
-        let _imgRefreshTimer = null;
         const _pendingDbFetches = new Set();
 
         function openImageDB() {
@@ -365,7 +356,7 @@
             if (importedImgCache.has(nk)) {
                 const v = importedImgCache.get(nk);
                 importedImgCache.delete(nk);
-                importedImgCache.set(nk, v); // 刷新LRU活跃度
+                importedImgCache.set(nk, v);
                 return v;
             }
             if (dbKeyIndexSet.has(nk)) {
@@ -402,7 +393,6 @@
             return rawSaveDataUrlToDB(customKey, dUrl);
         }
 
-        // 🌟 新版优点3：启动时建立全量Key索引并按需预热，既快又不爆内存
         async function loadAllImportedImagesToMemory() {
             try {
                 const db = await openImageDB();
@@ -526,7 +516,6 @@
             return extracted;
         }
 
-        // 🌟 新版优点4：解除固定按钮白名单限制，任何部位带阶位后缀导入都能自动挂入永久复用图池！
         async function importFilesOrZipToDB(fileList) {
             if (!fileList || !fileList.length) return 0;
             const itemsToSave = [];
@@ -574,6 +563,7 @@
             }
             return itemsToSave.length;
         }
+
         function safeStr(val, fallback = "") {
             if (val === null || val === undefined) return fallback;
             return String(val);
@@ -591,7 +581,6 @@
             return {};
         }
 
-        // 💬 玩法8：将导演台或X-Ray调教动作同步填入/发送到酒馆输入框
         function queueSilentChangeForNextTurn(changeDesc) {
             if (!changeDesc) return;
             curVars.待同步场外变动 = Array.isArray(curVars.待同步场外变动) ? curVars.待同步场外变动 : [];
@@ -603,11 +592,9 @@
 
         function dispatchDirectorActionToChat(actionNarrative) {
             if (!actionNarrative) return;
-            // 1. 永远自动加入后台静默同步队列，无需用户打字，下一轮AI正文100%自动体现！
             queueSilentChangeForNextTurn(actionNarrative.replace(/^\*|\*$/g, ""));
             saveChatCache(curVars);
 
-            // 2. 只有当用户在设置里主动开启了「写入输入框」时，才额外填入聊天框
             if (!userSettings.directorSendToChat) return;
             try {
                 const ta = document.getElementById("send_textarea");
@@ -698,9 +685,6 @@
             } catch (e) {}
         }
 
-        // =========================================================================
-        // 👃 玩法3 & 📡 玩法4：体臭信息素浓度计 + 社死曝光雷达计算器 + 动态 Buff 引擎
-        // =========================================================================
         function computeOdorAndExposureMetrics(v, dev) {
             const sp = v.体内精液存量 || {}, c = v.计数 || {}, mark = v.痕迹与标记 || {};
             const totalMl = safeNum(sp.口内毫升) + safeNum(sp.小穴毫升) + safeNum(sp.子宫毫升) + safeNum(sp.屁眼毫升);
@@ -708,7 +692,6 @@
             const expCnt = safeNum(c.暴露?.露出), watchCnt = safeNum(c.暴露?.被围观人次), photoCnt = safeNum(c.暴露?.被拍摄留影), hookerCnt = safeNum(c.交易?.接客卖身);
             const corr = safeNum(v.核心数值?.淫乱恶堕);
 
-            // 👃 体臭与雌臭信息素浓度 (0~100%)
             const rawOdor = Math.round(
                 Math.min(45, totalMl * 0.35) +
                 Math.min(25, leakCnt * 3 + squirtCnt * 1.5) +
@@ -719,7 +702,6 @@
             const odorLabels = ["🌸幽雅体香", "💦微汗雌香", "🥵浓烈情欲香", "🥛石楠花精腥", "💦骚尿白浊腌入味", "☣️十米催情母畜恶臭"];
             const odorStg = odorLabels[tier6(odorPct, false)];
 
-            // 📡 社死曝光度与暗网扩散率 (0~100%)
             const hasGraffiti = (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无") || (mark.体表痕迹 && /正字|肉便器|免费|内射/.test(mark.体表痕迹));
             const rawSocial = Math.round(
                 expCnt * 8 + watchCnt * 2.5 + photoCnt * 12 + hookerCnt * 4 +
@@ -898,9 +880,6 @@
             return `“啊嘿嘿……♡ 全身的六孔都已经100%改造成专用排泄受精肉坑了……今天也要把${u}灌成鼓鼓的精液泡芙哦~♡💦”`;
         }
 
-        // =========================================================================
-        // 🎨 6 套高定玻璃拟态主题 + 手机/电脑双端完美自适应 CSS
-        // =========================================================================
         const THEMES = {
             "魅魔粉": {
                 cls: "st-theme-succubus",
@@ -994,7 +973,6 @@
                 }
                 .st-organ-squeeze-anim { animation: stOrganSqueeze 0.42s ease-in-out; transform-origin: center; }
 
-                /* 💎 殿堂级卡片与微光边框排版 */
                 .st-v28-card {
                     transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease, border-color 0.18s ease, filter 0.18s ease !important;
                     position: relative; box-sizing: border-box;
@@ -1030,7 +1008,6 @@
                 .st-theme-brothel .st-v28-card { border: 2px ridge rgba(251, 191, 36, 0.72) !important; border-radius: 12px !important; }
                 .st-theme-emerald .st-v28-card { border-radius: 15px !important; border-left: 3.5px solid #34d399 !important; }
 
-                /* 🎛️ 精致胶囊按钮与可折叠手风琴抽屉 */
                 .st-pill-btn {
                     display: inline-flex; align-items: center; justify-content: center; gap: 4px;
                     padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
@@ -1049,7 +1026,6 @@
                     box-shadow: 0 6px 18px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.08);
                 }
 
-                /* 横向紧凑滑动条：防止 Buff 太多撑爆首屏高度 */
                 .st-horiz-scroll-strip {
                     display: flex; flex-wrap: nowrap; gap: 5px; align-items: center;
                     overflow-x: auto; overflow-y: hidden; padding-bottom: 2px;
@@ -1081,7 +1057,6 @@
                 .st-emo-stage6 { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 900; white-space: nowrap; background: linear-gradient(90deg, #f59e0b, #ff0055, #3b0764); color: #fff !important; border: 1px solid #fde047; box-shadow: 0 0 10px rgba(255, 0, 85, 0.85); }
                 .st-heart-beat { display: inline-block; animation: stHeartbeat 1.3s infinite ease-in-out; }
 
-                /* 💻 电脑与宽屏默认布局：左侧精致导航栏 + 右侧黄金比例内容区 */
                 #st-v5-layout-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; flex-direction: row; }
                 #st-v5-tabs {
                     width: 62px; padding: 8px 5px; display: flex; flex-direction: column; gap: 6px;
@@ -1090,7 +1065,6 @@
                 }
                 #st-v5-body { flex: 1; padding: 10px 12px; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
-                /* 📱 手机窄屏自适应优化：底部胶片式导航栏 + 顶部双行优雅排布 */
                 @media (max-width: 560px) {
                     #st-v5-panel {
                         left: 2vw !important; top: 3.5vh !important;
@@ -1216,7 +1190,7 @@
             try {
                 const slimSettings = {
                     ...userSettings,
-                    cgGallery: [] // 不再在全局重复存一份相册，彻底防止 5MB 爆仓
+                    cgGallery: []
                 };
                 if (Array.isArray(slimSettings.reusableImgPool) && slimSettings.reusableImgPool.length > 1200) {
                     slimSettings.reusableImgPool = slimSettings.reusableImgPool.slice(0, 1200);
@@ -1376,7 +1350,6 @@
         let isPanelOpen = false, isSettingsOpen = false;
         const SHORT_NAMES = { "档案与风评": "档案", "恶堕与脑改": "恶堕", "下流性癖库": "性癖", "六孔与储精": "六孔", "肉改与道具": "肉改", "全身穿搭": "穿搭", "苗床与受孕": "受孕", "恩客图鉴": "恩客", "淫乱总账": "总账" };
 
-        // 兼容单聊、群聊、纯文本聊天的唯一定位 Key
         function getChatStoreKey() {
             const ctx = safeCtx();
             const cid = safeStr(ctx?.chatId || ctx?.chat_metadata?.chat_id_hash || ctx?.chat_metadata?.main_chat || "no_cid").trim();
@@ -1402,7 +1375,6 @@
             } catch (e) { return null; }
         }
 
-        // ✅ 修复 P0：彻底剥离快照与按钮详情中的 Base64 字符串，杜绝 localStorage 5MB 爆仓！
         function sanitizeBase64FromBtnDetails(btnDetails) {
             if (!btnDetails || typeof btnDetails !== "object") return {};
             const cleaned = {};
@@ -1464,7 +1436,6 @@
                 }));
                 const slimBtnDetails = sanitizeBase64FromBtnDetails(varsObj.按钮详情);
 
-                // ✅ 把5项重口玩法状态绑定进当前聊天的独立存档里，防止跨角色卡串味
                 varsObj.玩法扩展状态 = {
                     hypnoTriggers: Array.isArray(userSettings.hypnoTriggers) ? [...userSettings.hypnoTriggers] : [],
                     parasiteState: userSettings.parasiteState ? { ...userSettings.parasiteState } : { type: "无寄生", lv: 0, eggCount: 0 },
@@ -1536,6 +1507,7 @@
             if (/(?:未知|道具|物品|系统|状态栏|档案|图鉴|总账|实况|数值|计数器|模式|测试|变量|目标|身份)$/.test(n)) return false;
             return true;
         }
+
         function detectProtagonistName(v) {
             const ctx = safeCtx(), chat = ctx?.chat || [];
             const charCardName = safeStr(ctx?.name2).trim();
@@ -1571,13 +1543,11 @@
         function applyNaturalMetabolism(floorText, targetVars, hasExplicitSet = false, isLatestFloor = false, floorIdx = 0) {
             if (!floorText) return;
             normalizeVarsStructure(targetVars);
-            // 🛡️ 铁律1：第 0 层（开场白）如果没有明确的 _.set 指令，绝不凭空用正则给主角加精液或性交次数！
             if (floorIdx === 0 && !hasExplicitSet) return;
 
-            // 🛡️ 铁律2：彻底剥离思考块、选项块，以及正文中一切用笔生成的「鬼怪档案/人物设定表/背景档案/因果律写字引号内容」！
             const cleanBody = floorText
                 .replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>|<summary>[\s\S]*?<\/summary>|<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, "")
-                .replace(/###\s*【[^】]*】[\\s\S]*?(?=---|###|<\/game>|$)/g, "")
+                .replace(/###\s*【[^】]*】[\s\S]*?(?=---|###|<\/game>|$)/g, "")
                 .replace(/【[^】]*(?:档案|设定|面板|资料|图鉴|记录)[^】]*】[\s\S]*?(?=\n\n|---|###|<\/game>|$)/g, "")
                 .replace(/(?:写下|写道|书写|落笔|改写为|设定为)[：:\s]*[“"「『][\s\S]*?[”"」』]/g, "")
                 .replace(/<item_[^>]+>[\s\S]*?<\/item_[^>]+>/gi, "");
@@ -1587,9 +1557,6 @@
             let gotFreshSemen = false;
             const curProtag = safeStr(targetVars?.档案?.手动锁定真名 || targetVars?.档案?.当前认知名字 || detectProtagonistName(targetVars)).trim();
 
-            // 🧬 核心升级A：检测本层是否发生了针对主角本人的【因果律身体重塑 / 性转】！
-            // 分支1：不仅变成了妓女/魅魔/荡妇/肉便器，而且明确写了“继承/保留了原身所有性交记忆、淫乱经验与被开发熟透的身体” -> 自动注入高阶历史总账与熟肉阶位！
-            // 分支2：只是单纯变成了新身体（如“变成了美少女/魅魔/萝莉”，未写继承原身淫乱性交记忆） -> 性别转为女性，但全身总账与六孔100%重置为清白处女初始态(0次、Lv.1)！
             const inheritDirtyRegex = new RegExp(`(?:${curProtag}|我|自己|主角)[^。！？；\\n]{0,35}(?:变成|化作|化为|重塑为|改写为|成为了)[^。！？；\\n]{0,25}(?:妓女|娼妇|肉便器|荡妇|母狗|母猪|魅魔|淫妇|熟女|人妻)[\\s\\S]{0,80}?(?:继承|保留|拥有|带着|刻满|熟知)[^。！？；\\n]{0,25}(?:原身|原本|过往|所有|全部|无数次|千人)[^。！？；\\n]{0,20}(?:性交|淫乱|接客|挨操|调教|开发|内射|记忆|经验|履历|身体)`);
             const pureNewFemaleRegex = new RegExp(`(?:${curProtag}|我|自己|主角)[^。！？；\\n]{0,25}(?:变成|化作|化为|重塑为|改写为|性转成|变成了)(?:了|一个|一名|一只|一具)?[^。！？；\\n]{0,18}(?:女|少女|女孩|萝莉|女人|女生|魅魔|美女蛇|仙子|大小姐|千金|公主|修女|巫女|女鬼)`);
             const backToMaleRegex = new RegExp(`(?:${curProtag}|我|自己|主角)[^。！？；\\n]{0,20}(?:恢复原状|变回男|恢复男儿身|变回普通男大学生|恢复了男性躯体)`);
@@ -1619,7 +1586,6 @@
                 const wasMaleBefore = (targetVars.档案?.当前性别 === "male");
                 targetVars.档案 = targetVars.档案 || {};
                 targetVars.档案.当前性别 = "female";
-                // 如果刚刚从男身变成一具全新的女性身体（且没有继承淫乱履历），确保新身体是100%处女初始态！
                 if (wasMaleBefore && !hasExplicitSet) {
                     targetVars.历史最高崩坏度 = {};
                 }
@@ -1627,7 +1593,6 @@
 
             const isCurrentlyMale = (detectProtagonistGender(curProtag, targetVars) === "male");
 
-            // 🛡️ 防误判锁：只保留主语明确包含主角本人（或第一人称“我”被侵犯）的真实动作句子，彻底丢弃写给女鬼/配角/路人的句子！
             const otherRoleNames = Object.keys(targetVars?.角色独立槽位 || {}).filter(n => n && n.length >= 2 && n !== curProtag);
             const actionOnlyBody = cleanBody
                 .replace(/\*[^*\n]+\*/g, "")
@@ -1637,7 +1602,6 @@
                 .filter(sent => {
                     const s = sent.trim();
                     if (!s) return false;
-                    // 如果句子里提到了“女鬼/她/少女/女人”且主语不是主角自己，直接排除！
                     if (/(?:女鬼|厉鬼|怨灵|那名少女|那个女人|女孩|她)/.test(s) && (!curProtag || !s.includes(curProtag))) return false;
                     if (otherRoleNames.length && otherRoleNames.some(oName => s.includes(oName)) && (!curProtag || !s.includes(curProtag))) return false;
                     return (curProtag && s.includes(curProtag)) || /(?:将我|把我|按住我|进入我|插进我|射进我|我的小穴|我的子宫|我的身体|我的嘴|我的后庭)/.test(s);
@@ -1649,7 +1613,6 @@
             const rawUvBlock = (floorText.match(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/i) || [""])[0];
             const hasSetField = (fieldKey) => hasExplicitSet && rawUvBlock.includes(fieldKey);
 
-            // 🛡️ 铁律3：如果当前主角是男性躯体（isCurrentlyMale），严禁凭空触发小穴贯穿、子宫内射、潮吹或喷乳！
             if (!isCurrentlyMale) {
                 if (!hasSetField("计数.性交.小穴") && /(?:挺身|肉棒|阳具|巨物|龟头|阴茎).{0,15}(?:捅入|插入|贯穿|顶入|没入|抽插|操进).{0,15}(?:小穴|花穴|甬道|蜜穴|肉穴|阴道|子宫)/.test(actionOnlyBody)) cnt.性交.小穴 = safeNum(cnt.性交.小穴) + 1;
                 if (!hasSetField("计数.射精.内射") && !hasSetField("子宫毫升") && /(?:内射|射入|灌入|喷洒在|泵入|轰击在|射进).{0,15}(?:子宫|宫腔|小穴深处|花心|甬道深处)/.test(actionOnlyBody)) { cnt.射精.内射 = safeNum(cnt.射精.内射) + 1; sp.子宫毫升 = safeNum(sp.子宫毫升) + 18; sp.小穴毫升 = safeNum(sp.小穴毫升) + 10; gotFreshSemen = true; }
@@ -1721,7 +1684,6 @@
             const recentText = (ctx?.chat || []).slice(-6).map(m => safeStr(m?.mes)).join(" ");
             const c = v?.计数 || {}, mark = v?.痕迹与标记 || {}, prop = v?.体内道具与权限 || {};
             const curSp = getSpeciesSignatureFromDna(v?.档案?.锁定外貌DNA || "");
-            // 🛡️ 移除“因果”二字的无差别触发，只有当主角真正是非人魔物形态、或真正发生了异种寄生/触手魔物交合时，才解锁第6阶100%非人崩坏上限！
             const hasFantasyOrMonster = (curSp && curSp !== "human") || safeNum(c.性交?.兽交异种) > 0 || (userSettings.parasiteState?.lv > 0) || /触手贯穿|异种交配|魔物肉棒|虫族产卵|史莱姆寄生|深渊魔物|机械改造肉壶/.test(recentText);
             const hasExtremePhysical = /拳交|扩阴器|扩肛器|宫颈脱垂|直肠脱肛|尿道扩张|宫颈扩张|彻底崩坏|烂肉洞|失禁改造|排泄器/.test(recentText);
             const hasExtremeMod = (mark.淫纹与刻印 && mark.淫纹与刻印 !== "无") || (mark.穿刺与环饰 && mark.穿刺与环饰 !== "无") || (prop.体内道具 && prop.体内道具 !== "无") || /烙铁|刀刻|刺青|钢钉|铅球|电击/.test(recentText);
@@ -1816,7 +1778,9 @@
             const ledgerCurve = calcStage6Score(totalWeightedPts, 0.75, dMult, sixScores[0] >= 100 && totalWeightedPts >= 450 * dMult);
             const compositeScore = (totalLedgerCount === 0 && all6OrganAvg === 0) ? 0 : Math.round(ledgerCurve.val * 0.45 + top2OrganAvg * 0.35 + all6OrganAvg * 0.20);
 
-            const finalRes = { vagObj, wombObj, mouthObj, chestObj, clitObj, analObj, totalLedgerCount, totalWeightedPts, top2OrganAvg, all6OrganAvg, masterCurve: { val: compositeScore, tier: tier6(compositeScore, false), curPts: Math.round(totalWeightedPts), nextThreshold: ledgerCurve.nextThreshold } }; _organDevCache = { sig: cacheSig, res: finalRes }; return finalRes;
+            const finalRes = { vagObj, wombObj, mouthObj, chestObj, clitObj, analObj, totalLedgerCount, totalWeightedPts, top2OrganAvg, all6OrganAvg, masterCurve: { val: compositeScore, tier: tier6(compositeScore, false), curPts: Math.round(totalWeightedPts), nextThreshold: ledgerCurve.nextThreshold } };
+            _organDevCache = { sig: cacheSig, res: finalRes };
+            return finalRes;
         }
 
         function computeUnlockedFetishes(v) {
@@ -1893,7 +1857,6 @@
             const totalMl = safeNum(sp.口内毫升) + safeNum(sp.小穴毫升) + safeNum(sp.子宫毫升) + safeNum(sp.屁眼毫升);
             const mark = v.痕迹与标记 || {}, prop = v.体内道具与权限 || {};
 
-            // ✅ 核心升级：只要玩家触发了涂鸦印章、淫纹、穿刺、体内道具、催眠钢印、换装破损或强制滑块锁定，立刻解除开局清白锁！
             const hasBodyMod = (mark.公开涂鸦字迹 && mark.公开涂鸦字迹 !== "无") ||
                                (mark.体表痕迹 && mark.体表痕迹 !== "无") ||
                                (mark.淫纹与刻印 && mark.淫纹与刻印 !== "无") ||
@@ -1924,7 +1887,6 @@
             }
 
             const caps = getBreakthroughCaps(v);
-            // 当玩家通过调教按钮（如印章、物化阶级、寄生、催眠）激活状态时，给锚点分数提供保底支撑，防止被拉回 0
             const playModBonus = (hasBodyMod ? 18 : 0) +
                                  (userSettings.objectificationId && userSettings.objectificationId !== "free" ? 35 : 0) +
                                  (safeNum(userSettings.parasiteState?.lv) * 12) +
@@ -2048,7 +2010,6 @@
                     if (!baseVars.角色独立槽位[rName]) {
                         baseVars.角色独立槽位[rName] = JSON.parse(JSON.stringify(cachedSlot));
                     } else {
-                        // 深度融合：保留最新楼层 _.set 扫描出的新数值，同时继承旧槽位的配图详情与强制锁
                         const freshSlot = baseVars.角色独立槽位[rName];
                         freshSlot.按钮详情 = { ...(cachedSlot.按钮详情 || {}), ...(freshSlot.按钮详情 || {}) };
                         freshSlot.上帝强制锁定 = { ...(cachedSlot.上帝强制锁定 || {}), ...(freshSlot.上帝强制锁定 || {}) };
@@ -2061,7 +2022,6 @@
                 }
             }
 
-            // ✅ 从当前角色独立存档恢复 5 大重口玩法状态；若本局无存档则重置为默认清爽态，绝不跨卡串味！
             const extState = cached.玩法扩展状态 || cached.快照?.玩法扩展状态;
             if (extState && typeof extState === "object") {
                 userSettings.hypnoTriggers = Array.isArray(extState.hypnoTriggers) ? [...extState.hypnoTriggers] : [];
@@ -2077,10 +2037,7 @@
                 userSettings.clothDurability = 100;
             }
 
-            const ctxNow = safeCtx(), latestMesNow = safeStr(ctxNow?.chat?.[Math.max(0, currentChatLen - 1)]?.mes);
-            const nowFloorHash = `${currentChatLen}_${latestMesNow.length}_${latestMesNow.slice(0, 32)}_${latestMesNow.slice(-32)}`;
             const isRolledBack = (typeof cached.floorLen === "number" && cached.floorLen > currentChatLen);
-
             const isRecentActiveChat = !isRolledBack;
 
             if (isRecentActiveChat && cached.历史最高崩坏度 && typeof cached.历史最高崩坏度 === "object") {
@@ -2101,7 +2058,6 @@
                     if (s[k] && typeof s[k] === "object") {
                         baseVars[k] = baseVars[k] || {};
                         Object.entries(s[k]).forEach(([subKey, val]) => {
-                            // ★ 核心修复：除非玩家手动开启了「🔒锁定自定义外貌(手动锁死外貌Flag)」，否则绝不用旧缓存的 锁定外貌DNA 覆盖当前楼层，确保外貌永远随最新正文实时更新！
                             if (k === "档案" && (subKey === "锁定外貌DNA" || subKey === "当前提取形象摘要") && !s.档案?.手动锁死外貌Flag) {
                                 return;
                             }
@@ -2131,7 +2087,6 @@
                 if (isRecentActiveChat && s.身体 && typeof s.身体.体力 === "number") {
                     baseVars.身体.体力 = Math.min(safeNum(baseVars.身体.体力, 100), s.身体.体力);
                 }
-                // ✅ 若玩家在同一层楼手动调整过精液或总账，直接以玩家手改值为准，绝不用 Math.max 把已调小的数值又拉回去！
                 if (isRecentActiveChat && !s.已手动清空精液 && s.体内精液存量 && typeof s.体内精液存量 === "object") {
                     const hasManualSemenBase = (typeof s.手动精液基准楼层 === "number" && s.手动精液基准楼层 <= currentChatLen);
                     const isSameFloorManual = (s.手动精液调整楼层 === currentChatLen);
@@ -2249,20 +2204,19 @@
             const corr = safeNum(v.核心数值?.淫乱恶堕), mode = userSettings.personaMode || "evolution", rules = [];
             if (mode === "despair") rules.push(`- 【💧彻底绝望型人格】：正文中${u}面对侵犯都处于绝望哭泣、求饶与失禁哀鸣状态！`);
             else if (mode === "addicted") rules.push(`- 【🥵沉沦变态型人格】：正文中${u}会主动掰开肉洞乞求更粗暴的灌精与改造！`);
-            else if (mode === "contrast") rules.push(userSettings.contrastInnerActive ? `- 【🎭私下母畜态】：${u}完全卸下伪装，极度饥渴下流！` : `- 【🎭表面伪装态】：${u}表面强装端庄，裙底实则湿透漏精暗颤！`);                      // 🧬 开放式物种形态与非人解剖结构同步铁律
+            else if (mode === "contrast") rules.push(userSettings.contrastInnerActive ? `- 【🎭私下母畜态】：${u}完全卸下伪装，极度饥渴下流！` : `- 【🎭表面伪装态】：${u}表面强装端庄，裙底实则湿透漏精暗颤！`);
+
             const curDnaTags = getLockedAppearanceTags(u, v);
             const curSpeciesSig = getSpeciesSignatureFromDna(curDnaTags);
             if (curSpeciesSig && curSpeciesSig !== "human") {
                 rules.push(`- 【🧬当前种族与躯体形态铁律(${v.档案?.当前提取形象摘要 || curSpeciesSig})】：当前${u}的躯体形态特征为「${v.档案?.当前提取形象摘要 || curDnaTags}」，正文中一切肢体动作、交合姿势、衣装穿戴与体液流淌描写必须100%契合该形态的解剖结构（如无腿蛇尾/触手/史莱姆流体/特殊器官），严禁写出与该形态冲突的普通人类肢体描写！`);
             }
 
-            // 🪑 物化阶级铁律
             const objTier = OBJECTIFICATION_TIERS.find(t => t.id === userSettings.objectificationId);
             if (objTier && objTier.promptRule) {
                 rules.push(`- 【🪑肉体物化生态位(${objTier.label})】：${u}${objTier.promptRule}`);
             }
 
-            // 🔒 寸止地狱锁铁律
             if (userSettings.edgingLockActive) {
                 rules.push(`- 【🔒寸止地狱锁生效中(快感卡死99%)】：无论${u}在本轮受到多么强烈的抽插、玩弄或刺激，快感都死死卡在99%临界点无法真正泄身高潮！必须细致描写她全身痉挛、小腹抽搐、哭喊乞求赐予高潮的焦躁寸止反应！`);
             }
@@ -2306,10 +2260,9 @@
             if (userSettings.customExtraPrompt && safeStr(userSettings.customExtraPrompt).trim()) {
                 rules.push(`- 【🛠️自定义铁律】：${safeStr(userSettings.customExtraPrompt).trim().replace(/{user}/g, u)}`);
             }
-            // ✅ 核心：将玩家在状态栏点击的所有按钮、滑块、换装、印章变动，全自动强制同步进AI下一轮正文！
             if (Array.isArray(v.待同步场外变动) && v.待同步场外变动.length > 0) {
                 rules.unshift(`- 【⚡本轮玩家在状态栏触发的即时调教与数值变动（最高优先级！必须在本轮正文中立刻、直观地描写出来！）】：\n  👉 ${v.待同步场外变动.join("；\n  👉 ")}`);
-            }            
+            }
             return rules.length ? `\n【🚨状态栏1.0各阶段生理与剧情强制同步铁律】\n${rules.join("\n")}\n` : "";
         }
 
@@ -2323,8 +2276,9 @@
             return `\n[系统后台只读状态参考（⚠️严禁在回复中输出此快照文本！难度：${diff.mult}x｜身份：${detectRealCharacterIdentity(currentVars)}）: ${compactSnap}]${reverseRules}\n[🔥状态变量后台静默更新规范：全篇最末尾仅输出唯一闭合的 ${openTag}...${closeTag}，严禁输出【状态快照】文本！]：\n${openTag}\n_.set('${userName}.身体.体力', ${safeNum(currentVars.身体?.体力, 100)});\n_.set('${userName}.核心数值.性欲程度', ${safeNum(currentVars.核心数值?.性欲程度)});\n_.set('${userName}.精神与心理.快感累积', ${safeNum(currentVars.精神与心理?.快感累积)});\n_.set('${userName}.计数.性交.口', ${safeNum(c.性交?.口)});\n_.set('${userName}.计数.性交.小穴', ${safeNum(c.性交?.小穴)});\n_.set('${userName}.计数.性交.屁眼', ${safeNum(c.性交?.屁眼)});\n_.set('${userName}.计数.射精.内射', ${safeNum(c.射精?.内射)});\n_.set('${userName}.计数.精液摄入.吞精次数', ${safeNum(c.精液摄入?.吞精次数)});\n_.set('${userName}.计数.高潮.总数', ${safeNum(c.高潮?.总数)});\n_.set('${userName}.计数.失控.喷潮', ${safeNum(c.失控?.喷潮)});\n_.set('${userName}.计数.失控.失禁', ${safeNum(c.失控?.失禁)});\n_.set('${userName}.体内精液存量.口内毫升', ${safeNum(sp.口内毫升)});\n_.set('${userName}.体内精液存量.小穴毫升', ${safeNum(sp.小穴毫升)});\n_.set('${userName}.体内精液存量.子宫毫升', ${safeNum(sp.子宫毫升)});\n_.set('${userName}.体内精液存量.屁眼毫升', ${safeNum(sp.屁眼毫升)});\n_.set('${userName}.痕迹与标记.体表痕迹', '${safeStr(mark.体表痕迹, "无")}');\n_.set('${userName}.痕迹与标记.淫纹与刻印', '${safeStr(mark.淫纹与刻印, "无")}');\n_.set('${userName}.痕迹与标记.穿刺与环饰', '${safeStr(mark.穿刺与环饰, "无")}');\n_.set('${userName}.体内道具与权限.体内道具', '${safeStr(prop.体内道具, "无")}');\n_.set('${userName}.实况.当前姿势', '简短概括当前姿势');\n_.set('${userName}.实况.内心独白', '符合当前崩坏阶位的第一人称心声');\n${closeTag}`;
         }
 
-        // 🧬 开放式动态主要特征挖掘器：支持美女蛇、魅魔、史莱姆、虫族、机娘及任何不可名状的克苏鲁/因果律异形形态！
-        // 🛡️ 内置【发箍/卫衣/玩偶/手办/比喻词防误判护盾】：戴兔耳发箍或穿兔女郎装的人类萝莉绝不会被误判为兽娘！
+        // =========================================================================
+        // 🧬 开放式动态主要特征挖掘器 + 状态栏按钮描述优先识图引擎
+        // =========================================================================
         const OPEN_MORPH_DICTIONARY = [
             { reg: /不可名状|克苏鲁|古神|旧日支配者|外神|深渊眷族|混沌肉块|蠕动肉山|肉瘤|千眼|多眼怪|眼球怪|黑泥怪|血肉畸变|eldritch|abomination|flesh mound|shoggoth/i, id: "eldritch_horror", cn: "👁️不可名状异形", en: "eldritch abomination, surreal horror monster morphology, writhing flesh mound, multiple glowing eyes on body, dark slime tendrils", lower: "nonhuman_eldritch", skin: "eldritch_flesh", isNonHumanForm: true },
             { reg: /史莱姆娘|粘液娘|流体娘|果冻状身躯|半透明果冻|融化成史莱姆|胶质躯体|变成.*?史莱姆|化作.*?史莱姆|slime girl|translucent gelatinous body|liquid body/i, id: "slime_fluid", cn: "🫧史莱姆/流体", en: "slime girl, monster girl, translucent gelatinous body, semi-transparent glowing slime flesh, dripping viscous fluid", lower: "nonhuman_slime", skin: "slime_gel", isNonHumanForm: false },
@@ -2349,7 +2303,6 @@
             { reg: /天使娘|堕天使|背后长出羽翼|头顶天使光环|angel girl|halo, feathered wings/i, id: "angel", cn: "👼天使翼", en: "halo, feathered wings", lower: "human_legs", skin: "human", isNonHumanForm: false }
         ];
 
-        // 🧹 剥离假兽耳/发饰/衣服/黑皮鞋/手办/比喻词/路人主语分句，防止把日常词或路人特征误判到主角身上！
         function stripFakeAccessoryAndMetaphorWords(rawText) {
             return safeStr(rawText)
                 .replace(/魅魔(?:淫纹|纹路|刻印|烙印|粉|主题|立体淫纹|体质|般)/g, "催情刻印")
@@ -2361,7 +2314,6 @@
                 .replace(/(?:大叔|肥猪|老板|黄毛|混混|体育生|学长|壮汉|男人|男生|少年|老头|流浪汉|教导主任|室友|路人)[^，。！？；\n]{0,18}?(?:黑发|白发|银发|金发|黄发|红发|蓝发|紫发|绿发|棕发|短发|长发|黑皮|古铜色|小麦色|红瞳|金瞳|蓝瞳|绿瞳|黑瞳|眼镜|墨镜)/g, "");
         }
 
-        // 动态挖掘正文中任意未预设的野生异形/身体特征（如：多眼、吸盘、骨刺、分叉舌、六条手臂等）
         function mineWildDynamicTraits(text) {
             let s = stripFakeAccessoryAndMetaphorWords(text);
             if (!s) return { wildCn: [], wildEn: [], wildIds: [] };
@@ -2378,19 +2330,15 @@
             const wildCn = new Set(), wildEn = new Set(), wildIds = new Set();
 
             const microRules = [
-                // 乳房数量异化（精准锁死数量：4乳绝不加 multiple breasts / extra breasts！）
                 [/(?:四个|四颗|两对|4个|四只|双排)[^。！？；\n]{0,10}(?:奶子|乳房|巨乳|胸乳|奶袋|乳)|四乳|four breasts/i, "🍒四乳", "1.55::four breasts, two pairs of breasts, 4 breasts, 4 nipples::", "trait_fourbreasts"],
                 [/(?:六个|六颗|八个|三对|四对|一排|两排|母猪般.*一排|多对|全身.*布满)[^。！？；\n]{0,12}(?:奶子|乳房|巨乳|奶袋|乳头)|多乳|six breasts/i, "🐄多乳母畜", "1.65::six breasts, three pairs of breasts, rows of breasts like udder, 6 nipples::", "trait_multibreasts"],
                 [/(?:三个|三颗|3个)[^。！？；\n]{0,8}(?:奶子|乳房|巨乳)|三乳|three breasts/i, "🍒三乳", "1.6::three breasts, 3 breasts, 3 nipples::", "trait_threebreasts"],
-                // 小穴/屁眼/阴蒂/嘴巴数量异化
                 [/(?:全身|浑身|遍布|布满|到处都是|密密麻麻|无数)[^。！？；\n]{0,12}(?:小穴|肉穴|淫穴|蜜穴|肉洞|性交洞|阴道)|multiple pussies/i, "🕳️全身小穴", "1.85::multiple pussies all over body, covered in vaginas, orifices all over skin::", "trait_allbodypussy"],
                 [/(?:三个|四个|五个|六个|一排|多个)[^。！？；\n]{0,10}(?:小穴|肉穴|淫穴|蜜穴|阴道)|multiple vaginas/i, "🌺多穴构造", "1.8::multiple vaginas, row of pussies::", "trait_multipussy"],
                 [/两个[^。！？；\n]{0,10}小穴|上下两个[^。！？；\n]{0,10}穴|并排.*两个.*穴|双穴|两个阴道|double pussy|two vaginas/i, "🌺双穴构造", "1.75::double pussy, two vertically stacked vaginas::", "trait_doublepussy"],
                 [/(?:肚子|小腹|肚皮|胸口|手心)[^。！？；\n]{0,8}(?:裂开|长出|张开)[^。！？；\n]{0,8}(?:嘴|大嘴|口器)|腹口|stomach mouth/i, "👄腹口", "1.8::stomach mouth, extra mouth on abdomen with tongue::", "trait_bellymouth"],
                 [/(?:两个|两张|双|多张)[^。！？；\n]{0,8}(?:嘴|嘴巴|口器|骚口)|multiple mouths/i, "👄多口", "1.75::multiple mouths, two mouths::", "trait_multimouth"],
-                // 植物娘/花妖/藤蔓特征
                 [/花瓣|花冠|花蕊|花蜜|藤蔓|枝条|叶片|树汁|食人花|植物娘|花妖|flower petals|vines|plant girl/i, "🌺花瓣藤蔓", "plant girl, blooming flower petals on body, writhing green vine tendrils, glistening floral nectar", "trait_plant"],
-                // 鳞片/吸盘/多眼/蛛丝/粘液/透视肚皮/甲壳/角/爪/尾
                 [/体表鳞片|蛇鳞|龙鳞|鱼鳞|长出鳞片|scales on skin/i, "鳞片", "glistening scales on skin", "trait_scales"],
                 [/长出吸盘|触手吸盘|肉盘|吸盘褶皱|suction cups/i, "吸盘", "fleshy suction cups", "trait_suckers"],
                 [/复眼|多眼|千眼|百目|眼球密布|恶鬼眼球|glowing eerie eyes|(?:后背|大腿|全身|皮下|肉缝)[^。！？；\n]{0,12}(?:眼球|眼珠)|multiple glowing eyes/i, "👁️多眼", "multiple glowing eerie eyes on body", "trait_multieyes"],
@@ -2475,31 +2423,31 @@
             return curGender;
         }
 
-        // 🎯 终极零误差变身与档案状态解析器（彻底修复 morphGenericReg 覆盖已知档案名的 Bug，并过滤生图临时块！）
+        // 🎯 终极零误差变身与档案状态解析器（修复多档案块切分，杜绝不同档案串味）
         function resolveCurrentMorphedArchiveAndState(targetName, chatArr) {
             const regStageImg = /第[一二三四五六1-6]阶段：[^\n<]*\s*<image>[\s\S]*?<\/image>|<image>[\s\S]*?<\/image>|image###[\s\S]*?###/gi;
             const allRawChat = (chatArr || []).map(m => safeStr(m?.mes)
-                .replace(/<think[\s\S]*?<\/think>|<options>[\s\S]*?<\/options>|<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, "")
+                .replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>|<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, "")
                 .replace(regStageImg, "")
             ).join("\n");
 
-            const archiveBlocks = allRawChat.match(/(?:###|##)?\s*【[^】\n]{2,35}】[\s\S]*?(?=\*\*\*|---|###|##\s*【|<\/game>|$)/g) || [];
+            // 支持按 ### 【...】、## 【...】 或独立行 【档案...】 精准切分每个独立档案块
+            const archiveBlocks = allRawChat.match(/(?:###|##|\*\*)?\s*【[^】\n]{2,40}】[\s\S]*?(?=\*\*\*|---|###|##\s*【|\n\s*【(?:档案|编号|鬼怪|角色)|<\/game>|$)/g) || [];
 
             const knownArchiveNames = [];
             archiveBlocks.forEach(blk => {
                 const headerLine = (blk.match(/【([^】]+)】/) || ["", ""])[1];
                 const qNames = [...headerLine.matchAll(/[“"「『]([^”"」』]+)[”"」』]/g)].map(m => m[1].trim());
-                const titleParts = headerLine.replace(/档案[零一二三四五六七八九十\d]+[：:\s]*/g, "").split(/[·•｜|：:\s]+/).map(s => s.replace(/伪装名|真名|姓名|名称|[“"「』”]/g, "").trim()).filter(s => s.length >= 1 && s.length <= 10);
+                const titleParts = headerLine.replace(/档案[零一二三四五六七八九十\d]+[：:\s]*/g, "").split(/[·•｜|：:\s（）()]+/).map(s => s.replace(/伪装名|真名|姓名|名称|代号|[“"「』”]/g, "").trim()).filter(s => s.length >= 1 && s.length <= 10);
                 [...qNames, ...titleParts].forEach(n => { if (n && !knownArchiveNames.includes(n)) knownArchiveNames.push(n); });
             });
 
             let morphedAliasName = "";
             let latestMorphPos = -1;
 
-            // 1. 最高优先级：匹配已知档案角色名（如：蛛音、白桃、琥珀、澪、百目淫丝鬼等）
             knownArchiveNames.forEach(kName => {
                 const esc = kName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                const reg = new RegExp(`(?:我|自己|${targetName}|主角)[^。！？；\\n]{0,25}(?:变成了|变成|化作|重塑为|改写为)[^。！？；\\n]{0,25}?${esc}`, "g");
+                const reg = new RegExp(`(?:我|自己|${targetName}|主角)[^。！？；\\n]{0,25}(?:变成了|变成|化作|重塑为|改写为|成为了)[^。！？；\\n]{0,25}?${esc}`, "g");
                 let m;
                 while ((m = reg.exec(allRawChat)) !== null) {
                     if (m.index >= latestMorphPos) {
@@ -2509,11 +2457,10 @@
                 }
             });
 
-            // 2. 只有当没有命中已知档案名，或严格在更靠后的新句子（mGen.index > latestMorphPos + 15）发生新变身时，才用通用提取！绝不覆盖刚识别出的档案名！
             const morphGenericReg = new RegExp(`(?:我|自己|${targetName}|主角)[^。！？；\\n]{0,12}(?:变成了|变成|化作|重塑为|改写为)(?:档案里的|档案中|那只|那个|一名|一只|一具)?(?:[\\u4e00-\\u9fa5]{2,8}鬼)?[“"「『]?([\\u4e00-\\u9fa5]{1,8})[”"」』]?`, "g");
             let mGen;
             while ((mGen = morphGenericReg.exec(allRawChat)) !== null) {
-                if (morphedAliasName && Math.abs(mGen.index - latestMorphPos) <= 20) continue;
+                if (morphedAliasName && Math.abs(mGen.index - latestMorphPos) <= 25) continue;
                 const cand = safeStr(mGen[1]).replace(/^(?:档案里的|档案中|这个叫|那个叫|一只|一具|一名)/, "").trim();
                 if (cand && !/^(?:普通人|正常人|人类|男大学生|美少女|普通少女|自己|这样|什么|档案)$/.test(cand) && mGen.index > latestMorphPos) {
                     latestMorphPos = mGen.index;
@@ -2539,7 +2486,7 @@
             if (morphedAliasName) {
                 for (const blk of archiveBlocks) {
                     const headerLine = (blk.match(/【([^】]+)】/) || ["", ""])[1];
-                    if (headerLine.includes(morphedAliasName) || blk.slice(0, 140).includes(morphedAliasName)) {
+                    if (headerLine.includes(morphedAliasName) || blk.slice(0, 160).includes(morphedAliasName)) {
                         matchedArchiveBlock = blk;
                         break;
                     }
@@ -2550,7 +2497,7 @@
 
             let activeStateStartFloor = 0;
             (chatArr || []).forEach((m, fIdx) => {
-                const cleanM = safeStr(m?.mes).replace(/<think[\s\S]*?<\/think>|<options>[\s\S]*?<\/options>/gi, "").replace(regStageImg, "");
+                const cleanM = safeStr(m?.mes).replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>/gi, "").replace(regStageImg, "");
                 if (fIdx > 0 && new RegExp(`(?:我|自己|${targetName}|主角)[^。！？；\\n]{0,20}(?:变成了|变成|化作|重塑为|改写为|变回|恢复)`).test(cleanM)) {
                     activeStateStartFloor = fIdx;
                 }
@@ -2565,16 +2512,45 @@
             };
         }
 
+        // ★ 核心重构：状态栏按钮描述最高优先级识图引擎！
+        // 汇总状态栏当前各按钮（肉体外貌、身份与背景、六孔、穿搭等）的实时描述文本，让外貌识图 100% 优先听从状态栏按钮里的描述！
+        function collectAllActiveButtonDescriptionsForAppearance(v) {
+            if (!v || typeof v !== "object") return "";
+            const chunks = [];
+            if (v.档案) {
+                if (v.档案.种族与体质) chunks.push(v.档案.种族与体质);
+                if (v.档案.身份与背景) chunks.push(v.档案.身份与背景);
+                if (v.档案.肉体外貌实况) chunks.push(v.档案.肉体外貌实况);
+            }
+            if (v.穿搭 && typeof v.穿搭 === "object") {
+                Object.values(v.穿搭).forEach(val => { if (val) chunks.push(val); });
+            }
+            if (v.实况 && typeof v.实况 === "object") {
+                ["当前姿势", "当前衣装", "骚口实况", "胸部实况", "小穴实况", "子宫实况", "屁眼实况"].forEach(k => {
+                    if (v.实况[k]) chunks.push(v.实况[k]);
+                });
+            }
+            if (v.按钮详情 && typeof v.按钮详情 === "object") {
+                ["身份与背景", "肉体外貌", "当前姿势", "骚口实况", "胸部实况", "小穴实况", "子宫实况", "屁眼实况", "穿搭_头饰", "穿搭_胸罩", "穿搭_上衣", "穿搭_内裤", "穿搭_下装", "穿搭_丝袜", "穿搭_鞋子"].forEach(k => {
+                    const b = v.按钮详情[k];
+                    if (b) {
+                        if (b.stage) chunks.push(b.stage);
+                        if (b.desc) chunks.push(b.desc);
+                    }
+                });
+            }
+            return stripFakeAccessoryAndMetaphorWords(chunks.filter(Boolean).join(" \n "));
+        }
+
         let _appearMemoCache = { sig: "", res: null };
         function extractTargetCurrentAppearance(u, v, customHint = "") {
             const ctx = safeCtx(), chatArr = ctx?.chat || [];
             const targetName = safeStr(u || detectProtagonistName(v) || "主角").trim();
             const curGender = detectProtagonistGender(targetName, v);
             const regStageImg = /第[一二三四五六1-6]阶段：[^\n<]*\s*<image>[\s\S]*?<\/image>|<image>[\s\S]*?<\/image>|image###[\s\S]*?###/gi;
-            // ★ 彻底剥离生图时临时注入的 image### 块再计算签名，防止生图期间和生图后外貌乱跳！
             const cleanLastMes = safeStr(chatArr[chatArr.length - 1]?.mes).replace(regStageImg, "").trim();
-            const wearSigStr = v?.穿搭 ? Object.values(v.穿搭).join("") : "";
-            const memoSig = `${targetName}_${curGender}_${chatArr.length}_${cleanLastMes.length}_${safeStr(v?.档案?.种族与体质)}_${safeStr(v?.档案?.肉体外貌实况)}_${wearSigStr}_${customHint}`;
+            const allBtnDescSnap = collectAllActiveButtonDescriptionsForAppearance(v);
+            const memoSig = `${targetName}_${curGender}_${chatArr.length}_${cleanLastMes.length}_${allBtnDescSnap.length}_${allBtnDescSnap.slice(0, 80)}_${allBtnDescSnap.slice(-80)}_${customHint}`;
             if (!customHint && _appearMemoCache.sig === memoSig && _appearMemoCache.res) {
                 return _appearMemoCache.res;
             }
@@ -2592,26 +2568,17 @@
                 relevantChunks.push(stripFakeAccessoryAndMetaphorWords(safeStr(ctx?.power_user?.persona_description).slice(0, 600)));
             }
 
-            if (matchedArchiveBlock) {
-                let cleanArchive = stripFakeAccessoryAndMetaphorWords(matchedArchiveBlock);
-                if (isCurrentlyRevertedToHuman) {
-                    cleanArchive = cleanArchive.replace(/\*\s*\*\*恶鬼真身[\s\S]*?(?=\*\s*\*\*|$)/g, "");
-                }
-                relevantChunks.push(cleanArchive);
-            }
-
+            // 1. 先放入最新楼层正文（已彻底剔除多档案列表，防止未选中的其他角色档案干扰！）
             const recentFloors = activeStateStartFloor > 0
                 ? chatArr.slice(activeStateStartFloor)
-                : [...chatArr.slice(0, Math.min(3, chatArr.length)), ...chatArr.slice(Math.max(3, chatArr.length - 6))];
+                : chatArr.slice(Math.max(0, chatArr.length - 4));
 
             recentFloors.forEach((m) => {
                 let raw = safeStr(m?.mes)
                     .replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>|<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, "")
                     .replace(regStageImg, "")
-                    .replace(/<item_[^>]+>[\s\S]*?<\/item_[^>]+>/gi, "");
-                if (morphedAliasName || archiveBlocksCount(chatArr) > 1) {
-                    raw = raw.replace(/###\s*【[^】]*】[\s\S]*?(?=\*\*\*|---|###|<\/game>|$)/g, "");
-                }
+                    .replace(/<item_[^>]+>[\s\S]*?<\/item_[^>]+>/gi, "")
+                    .replace(/(?:###|##|\*\*)?\s*【[^】\n]{2,40}】[\s\S]*?(?=\*\*\*|---|###|##\s*【|\n\s*【(?:档案|编号|鬼怪|角色)|<\/game>|$)/g, "");
                 if (!raw) return;
                 const sents = raw.split(/[。！？；\n\r]+/);
                 sents.forEach(s => {
@@ -2624,16 +2591,21 @@
                 });
             });
 
-            function archiveBlocksCount(arr) {
-                const txt = (arr || []).map(x => safeStr(x?.mes)).join("\n");
-                return (txt.match(/###\s*【[^】]*】/g) || []).length;
+            // 2. 放入匹配到的当前变身档案块（放在普通聊天后面，权重更高！）
+            if (matchedArchiveBlock) {
+                let cleanArchive = stripFakeAccessoryAndMetaphorWords(matchedArchiveBlock);
+                if (isCurrentlyRevertedToHuman) {
+                    cleanArchive = cleanArchive.replace(/\*\s*\*\*恶鬼真身[\s\S]*?(?=\*\s*\*\*|$)/g, "");
+                }
+                relevantChunks.push(cleanArchive);
             }
 
-            if (!isCurrentlyRevertedToHuman && !morphedAliasName) {
-                if (v?.档案?.种族与体质) relevantChunks.push(stripFakeAccessoryAndMetaphorWords(v.档案.种族与体质));
-                if (v?.档案?.肉体外貌实况) relevantChunks.push(stripFakeAccessoryAndMetaphorWords(v.档案.肉体外貌实况));
+            // 3. ★ 最高优先级：放入状态栏各按钮当前的实时描述（肉体外貌、身份、胸部、小穴、穿搭按钮描述）！
+            // 因为 pickLatestMatch 取最后一次匹配，放在末尾即可确保按钮描述拥有绝对决定权！
+            if (!isCurrentlyRevertedToHuman && allBtnDescSnap) {
+                relevantChunks.push(allBtnDescSnap);
             }
-            if (customHint) relevantChunks.push(customHint + " " + customHint);
+            if (customHint) relevantChunks.push(customHint + " \n " + customHint);
 
             const fullText = relevantChunks.join(" \n ");
 
@@ -2868,7 +2840,6 @@
         }
 
         function getLockedAppearanceTags(u, v) {
-            // ★ 全自动零手动锁：平时 100% 自动跟随最新正文提取；仅在【生图进行中】冻结几秒防止生图临时文本干扰，生完图依然保持最新准确形象！
             if (v?.档案?.锁定外貌DNA && safeStr(v.档案.锁定外貌DNA).trim()) {
                 if (v.档案.手动锁死外貌Flag || isGeneratingImageBusy) {
                     const locked = safeStr(v.档案.锁定外貌DNA).trim();
@@ -3016,7 +2987,6 @@
             return sigs.size > 0 ? Array.from(sigs).sort().join("|") : "human";
         }
 
-        // ★ 新增：完整外观形态指纹（物种+解剖特征+发色+肤色+体型），用于本局连续变身（如从蛛音变成白桃或琥珀，或变回人类）时精准识别并自动换图！
         function getFullMorphFormSignature(dnaStr) {
             const s = safeStr(dnaStr).toLowerCase();
             const sp = getSpeciesSignatureFromDna(s);
@@ -3032,6 +3002,13 @@
             const rawInput = safeStr(chineseInput).trim();
             const isOldEnglishTagsOnly = /^[a-zA-Z0-9,\s_-]+$/.test(rawInput);
 
+            // ★ 关键修复：如果点的是「🎯提取当前形象」，立刻解除手动锁死 Flag，让外貌重新跟随状态栏按钮描述与最新剧情自动更新！
+            if (isAutoExtractBtn && curVars.档案) {
+                curVars.档案.手动锁死外貌Flag = false;
+                curVars.档案.锁定外貌DNA = "";
+            }
+            _appearMemoCache = { sig: "", res: null };
+
             const userCustomHint = isAutoExtractBtn ? "" : (isOldEnglishTagsOnly ? "" : rawInput);
             const autoObj = extractTargetCurrentAppearance(u, curVars, userCustomHint);
             let finalTags = autoObj.tags;
@@ -3046,17 +3023,17 @@
 
             if (userSettings.apiUrl && userSettings.apiKey && (isAutoExtractBtn || !isOldEnglishTagsOnly)) {
                 try {
-                    const firstChat = (ctx?.chat || []).slice(0, 2).map(m => safeStr(m?.mes)).join("\n").slice(0, 900);
-                    const recentChat = (ctx?.chat || []).slice(-3).map(m => safeStr(m?.mes)).join("\n").slice(-1200);
-                    showToast(`🤖 正在通过 AI 深度提炼【${u}】的物种形态与主要特征 Tag...`, "info", 3000);
+                    const btnDescContext = collectAllActiveButtonDescriptionsForAppearance(curVars).slice(-1400);
+                    const recentChat = (ctx?.chat || []).slice(-2).map(m => safeStr(m?.mes)).join("\n").slice(-1000);
+                    showToast(`🤖 正在结合状态栏按钮描述深度提炼【${u}】的外貌 Tag...`, "info", 3000);
                     const { reply } = await callSubApiRaw(
-                        `Extract ONLY the target character 【${u}】's CURRENT physical appearance and species morphology from the text into Danbooru English tags separated by commas.
+                        `Extract ONLY the target character 【${u}】's CURRENT physical appearance and species morphology into Danbooru English tags separated by commas.
 CRITICAL RULES:
-1. If she is a ghost/spirit/apparition (鬼怪/女鬼/幽灵), output "ghost girl, supernatural apparition, pale skin" — DO NOT output succubus unless she explicitly has demon horns and a succubus tail!
-2. If she has special monster traits (multiple eyes on body, spider web threads, double pussy, translucent see-through abdomen, oni horns, sharp fangs, long tongue, black claws, monster tail), include their exact English tags!
-3. Include hair color, hairstyle, eye color, breast size (specify "petite, loli, flat chest, small breasts" if she is a loli/petite), skin tone.
+1. Prioritize the "Current Status Bar Button Descriptions" above everything else!
+2. If she has special traits (four breasts, double pussy, plant girl flower petals/vines, ghost girl, multiple eyes on body, spider web threads, translucent abdomen, horns, sharp fangs, long tongue, snake tail), include their exact English tags!
+3. Include hair color, hairstyle, eye color, breast size (specify "petite, loli, flat chest, small breasts" if loli/petite), skin tone.
 4. Ignore other NPCs! Output ONLY comma-separated English tags.`,
-                        `Target Character: ${u}\nUser Custom Hint: ${userCustomHint || "无"}\nOpening Setting:\n${firstChat}\nLatest Story Text:\n${recentChat}`
+                        `Target Character: ${u}\nUser Custom Hint: ${userCustomHint || "无"}\nCurrent Status Bar Button Descriptions:\n${btnDescContext}\nLatest Story Text:\n${recentChat}`
                     );
                     const clean = safeStr(reply).replace(/[\n\r"'`。！]/g, "").trim();
                     if (clean.length > 5) {
@@ -3070,11 +3047,10 @@ CRITICAL RULES:
             curVars.档案.锁定外貌DNA = finalTags;
             curVars.档案.当前提取形象摘要 = cnSum;
             curVars.档案._dnaLockedAtFloor = safeCtx()?.chat?.length || 0;
-            // ★ 防跳回锁2：无论是点「🎯提取当前形象」还是点「🔒锁定自定义」，只要主动提取成功，就锁定在本层，生图后绝不跳回！
-            curVars.档案.手动锁死外貌Flag = true;
+            // 只有点「🔒锁定自定义」时才锁死 Flag；点「🎯提取当前形象」保持自动跟随！
+            curVars.档案.手动锁死外貌Flag = !isAutoExtractBtn && Boolean(rawInput);
             userSettings.lockedAppearanceTags = finalTags;
 
-            // ★ 核心修复：提取新形象后，立即清空动态上下文缓存与未锁定的旧按钮文案缓存，让所有按钮的文字描述立刻按新形象刷新！
             _dynCtxCache = { sig: "", res: null };
             _appearMemoCache = { sig: "", res: null };
             if (curVars.按钮详情 && typeof curVars.按钮详情 === "object") {
@@ -3090,9 +3066,8 @@ CRITICAL RULES:
             saveSettings();
             latestStatus = getFallbackData();
             renderBody();
-            showToast(`✅ 【${u}】当前主要特征已识别并同步刷新全部按钮描述：${cnSum}`, "success", 3800);
+            showToast(`✅ 【${u}】当前外貌特征已按按钮描述精准识别：${cnSum}`, "success", 3800);
             return finalTags;
-
         }
 
         function getProtagScopedImgKey(editKey, stageNum) {
@@ -3106,12 +3081,17 @@ CRITICAL RULES:
             return `global_pin_${editKey}_${stageNum}`;
         }
 
-        // 🎨 将任意按钮当前的详细描述 (item.desc) 实时提取转化为该按钮专属的画面动作/服饰/异化 Danbooru 英文 Tag
-        // 🌐 终极全通用【按钮实时文本描述 ➔ 绘画 Tag 直译与冲突覆盖引擎】
-        // 无论主角是鬼怪、植物娘、虫娘、史莱姆、龙娘还是任意改造，直接逐词解析当前按钮描述 (descText)，ボタン写什么就画什么！
+        // =========================================================================
+        // 🎨 全按钮「所见即所得」描述直译生图引擎（按钮描述写什么，直接转成最高权重英文Tag画什么！）
+        // =========================================================================
         function translateAnyButtonDescToVisualTags(descText, partKey = "", fullCharDna = "") {
-            const s = stripFakeAccessoryAndMetaphorWords(`${safeStr(descText)} ${safeStr(fullCharDna)}`);
-            const btnOnlyText = stripFakeAccessoryAndMetaphorWords(safeStr(descText));
+            // 清洗掉无效元数据，只保留按钮自身的真实外观、器官、动作、服饰与状态描述
+            const cleanBtnText = stripFakeAccessoryAndMetaphorWords(safeStr(descText))
+                .replace(/💭【[^】]*实时心声】[：:\s]*[\s\S]*$/g, "")
+                .replace(/📊\s*【[^】]*统计】[：:\s]*[^\n]*/g, "")
+                .replace(/（畸变点：[^）]*）/g, "");
+            const s = `${cleanBtnText} ${stripFakeAccessoryAndMetaphorWords(safeStr(fullCharDna))}`;
+            const btnOnlyText = cleanBtnText;
             const key = String(partKey || "");
 
             const posTags = [];
@@ -3128,11 +3108,10 @@ CRITICAL RULES:
                 if (negBanStr) extraNegTags.push(negBanStr);
             };
 
-            // 1. 扫描【胸部/乳房/乳头】在按钮描述中的真实形态（精准控制 3乳 / 4乳 / 6乳 数量，绝不越界多画！）
+            // 1. 直接从按钮描述中提取【乳房/胸部/乳头/乳汁】的一切细节描述
             if (key === "胸部实况" || key === "穿搭_胸罩" || key === "穿搭_上衣" || key === "穿刺环饰" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
                 if (/(?:四个|四颗|两对|4个|四只|双排)[^。！？；\n]{0,12}(?:奶|乳|胸|峰)|四乳|four breasts|two pairs of breasts/i.test(s)) {
-                    // ★ 精准 4 乳锁：去掉会诱发 6 乳的 multiple breasts / extra breasts，并在负面词里严禁 6 乳！
-                    addMut("1.55::four breasts, two pairs of breasts, 4 breasts, 4 nipples::",
+                    addMut("1.6::four breasts, two pairs of breasts, 4 breasts, 4 nipples::",
                         /flat chest|tiny small breasts|small flat pink nipple buds|petite small breasts|petite modest breasts|no cleavage|multiple breasts|extra breasts/gi,
                         /huge breasts|gigantic breasts|large breasts|deep cleavage|bad anatomy|extra breasts|extra nipples/gi,
                         "six breasts, 6 breasts, three pairs of breasts, rows of breasts, 6 nipples, 3 breasts");
@@ -3146,28 +3125,35 @@ CRITICAL RULES:
                         /huge breasts|gigantic breasts|large breasts|deep cleavage|bad anatomy/gi,
                         "four breasts, 4 breasts, six breasts, 6 breasts, two pairs of breasts");
                 }
-                if (/爆乳|超乳|硕大.*(?:奶|乳|双峰)|巨型.*(?:奶|乳)|沉甸甸.*奶袋|huge breasts/i.test(btnOnlyText)) {
-                    addMut("1.7::huge breasts, gigantic breasts, plump heavy breasts, deep cleavage::",
+                if (/爆乳|超乳|硕大.*(?:奶|乳|双峰)|巨型.*(?:奶|乳)|沉重.*奶袋|奶袋|huge breasts/i.test(btnOnlyText)) {
+                    addMut("1.65::huge breasts, gigantic breasts, plump heavy breasts, deep cleavage::",
                         /flat chest|tiny small breasts|small flat pink nipple buds|petite small breasts|medium.*breasts|no cleavage/gi,
                         /huge breasts|gigantic breasts|large breasts|deep cleavage/gi);
-                } else if (/丰满|饱满|巨乳|丰乳|软弹.*乳肉|large breasts/i.test(btnOnlyText) && !/平坦|平胸|小巧玲珑的少女胸口/.test(btnOnlyText)) {
-                    addMut("1.5::large plump breasts, full breasts, soft cleavage::",
+                } else if (/丰满|饱满|巨乳|丰乳|软弹.*乳肉|沉甸甸|large breasts/i.test(btnOnlyText) && !/平坦|平胸|小巧玲珑的少女胸口/.test(btnOnlyText)) {
+                    addMut("1.55::large plump breasts, full breasts, soft cleavage::",
                         /flat chest|tiny small breasts|small flat pink nipple buds|no cleavage/gi,
                         /large breasts|deep cleavage/gi);
+                } else if (/平坦.*胸口|平胸|贫乳|小巧玲珑.*乳蕾|微乳/i.test(btnOnlyText)) {
+                    posTags.push("1.55::flat chest, petite small breasts, tiny pink nipple buds::");
                 }
+                if (/紫黑.*乳晕|宽大.*乳晕|暗粉紫.*乳晕/i.test(btnOnlyText)) posTags.push("1.5::wide dark purple areola, swollen puffy nipples::");
+                else if (/充血挺立|硬如红豆|勃起.*乳头|肿大.*乳头/i.test(btnOnlyText)) posTags.push("1.5::erect puffy pink nipples, flushed breasts::");
+                if (/青紫色.*静脉|泌乳静脉|青筋/i.test(btnOnlyText)) posTags.push("visible blue veins on breasts");
                 if (/多个乳头|四颗乳头|满胸.*乳头|multiple nipples/i.test(btnOnlyText)) {
                     addMut("1.8::multiple nipples, extra nipples on breasts::", null, /bad anatomy/gi);
                 }
-                if (/泌乳|喷乳|漏奶|狂飙.*乳|奶水|初乳|lactation/i.test(btnOnlyText) && !/未泌乳|安静未泌乳|0ml/.test(btnOnlyText)) {
-                    posTags.push("1.6::lactation, breast milk squirting from nipples, milk droplets::");
+                if (/狂飙.*乳|花洒.*喷|喷溅.*浓奶|飙射.*乳汁/i.test(btnOnlyText)) {
+                    posTags.push("1.7::lactation, breast milk squirting out in arcs from nipples, milk splashes::");
+                } else if (/泌乳|喷乳|漏奶|渗出.*初乳|渗出.*乳汁|奶水|lactation/i.test(btnOnlyText) && !/未泌乳|安静未泌乳|蓄乳 0\//.test(btnOnlyText)) {
+                    posTags.push("1.55::lactation, milk droplets leaking from erect nipples::");
                 }
                 if (/纺丝腺|吐.*淫丝|粉红.*淫丝/i.test(btnOnlyText)) {
                     addMut("1.7::sticky pink spider web threads oozing from erect nipples, glowing spinneret nipples::");
                 }
             }
 
-            // 2. 扫描【小穴/阴蒂/会阴】在按钮描述中的真实形态
-            if (key === "小穴实况" || key === "阴蒂尿道" || key === "穿搭_内裤" || key === "体内道具" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
+            // 2. 直接从按钮描述中提取【小穴/阴唇/阴道内壁/阴蒂/尿道】的一切细节描述
+            if (key === "小穴实况" || key === "阴蒂尿道" || key === "穿搭_内裤" || key === "体内道具" || key === "破瓜纪念" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
                 if (/(?:全身|浑身|遍布|布满|到处都是|密密麻麻|无数)[^。！？；\n]{0,12}(?:小穴|肉穴|淫穴|蜜穴|肉洞|阴道)|multiple pussies/i.test(s)) {
                     addMut("2.0::multiple pussies all over body, covered in vaginas, many wet orifices on skin, body horror::", null, /bad anatomy/gi);
                 } else if (/(?:三个|四个|五个|六个|一排|多个)[^。！？；\n]{0,10}(?:小穴|肉穴|淫穴|蜜穴|阴道)|multiple vaginas/i.test(s)) {
@@ -3175,8 +3161,17 @@ CRITICAL RULES:
                 } else if (/两个[^。！？；\n]{0,10}小穴|上下.*两个.*穴|并排.*两个.*穴|双穴|double pussy/i.test(s)) {
                     addMut("1.9::double pussy, two vertically stacked vaginas on perineum, two distinct vulva slits one above the other::", null, /bad anatomy/gi);
                 }
-                if (/白虎|半根阴毛都没有|连一根阴毛都没有|无毛/i.test(btnOnlyText)) {
-                    posTags.push("hairless pussy, smooth pudendum");
+                if (/白虎|半根阴毛都没有|连一根阴毛都没有|无毛|光洁外阴/i.test(btnOnlyText)) {
+                    posTags.push("1.5::hairless pussy, smooth pudendum::");
+                }
+                if (/一线天|严丝合缝.*紧闭|紧致初鲍|处子粘膜干爽/i.test(btnOnlyText)) {
+                    posTags.push("1.6::tightly closed pink virgin pussy slit, neat labia::");
+                } else if (/外翻黑木耳|紫红色.*外翻|肥厚外翻/i.test(btnOnlyText)) {
+                    posTags.push("1.6::swollen dark-purple everted labia minora, spread labia::");
+                } else if (/肉壁脱垂|漏精肉壶|翻卷垂挂在穴口外|拳头大小.*烂肉坑|合不拢的鲜红肉洞/i.test(btnOnlyText)) {
+                    posTags.push("1.7::gaping open vaginal hole, everted red vaginal folds, heavy cum overflowing from gaping pussy::");
+                } else if (/撑开一道湿润.*缝|充血红肿.*翻卷|透明拉丝爱液/i.test(btnOnlyText)) {
+                    posTags.push("1.55::slightly parted swollen pink labia, dripping clear vaginal fluid strings::");
                 }
                 if (/花瓣.*穴|花蕊.*穴|食人花.*穴|植物.*穴/i.test(btnOnlyText)) {
                     addMut("1.7::flower petal labia, blooming floral vulva, dripping golden floral nectar, plant girl anatomy::");
@@ -3184,9 +3179,46 @@ CRITICAL RULES:
                 if (/肉丝褶皱|吸精肉丝|吸盘.*内壁|上千颗.*肉芽/i.test(btnOnlyText)) {
                     addMut("1.65::writhing pink meat tendrils and suction cups inside vaginal opening::");
                 }
+                if (/雌性小肉棒|阴蒂.*肥大如龟头|拇指粗.*阴蒂/i.test(btnOnlyText)) {
+                    posTags.push("1.7::clitoris hypertrophy, huge swollen erect clitoris like tiny penis::");
+                } else if (/阴蒂.*充血挺立|饱满通红的小肉豆|阴蒂.*肥大勃起/i.test(btnOnlyText)) {
+                    posTags.push("1.55::swollen erect red clitoris peeking out of hood::");
+                }
+                if (/尿道口.*扩成.*肉洞|喷泉孔|狂喷失禁|飙射.*金黄热尿|失禁漏尿/i.test(btnOnlyText) && !/失禁 0 次|失禁度 0|绝不会.*漏尿/.test(btnOnlyText)) {
+                    posTags.push("1.65::dilated urethral opening, squirting yellow urine stream, urinary incontinence::");
+                }
             }
 
-            // 3. 扫描【嘴巴/舌头/牙齿】在按钮描述中的真实形态
+            // 3. 直接从按钮描述中提取【子宫/宫颈口/卵巢/受精断面/孕肚】的一切细节描述
+            if (key === "子宫实况" || key === "排卵周期" || key === "受精断面" || key === "孕肚进度" || key === "精液归属") {
+                if (/子宫颈.*掉出体外|悬挂在.*穴口外|重度子宫脱垂外翻/i.test(btnOnlyText)) {
+                    posTags.push("1.75::severe uterine prolapse, swollen purple-red cervix hanging outside gaping vaginal opening::");
+                } else if (/重度宫颈脱垂|掉到了距离外阴穴口不到两指|海葵.*大嘴/i.test(btnOnlyText)) {
+                    posTags.push("1.65::cervical prolapse, swollen cervix dropping down to vaginal entrance, open cervical os::");
+                } else if (/锁精小嘴|宫口.*张开|浓精.*锁在.*宫腔/i.test(btnOnlyText)) {
+                    posTags.push("1.6::dilated open cervix mouth, uterus filled with thick white semen::");
+                }
+                if (/透明薄膜包囊|完全透明化病变|透过.*肚皮.*看见/i.test(btnOnlyText)) {
+                    addMut("1.8::translucent see-through abdomen skin showing internal womb filled with cum and writhing tentacles::");
+                } else if (/小手小脚或触手.*轮廓|高高挺起|吹气的气球|显怀大肚/i.test(btnOnlyText)) {
+                    posTags.push("1.65::heavily distended pregnant-like cum belly, bulging round abdomen::");
+                } else if (/微凸弧线|塞了水球一样圆润鼓起/i.test(btnOnlyText)) {
+                    posTags.push("1.5::slightly swollen round cum-filled lower belly::");
+                }
+            }
+
+            // 4. 直接从按钮描述中提取【屁眼/后庭/直肠】的一切细节描述
+            if (key === "屁眼实况" || key === "穿搭_下装") {
+                if (/重度脱肛|直肠肉管.*翻出体外|脱肛红肉玫瑰|轻度脱肛翻肉/i.test(btnOnlyText)) {
+                    posTags.push("1.75::anal prolapse, everted red rectal rosebud mucosa protruding from gaping anus, dripping cum::");
+                } else if (/黑乎乎、合不拢的圆洞|后庭.*松弛失守/i.test(btnOnlyText)) {
+                    posTags.push("1.65::gaping open anal hole, relaxed anal sphincter, visible red rectum interior::");
+                } else if (/褶皱.*磨平|微微张合透气|充血红肿.*红掌印/i.test(btnOnlyText)) {
+                    posTags.push("1.55::swollen red anal pucker, red spank handprints on plump butt cheeks, wet lube sheen::");
+                }
+            }
+
+            // 5. 直接从按钮描述中提取【嘴巴/舌头/牙齿/表情】的一切细节描述
             if (key === "骚口实况" || key === "穿搭_头饰" || key === "内心独白" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
                 if (/(?:两个|两张|双|多张)[^。！？；\n]{0,8}(?:嘴|嘴巴|口器|骚口)|multiple mouths/i.test(btnOnlyText)) {
                     addMut("1.85::multiple mouths, two mouths, extra mouth::", null, /bad anatomy/gi);
@@ -3195,13 +3227,21 @@ CRITICAL RULES:
                     addMut("1.75::long forked tongue, multiple tongues::");
                 } else if (/三十公分.*舌|极长.*舌|肉刺.*舌|猩红长舌/i.test(btnOnlyText)) {
                     addMut("1.75::extremely long monster red tongue, barbed tongue::");
+                } else if (/淫舌无力垂在唇外|舌尖.*外吐|舌根.*下压平铺/i.test(btnOnlyText)) {
+                    posTags.push("1.55::protruding wet pink tongue, drooling saliva strings::");
+                }
+                if (/下颚.*脱臼|圆形接精漏斗|合不拢的深喉榨精肉壶/i.test(btnOnlyText)) {
+                    posTags.push("1.65::wide open gaping mouth, dislocated jaw, overflowing thick white cum and saliva strings::");
                 }
                 if (/三排.*尖牙|密密麻麻.*尖牙|裂口|撕裂到耳根|小虎牙|尖牙/i.test(btnOnlyText)) {
                     addMut("1.65::sharp fangs, monster teeth::");
                 }
+                if (/阿嘿颜|翻白眼|眼珠.*翻白/i.test(btnOnlyText)) {
+                    posTags.push("1.6::ahegao, rolled back eyes, heart-shaped pupils, heavy blush::");
+                }
             }
 
-            // 4. 扫描【全身通用种族材质：植物娘/鬼怪/虫娘/史莱姆/龙娘/机械娘/多眼/透视肚皮】
+            // 6. 直接从按钮描述中提取【全身通用种族材质：植物娘/鬼怪/虫娘/史莱姆/龙娘/机械娘/多眼/透视肚皮】
             if (/植物娘|花妖|树精|藤蔓|花瓣|花冠|花蜜|叶|alraune|plant girl/i.test(s)) {
                 posTags.push("1.6::alraune, plant monster girl, blooming flower petals on body, writhing green vine tendrils, leaf ornaments, glistening floral nectar::");
             }
@@ -3215,24 +3255,47 @@ CRITICAL RULES:
                 addMut("1.85::stomach mouth, vertical mouth on belly with tongue and teeth::", null, /bad anatomy/gi);
             }
 
-            // 5. 扫描按钮描述中的实时穿搭与动作（如滑落的大卫衣、洛丽塔裙、红框眼镜、跪姿等）
-            if (/灰色.*卫衣.*滑落|大得离谱.*卫衣/.test(btnOnlyText) && !/小穴|子宫|屁眼|阴蒂|鞋子|丝袜/.test(key)) {
-                posTags.push("oversized grey hoodie slipping off narrow shoulders over gothic lolita dress");
-            }
-            if (/跪坐在.*水泥地板|双膝.*跪倒/.test(btnOnlyText) && /姿势|外貌|身份/.test(key)) {
-                posTags.push("kneeling on cold floor");
-            }
-            if (/连内裤都不穿|无内裤|真空/.test(btnOnlyText) && /内裤|下装|外貌|姿势/.test(key)) {
-                posTags.push("no panties, bottomless under skirt");
-            }
+            // 7. 直接从按钮描述中提取【实时穿搭、道具、烙印与身体姿势】
+            const customWearRules = [
+                [/灰色.*卫衣.*滑落|大得离谱.*卫衣/, "oversized grey hoodie slipping off narrow shoulders"],
+                [/浅粉色连帽卫衣|粉色.*卫衣/, "oversized light pink hoodie"],
+                [/哥特|黑蕾丝.*蓬蓬裙|洛丽塔/, "gothic lolita black lace frilly dress"],
+                [/死库水|蓝色旧校服泳衣/, "sukumizu, school swimsuit, wet clothes"],
+                [/露脐.*运动小背心/, "cropped white sports tank top"],
+                [/牛仔热裤|牛仔短裤/, "tight denim micro shorts"],
+                [/水手服|JK制服/, "pleated sailor uniform"],
+                [/湿透白衬衫|纽扣崩飞.*衬衫/, "sweat-soaked translucent white dress shirt, popped buttons"],
+                [/半透明.*薄纱.*睡裙|吊带睡裙/, "see-through sheer lace nightgown"],
+                [/黑色蕾丝开裆内裤|开裆内裤|镂空内裤/, "black lace crotchless panties exposing wet vulva"],
+                [/连内裤都不穿|无内裤|真空/, "no panties, bottomless under skirt"],
+                [/贞操带/, "locked leather chastity belt"],
+                [/撕开大洞.*黑丝|破洞黑丝/, "torn sheer black pantyhose with large ripped holes"],
+                [/白丝|白色.*长筒袜|洁白及膝袜/, "white kneehigh stockings, white thighhighs"],
+                [/黑丝|黑色.*丝袜|连裤黑丝/, "sheer black thighhigh stockings"],
+                [/赤足|光着.*脚|裸足/, "barefoot, delicate bare feet, pink soles"],
+                [/高跟鞋|细高跟/, "glossy stiletto high heels"],
+                [/开口环|口球/, "ring gag in mouth, drooling saliva"],
+                [/锁链项圈|皮革.*项圈|铭牌.*项圈/, "leather bondage collar with metal chain leash"],
+                [/铃铛乳环|银色乳环|乳环/, "silver nipple rings with tiny dangling bells piercing nipples"],
+                [/正字涂鸦|写满.*正字|母畜价目表/, "black tally marks and lewd body writing calligraphy on skin"],
+                [/魅魔淫纹|紫红.*淫纹|心形.*淫纹/, "glowing purple-pink heart-shaped womb tattoo on lower abdomen"],
+                [/无线跳蛋|粉红.*跳蛋/, "pink wireless vibrator egg inserted in pussy with pull cord hanging out"],
+                [/跪坐在.*地板|双膝.*跪倒|温顺跪姿/, "kneeling on floor"],
+                [/四肢着地.*爬行|母狗.*跪爬/, "crawling on all fours, doggystyle posture"],
+                [/M字大开|M字开腿|双腿大敞/, "M-legs spread wide open exposing crotch"],
+                [/瘫软在原地|脱力瘫软/, "sprawled weakly on floor, exhausted panting"]
+            ];
+            customWearRules.forEach(([reg, enTag]) => {
+                if (reg.test(btnOnlyText)) posTags.push(`1.55::${enTag}::`);
+            });
 
-            // 6. 如果玩家在按钮的「自定义编辑框」里手写了英文 Tag，原样提取！
+            // 8. 如果玩家在按钮的「自定义编辑框」或描述里手写了英文 Tag，原样提取并赋予高权重！
             const customUserDesc = `${safeStr(curVars?.按钮详情?.[key]?.desc)} ${safeStr(curVars?.按钮详情?.[key]?.stage)}`;
             const customEnList = customUserDesc.match(/[a-zA-Z0-9_\s:()-]{4,}/g) || [];
             customEnList.forEach(enStr => {
                 const trimEn = enStr.trim();
-                if (trimEn.length >= 4 && !/^(?:http|data|webp|true|false|null)$/i.test(trimEn)) {
-                    posTags.push(`1.6::${trimEn}::`);
+                if (trimEn.length >= 4 && !/^(?:http|data|webp|true|false|null|LV\.\d+|BPM|MAX)$/i.test(trimEn)) {
+                    posTags.push(`1.65::${trimEn}::`);
                 }
             });
 
@@ -3248,7 +3311,6 @@ CRITICAL RULES:
         function extractExtraSceneTagsFromButtonDesc(descText, partKey = "") {
             return translateAnyButtonDescToVisualTags(descText, partKey, "").posBoostStr;
         }
-
         function buildDanbooruImageBlock(item, curStageIdx, u) {
             const key = item.editKey || "custom";
             const stageNames = ["初绽完好", "初步驯化", "深度开发", "括约肌松弛", "重度畸变", "彻底崩坏"];
@@ -3280,14 +3342,16 @@ CRITICAL RULES:
             const selfMorphExcludeClean = contextStr.replace(/(?:肉棒和蛋蛋|我的肉棒)[^。！？；\n]{0,20}(?:缩进|消失|融化|没了)|(?:需要|必须|靠|吞吐|没有)[^。！？；\n]{0,15}肉棒[^。！？；\n]{0,15}(?:插入|活命|活下去|填塞)/g, "");
             const hasActiveSexInScene = !isPureInitialClean && totalSexCntNow > 0 && /(?:肉棒|阳具|龟头|阴茎|巨物).{0,12}(?:正插在|捅入|抽插着|顶入|没入|贯穿|深喉)|(?:正在|狠狠|挺腰|按在身下).{0,8}(?:内射|口交|肛交|乳交|足交|抽插|侵犯|轮奸)/.test(selfMorphExcludeClean);
 
-            // ★ 核心升级：直接编译当前按钮的完整描述 (item.desc)，获取按钮专属的画面Tag，并获取需要从默认模板和负面词中剔除的冲突项！
+            // ★ 核心升级：直接把当前按钮的完整描述 (item.desc + 用户自定义描述) 直译成最高权重的画面 Tag！
             const dnaLow = fullCharDna.toLowerCase();
             const isMaleProtagNow = /\b(?:1boy|male focus|flat male chest)\b/.test(dnaLow) && !/\b(?:1girl|loli|breasts)\b/.test(dnaLow);
             const btnSpecificDesc = `${safeStr(item.rawKey)} ${safeStr(item.desc)} ${safeStr(curVars.按钮详情?.[key]?.desc)} ${safeStr(curVars.按钮详情?.[key]?.stage)}`;
             const btnVisual = translateAnyButtonDescToVisualTags(btnSpecificDesc, key, fullCharDna);
             const btnMutTagStr = btnVisual.posBoostStr ? ", " + btnVisual.posBoostStr : "";
 
-            // 自动清洗默认模板与负面词中与按钮描述冲突的词（比如按钮写了四个奶，就彻底剔除模板里的 flat chest 和负面词里的 huge breasts / bad anatomy！）
+            // 提取按钮描述中的纯客观视觉句，放入 <image_think> 强制指导智绘姬严格按按钮描述作画！
+            const rawBtnVisualSummary = safeStr(item.desc).split("💭")[0].replace(/\s+/g, " ").slice(0, 260);
+
             const sanitizeTemplateByBtnDesc = (tplStr) => {
                 let res = safeStr(tplStr);
                 btnVisual.removeFromTemplateRegs.forEach(reg => { res = res.replace(reg, ""); });
@@ -3463,7 +3527,7 @@ CRITICAL RULES:
                 const cfg = holePresets[key];
                 const tag = sanitizeTemplateByBtnDesc(cfg.tags[idx]);
                 const cleanDna = sanitizeTemplateByBtnDesc(cfg.dna);
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部微距特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the extreme macro close-up of ${key}. DO NOT draw full body, head, face, hair, or limbs.\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, headless, extreme macro close-up, ${cleanDna}${liveExtra}, 2.0::${tag}${paraTag}, filling the entire frame, macro photography::;\nChar1 UC:2.2::${cfg.neg}, multiple views, zoomed out, text, watermark, ${anatomyNegWord}::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部微距特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}. ONLY draw the extreme macro close-up of ${key}. DO NOT draw full body, head, face, hair, or limbs.\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, headless, extreme macro close-up, ${cleanDna}${liveExtra}, 2.0::${tag}${paraTag}, filling the entire frame, macro photography::;\nChar1 UC:2.2::${cfg.neg}, multiple views, zoomed out, text, watermark, ${anatomyNegWord}::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             const cnWearToEnTags = (cnStr, fallbackEn) => {
@@ -3570,14 +3634,15 @@ CRITICAL RULES:
                 return matched.length ? matched.join(", ") : fallbackEn;
             };
 
-            const wearHeadTxt = cnWearToEnTags(getWearStyleSignature("穿搭_头饰", curVars), "neat hair ornament, clean bangs");
-            const wearNeckTxt = cnWearToEnTags(getWearStyleSignature("穿搭_颈部", curVars), "clean fair slender neck, neat collar, delicate collarbone");
-            const wearBraTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_胸罩", curVars), "white silk innerwear camisole, modest lace bra");
-            const wearTopTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_上衣", curVars), "neat fitted outer blouse shirt, tailored waist belt, sleeves");
-            const wearPanTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_内裤", curVars), "clean pure white cotton panties covering crotch");
-            const wearBotTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_下装", curVars), "neat pleated skirt hem");
-            const wearSocTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_丝袜", curVars), "bare smooth slender legs together");
-            const wearShoTxt  = cnWearToEnTags(getWearStyleSignature("穿搭_鞋子", curVars), "classic Mary Jane shoes");
+            // 直接同时读取穿搭签名与当前按钮自己的描述来转译服饰 Tag！
+            const wearHeadTxt = cnWearToEnTags(`${getWearStyleSignature("穿搭_头饰", curVars)} ${key === "穿搭_头饰" ? btnSpecificDesc : ""}`, "neat hair ornament, clean bangs");
+            const wearNeckTxt = cnWearToEnTags(`${getWearStyleSignature("穿搭_颈部", curVars)} ${key === "穿搭_颈部" ? btnSpecificDesc : ""}`, "clean fair slender neck, neat collar, delicate collarbone");
+            const wearBraTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_胸罩", curVars)} ${key === "穿搭_胸罩" ? btnSpecificDesc : ""}`, "white silk innerwear camisole, modest lace bra");
+            const wearTopTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_上衣", curVars)} ${key === "穿搭_上衣" ? btnSpecificDesc : ""}`, "neat fitted outer blouse shirt, tailored waist belt, sleeves");
+            const wearPanTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_内裤", curVars)} ${key === "穿搭_内裤" ? btnSpecificDesc : ""}`, "clean pure white cotton panties covering crotch");
+            const wearBotTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_下装", curVars)} ${key === "穿搭_下装" ? btnSpecificDesc : ""}`, "neat pleated skirt hem");
+            const wearSocTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_丝袜", curVars)} ${key === "穿搭_丝袜" ? btnSpecificDesc : ""}`, "bare smooth slender legs together");
+            const wearShoTxt  = cnWearToEnTags(`${getWearStyleSignature("穿搭_鞋子", curVars)} ${key === "穿搭_鞋子" ? btnSpecificDesc : ""}`, "classic Mary Jane shoes");
 
             const hasSpermInWomb = (safeNum(sp.子宫毫升) > 0 || safeNum(curVars.计数?.射精?.内射) > 0);
             const cumOnLegsTag = (idx >= 3 || (idx >= 2 && lowerCumMl >= 30)) ? ", thick white cum dripping down inner thighs" : (idx >= 1 ? ", glistening sweat sheen" : ", clean smooth surface");
@@ -3611,7 +3676,7 @@ CRITICAL RULES:
                 adaptiveShoeTag = `extreme macro close-up of semi-transparent melting slime feet and puddle base only, headless (${wearShoTxt})${cumOnShoesTag}`;
             }
 
-            const rawGrafTxt = `${safeStr(curVars.痕迹与标记?.体表痕迹)} ${safeStr(curVars.痕迹与标记?.公开涂鸦字迹)}`;
+            const rawGrafTxt = `${safeStr(curVars.痕迹与标记?.体表痕迹)} ${safeStr(curVars.痕迹与标记?.公开涂鸦字迹)} ${btnSpecificDesc}`;
             let graffitiTargetArea = "lower abdomen and inner thighs";
             if (/双乳|胸/.test(rawGrafTxt) && !/小腹/.test(rawGrafTxt)) graffitiTargetArea = `chest and ${bodyProf.breastByStage[0]}`;
             else if (/臀/.test(rawGrafTxt) && !/小腹/.test(rawGrafTxt)) graffitiTargetArea = "plump ass cheeks from behind";
@@ -3703,7 +3768,7 @@ CRITICAL RULES:
                 const pCfg = partCloseupPresets[key];
                 const isHeadPart = (key === "穿搭_头饰");
                 const cleanPartTag = sanitizeTemplateByBtnDesc(pCfg.tag);
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the tightly cropped close-up of ${key}. ${isHeadPart ? "Focus on head and hair ornament only, NO torso or chest." : "STRICTLY HEADLESS! DO NOT draw head, face, eyes, or hair!"}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, ${isHeadPart ? "headshot only" : "headless, out of frame head"}, extreme close-up, ${pCfg.dna}${liveExtra}, 2.0::${cleanPartTag}${paraTag}, filling the entire frame::;\nChar1 UC:2.4::${pCfg.neg}, zoomed out, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}. ONLY draw the tightly cropped close-up of ${key}. ${isHeadPart ? "Focus on head and hair ornament only, NO torso or chest." : "STRICTLY HEADLESS! DO NOT draw head, face, eyes, or hair!"}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, ${isHeadPart ? "headshot only" : "headless, out of frame head"}, extreme close-up, ${pCfg.dna}${liveExtra}, 2.0::${cleanPartTag}${paraTag}, filling the entire frame::;\nChar1 UC:2.4::${pCfg.neg}, zoomed out, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             if (key.startsWith("client_") || item.isClient) {
@@ -3724,7 +3789,7 @@ CRITICAL RULES:
                 ][idx];
                 const sexActByStage = adaptPoseForMonster(rawSexActByStage);
 
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}与恩客${cName}激烈交合实况]\n${THINK_OPEN}\n必须同时画出${u}与男性恩客【${cName}】正在发生激烈肉体交合，严格保持${u}的物种形态与体型胸围特征！\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, explicit sex, ${subjectTag}, ${maleDna}, ${dmgTag}1.8::${sexActByStage}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::, detailed dark background;\nChar1:1.5::${u}, ${fullCharDna}, ${sexActByStage}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:2.0::${bodyProf.negBreast}${monsterLegNegBoost}solo, 1girl only, no male, no penis, censorship, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}与恩客${cName}激烈交合实况]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}. 必须同时画出${u}与男性恩客【${cName}】正在发生激烈肉体交合！\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, explicit sex, ${subjectTag}, ${maleDna}, ${dmgTag}1.8::${sexActByStage}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::, detailed dark background;\nChar1:1.5::${u}, ${fullCharDna}, ${sexActByStage}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:2.0::${sanitizeNegByBtnDesc(bodyProf.negBreast)}${monsterLegNegBoost}solo, 1girl only, no male, no penis, censorship, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             if (key.startsWith("fetish_")) {
@@ -3764,7 +3829,7 @@ CRITICAL RULES:
                 fetScene = adaptPoseForMonster(fetScene);
 
                 const ucExtra = isMultiPerson ? "solo, 1girl only, " : "";
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的性癖发作特写_${fetName}]\n${THINK_OPEN}\n展现${u}的性癖【${fetName}】（第${curStageIdx}阶）。\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, ${dmgTag}1.8::${fetScene}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::;\nChar1:1.5::${u}, ${fullCharDna}, ${fetScene}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:1.8::${bodyProf.negBreast}${monsterLegNegBoost}${ucExtra}multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的性癖发作特写_${fetName}]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, ${dmgTag}1.8::${fetScene}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::;\nChar1:1.5::${u}, ${fullCharDna}, ${fetScene}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:1.8::${sanitizeNegByBtnDesc(bodyProf.negBreast)}${monsterLegNegBoost}${ucExtra}multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             const stageBodyProgression = [
@@ -3777,13 +3842,13 @@ CRITICAL RULES:
             ][idx];
 
             if ((key === "当前姿势" && hasActiveSexInScene) || key === "破瓜纪念" || key === "六孔总账") {
-                const poseRaw = safeStr(curVars.实况?.当前姿势);
+                const poseRaw = `${safeStr(curVars.实况?.当前姿势)} ${btnSpecificDesc}`;
                 let sexPoseTag = `${subjectTag}, 1boy, hetero, explicit sex, lying down with legs spread wide in M-legs holding ankles, muscular male holding huge erect penis thrusting into her gaping pussy and prolapsed cervix, distended cum-filled belly`;
                 if (/深喉|口|舌/.test(poseRaw)) sexPoseTag = `${subjectTag}, 1boy, hetero, deepthroat oral sex, ${tongueTypeTag} wrapped around huge erect penis, saliva and cum overflowing`;
                 else if (/跪|趴|母畜|后入/.test(poseRaw)) sexPoseTag = `${subjectTag}, 1boy, hetero, doggystyle from behind, arched back, huge erect penis penetrating dripping gaping pussy`;
                 sexPoseTag = adaptPoseForMonster(sexPoseTag);
 
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的实时交合姿势特写]\n${THINK_OPEN}\n当前正处于双人交合剧情中，必须同时画出男性肉棒与${u}的交合姿态！\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, explicit sex, ${subjectTag}, 1boy, ${dmgTag}1.8::${sexPoseTag}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::, dark background;\nChar1:1.5::${u}, ${fullCharDna}, ${sexPoseTag}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:2.0::${bodyProf.negBreast}${monsterLegNegBoost}solo, 1girl only, no male, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的实时交合姿势特写]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, explicit sex, ${subjectTag}, 1boy, ${dmgTag}1.8::${sexPoseTag}::, 1.5::masterpiece, best quality, ${fullCharDna}, ${faceExpr}${liveExtra}::, dark background;\nChar1:1.5::${u}, ${fullCharDna}, ${sexPoseTag}, ${faceExpr}${paraTag}${liveExtra}::|centers:C3;\nChar1 UC:2.0::${sanitizeNegByBtnDesc(bodyProf.negBreast)}${monsterLegNegBoost}solo, 1girl only, no male, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             const poseByStage = [
@@ -3816,16 +3881,16 @@ CRITICAL RULES:
                 "射精总账":   `cowboy shot, bukkake, covered in thick white cum from face to distended belly, cum overflowing from mouth and pussy, ${faceExpr}`,
                 "露出总账":   `full body shot, outdoor night alleyway by vending machine, exposing dripping wet gaping pussy, ${faceExpr}`
             };
-            const chosenTag = nonHoleMap[key] || `cowboy shot, ${stageBodyProgression}, ${faceExpr}`;
+            const chosenTag = sanitizeTemplateByBtnDesc(nonHoleMap[key] || `cowboy shot, ${stageBodyProgression}, ${faceExpr}`);
             const hasBoyInTag = chosenTag.includes("1boy");
             const soloOrDuo = hasBoyInTag ? `${subjectTag}, 1boy, hetero, monster sex` : `${subjectTag}, solo`;
             const ratingTag = (idx === 0 && !hasBoyInTag) ? "general, safe, fully clothed" : "NSFW";
             const noSexNegForStage1 = (!hasBoyInTag) ? "2.0::1boy, male, penis, sex, penetration, hetero, cum, semen, nude, naked, spread legs, M-legs::, " : "";
             const finalChosenTag = adaptPoseForMonster(chosenTag);
+            const cleanFullDna = sanitizeTemplateByBtnDesc(fullCharDna);
 
-            return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的${item.cleanTitle || key}第${curStageIdx}阶特写]\n${THINK_OPEN}\n展现${u}的${item.cleanTitle || key}（第${curStageIdx}阶·${stgTag}）。严格保持${u}的胸围体型特征！${!hasBoyInTag ? "严禁画出男性、阳具或性交画面！" : ""}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:${ratingTag}, ${soloOrDuo}, ${dmgTag}1.5::masterpiece, best quality, ${fullCharDna}, ${finalChosenTag}${liveExtra}::, detailed background;\nChar1:1.5::${u}, ${fullCharDna}::, ${finalChosenTag}${paraTag}${liveExtra}|centers:C3;\nChar1 UC:1.8::${bodyProf.negBreast}${noSexNegForStage1}${monsterLegNegBoost}${hasBoyInTag ? "solo, 1girl only, " : ""}multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
-        }         
-
+            return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[${u}的${item.cleanTitle || key}第${curStageIdx}阶特写]\n${THINK_OPEN}\nStrictly draw according to button description: ${rawBtnVisualSummary}. 展现${u}的${item.cleanTitle || key}（第${curStageIdx}阶·${stgTag}）！\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:${ratingTag}, ${soloOrDuo}, ${dmgTag}1.5::masterpiece, best quality, ${cleanFullDna}, ${finalChosenTag}${liveExtra}::, detailed background;\nChar1:1.5::${u}, ${cleanFullDna}::, ${finalChosenTag}${paraTag}${liveExtra}|centers:C3;\nChar1 UC:1.8::${sanitizeNegByBtnDesc(bodyProf.negBreast)}${noSexNegForStage1}${monsterLegNegBoost}${hasBoyInTag ? "solo, 1girl only, " : ""}multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+        }
         let xrayPlayMode = false;
         function buildEnhancedTopXRayCenter(v, dev, caps) {
             const sp = v.体内精液存量 || {};
