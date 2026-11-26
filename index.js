@@ -2101,6 +2101,10 @@
                     if (s[k] && typeof s[k] === "object") {
                         baseVars[k] = baseVars[k] || {};
                         Object.entries(s[k]).forEach(([subKey, val]) => {
+                            // ★ 核心修复：除非玩家手动开启了「🔒锁定自定义外貌(手动锁死外貌Flag)」，否则绝不用旧缓存的 锁定外貌DNA 覆盖当前楼层，确保外貌永远随最新正文实时更新！
+                            if (k === "档案" && (subKey === "锁定外貌DNA" || subKey === "当前提取形象摘要") && !s.档案?.手动锁死外貌Flag) {
+                                return;
+                            }
                             if (val !== "" && val !== "无" && val !== 0 && (!baseVars[k][subKey] || baseVars[k][subKey] === "无" || isRecentActiveChat)) {
                                 baseVars[k][subKey] = val;
                             }
@@ -3051,12 +3055,26 @@ CRITICAL RULES:
             curVars.档案.当前提取形象摘要 = cnSum;
             curVars.档案.手动锁死外貌Flag = !isAutoExtractBtn && Boolean(rawInput);
             userSettings.lockedAppearanceTags = finalTags;
+
+            // ★ 核心修复：提取新形象后，立即清空动态上下文缓存与未锁定的旧按钮文案缓存，让所有按钮的文字描述立刻按新形象刷新！
+            _dynCtxCache = { sig: "", res: null };
+            _appearMemoCache = { sig: "", res: null };
+            if (curVars.按钮详情 && typeof curVars.按钮详情 === "object") {
+                Object.keys(curVars.按钮详情).forEach(k => {
+                    if (userSettings.pinnedItems?.[k]) return;
+                    delete curVars.按钮详情[k].desc;
+                    delete curVars.按钮详情[k].thought;
+                    if (!k.startsWith("穿搭_")) delete curVars.按钮详情[k].stage;
+                });
+            }
+
             saveChatCache(curVars);
             saveSettings();
             latestStatus = getFallbackData();
             renderBody();
-            showToast(`✅ 【${u}】当前主要特征已识别：${cnSum}`, "success", 3800);
+            showToast(`✅ 【${u}】当前主要特征已识别并同步刷新全部按钮描述：${cnSum}`, "success", 3800);
             return finalTags;
+
         }
 
         function getProtagScopedImgKey(editKey, stageNum) {
@@ -3071,21 +3089,140 @@ CRITICAL RULES:
         }
 
         // 🎨 将任意按钮当前的详细描述 (item.desc) 实时提取转化为该按钮专属的画面动作/服饰/异化 Danbooru 英文 Tag
+        // 🌐 终极全通用【按钮实时文本描述 ➔ 绘画 Tag 直译与冲突覆盖引擎】
+        // 无论主角是鬼怪、植物娘、虫娘、史莱姆、龙娘还是任意改造，直接逐词解析当前按钮描述 (descText)，ボタン写什么就画什么！
+        function translateAnyButtonDescToVisualTags(descText, partKey = "", fullCharDna = "") {
+            const s = stripFakeAccessoryAndMetaphorWords(`${safeStr(descText)} ${safeStr(fullCharDna)}`);
+            const btnOnlyText = stripFakeAccessoryAndMetaphorWords(safeStr(descText));
+            const key = String(partKey || "");
+
+            const posTags = [];
+            const removeFromTemplateRegs = [];
+            const removeFromNegRegs = [];
+            let isMutatedAnatomy = false;
+
+            const addMut = (tagStr, cleanTplReg = null, cleanNegReg = null) => {
+                posTags.push(tagStr);
+                isMutatedAnatomy = true;
+                if (cleanTplReg) removeFromTemplateRegs.push(cleanTplReg);
+                if (cleanNegReg) removeFromNegRegs.push(cleanNegReg);
+            };
+
+            // 1. 扫描【胸部/乳房/乳头】在按钮描述中的真实形态（自动粉碎平胸死模板！）
+            if (key === "胸部实况" || key === "穿搭_胸罩" || key === "穿搭_上衣" || key === "穿刺环饰" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
+                if (/(?:四个|四颗|两对|4个|四只|双排)[^。！？；\n]{0,12}(?:奶|乳|胸|峰)|四乳|four breasts|two pairs of breasts/i.test(s)) {
+                    addMut("2.0::four breasts, 4 breasts, multiple breasts, two pairs of breasts vertically stacked on chest, four nipples, extra breasts, extra nipples::",
+                        /flat chest|tiny small breasts|small flat pink nipple buds|petite small breasts|petite modest breasts|no cleavage/gi,
+                        /huge breasts|gigantic breasts|large breasts|deep cleavage|bad anatomy|extra breasts|extra nipples/gi);
+                } else if (/(?:六个|六颗|八个|三对|四对|一排|两排|母猪般.*一排|多对)[^。！？；\n]{0,12}(?:奶|乳|胸)|多乳|multiple breasts|six breasts/i.test(s)) {
+                    addMut("2.0::multiple breasts, six breasts, 6 breasts, three pairs of breasts, rows of breasts like livestock udder, many nipples::",
+                        /flat chest|tiny small breasts|small flat pink nipple buds|petite small breasts|no cleavage/gi,
+                        /huge breasts|gigantic breasts|large breasts|deep cleavage|bad anatomy|extra breasts|extra nipples/gi);
+                } else if (/(?:三个|三颗|3个)[^。！？；\n]{0,10}(?:奶|乳|胸)|三乳|three breasts/i.test(s)) {
+                    addMut("2.0::three breasts, 3 breasts, extra breast in center, three nipples::",
+                        /flat chest|tiny small breasts|small flat pink nipple buds|no cleavage/gi,
+                        /huge breasts|gigantic breasts|large breasts|deep cleavage|bad anatomy/gi);
+                }
+                if (/爆乳|超乳|硕大.*(?:奶|乳|双峰)|巨型.*(?:奶|乳)|沉甸甸.*奶袋|huge breasts/i.test(btnOnlyText)) {
+                    addMut("1.7::huge breasts, gigantic breasts, plump heavy breasts, deep cleavage::",
+                        /flat chest|tiny small breasts|small flat pink nipple buds|petite small breasts|medium.*breasts|no cleavage/gi,
+                        /huge breasts|gigantic breasts|large breasts|deep cleavage/gi);
+                } else if (/丰满|饱满|巨乳|丰乳|软弹.*乳肉|large breasts/i.test(btnOnlyText) && !/平坦|平胸|小巧玲珑的少女胸口/.test(btnOnlyText)) {
+                    addMut("1.5::large plump breasts, full breasts, soft cleavage::",
+                        /flat chest|tiny small breasts|small flat pink nipple buds|no cleavage/gi,
+                        /large breasts|deep cleavage/gi);
+                }
+                if (/多个乳头|四颗乳头|满胸.*乳头|multiple nipples/i.test(btnOnlyText)) {
+                    addMut("1.8::multiple nipples, extra nipples on breasts::", null, /bad anatomy/gi);
+                }
+                if (/泌乳|喷乳|漏奶|狂飙.*乳|奶水|初乳|lactation/i.test(btnOnlyText) && !/未泌乳|安静未泌乳|0ml/.test(btnOnlyText)) {
+                    posTags.push("1.6::lactation, breast milk squirting from nipples, milk droplets::");
+                }
+                if (/纺丝腺|吐.*淫丝|粉红.*淫丝/i.test(btnOnlyText)) {
+                    addMut("1.7::sticky pink spider web threads oozing from erect nipples, glowing spinneret nipples::");
+                }
+            }
+
+            // 2. 扫描【小穴/阴蒂/会阴】在按钮描述中的真实形态
+            if (key === "小穴实况" || key === "阴蒂尿道" || key === "穿搭_内裤" || key === "体内道具" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
+                if (/(?:全身|浑身|遍布|布满|到处都是|密密麻麻|无数)[^。！？；\n]{0,12}(?:小穴|肉穴|淫穴|蜜穴|肉洞|阴道)|multiple pussies/i.test(s)) {
+                    addMut("2.0::multiple pussies all over body, covered in vaginas, many wet orifices on skin, body horror::", null, /bad anatomy/gi);
+                } else if (/(?:三个|四个|五个|六个|一排|多个)[^。！？；\n]{0,10}(?:小穴|肉穴|淫穴|蜜穴|阴道)|multiple vaginas/i.test(s)) {
+                    addMut("1.9::multiple vaginas, extra pussies, row of pussies::", null, /bad anatomy/gi);
+                } else if (/两个[^。！？；\n]{0,10}小穴|上下.*两个.*穴|并排.*两个.*穴|双穴|double pussy/i.test(s)) {
+                    addMut("1.9::double pussy, two vertically stacked vaginas on perineum, two distinct vulva slits one above the other::", null, /bad anatomy/gi);
+                }
+                if (/白虎|半根阴毛都没有|连一根阴毛都没有|无毛/i.test(btnOnlyText)) {
+                    posTags.push("hairless pussy, smooth pudendum");
+                }
+                if (/花瓣.*穴|花蕊.*穴|食人花.*穴|植物.*穴/i.test(btnOnlyText)) {
+                    addMut("1.7::flower petal labia, blooming floral vulva, dripping golden floral nectar, plant girl anatomy::");
+                }
+                if (/肉丝褶皱|吸精肉丝|吸盘.*内壁|上千颗.*肉芽/i.test(btnOnlyText)) {
+                    addMut("1.65::writhing pink meat tendrils and suction cups inside vaginal opening::");
+                }
+            }
+
+            // 3. 扫描【嘴巴/舌头/牙齿】在按钮描述中的真实形态
+            if (key === "骚口实况" || key === "穿搭_头饰" || key === "内心独白" || !UNIVERSAL_LOCAL_PARTS.has(key)) {
+                if (/(?:两个|两张|双|多张)[^。！？；\n]{0,8}(?:嘴|嘴巴|口器|骚口)|multiple mouths/i.test(btnOnlyText)) {
+                    addMut("1.85::multiple mouths, two mouths, extra mouth::", null, /bad anatomy/gi);
+                }
+                if (/(?:两条|三根|多条|分叉)[^。！？；\n]{0,8}(?:舌|长舌|淫舌)|forked.*tongue|multiple tongues/i.test(btnOnlyText)) {
+                    addMut("1.75::long forked tongue, multiple tongues::");
+                } else if (/三十公分.*舌|极长.*舌|肉刺.*舌|猩红长舌/i.test(btnOnlyText)) {
+                    addMut("1.75::extremely long monster red tongue, barbed tongue::");
+                }
+                if (/三排.*尖牙|密密麻麻.*尖牙|裂口|撕裂到耳根|小虎牙|尖牙/i.test(btnOnlyText)) {
+                    addMut("1.65::sharp fangs, monster teeth::");
+                }
+            }
+
+            // 4. 扫描【全身通用种族材质：植物娘/鬼怪/虫娘/史莱姆/龙娘/机械娘/多眼/透视肚皮】
+            if (/植物娘|花妖|树精|藤蔓|花瓣|花冠|花蜜|叶|alraune|plant girl/i.test(s)) {
+                posTags.push("1.6::alraune, plant monster girl, blooming flower petals on body, writhing green vine tendrils, leaf ornaments, glistening floral nectar::");
+            }
+            if (/(?:后背|大腿|全身|皮下|肉缝)[^。！？；\n]{0,15}(?:数十|几十|无数|密密麻麻|百目|多颗|裂开)[^。！？；\n]{0,12}(?:眼球|眼珠|眼睛|肉缝)|glowing eerie eyes/i.test(s) && key !== "骚口实况" && key !== "穿搭_头饰") {
+                addMut("1.75::multiple glowing eerie eyes embedded in purple-red skin seams::", null, /bad anatomy/gi);
+            }
+            if (/半透明[^。！？；\n]{0,10}(?:肚皮|小腹|皮肤|身体|胶质)|透过[^。！？；\n]{0,10}肚皮[^。！？；\n]{0,10}看见|see-through abdomen/i.test(s) && !/骚口|头饰|鞋子/.test(key)) {
+                addMut("1.8::translucent skin, see-through abdomen showing internal pink womb::");
+            }
+            if (/(?:肚子|小腹|肚皮)[^。！？；\n]{0,8}(?:裂开|长出|张开)[^。！？；\n]{0,8}(?:嘴|大嘴|口器)|stomach mouth/i.test(s) && /子宫|孕肚|精液|淫纹|外貌|姿势/.test(key)) {
+                addMut("1.85::stomach mouth, vertical mouth on belly with tongue and teeth::", null, /bad anatomy/gi);
+            }
+
+            // 5. 扫描按钮描述中的实时穿搭与动作（如滑落的大卫衣、洛丽塔裙、红框眼镜、跪姿等）
+            if (/灰色.*卫衣.*滑落|大得离谱.*卫衣/.test(btnOnlyText) && !/小穴|子宫|屁眼|阴蒂|鞋子|丝袜/.test(key)) {
+                posTags.push("oversized grey hoodie slipping off narrow shoulders over gothic lolita dress");
+            }
+            if (/跪坐在.*水泥地板|双膝.*跪倒/.test(btnOnlyText) && /姿势|外貌|身份/.test(key)) {
+                posTags.push("kneeling on cold floor");
+            }
+            if (/连内裤都不穿|无内裤|真空/.test(btnOnlyText) && /内裤|下装|外貌|姿势/.test(key)) {
+                posTags.push("no panties, bottomless under skirt");
+            }
+
+            // 6. 如果玩家在按钮的「自定义编辑框」里手写了英文 Tag，原样提取！
+            const customUserDesc = `${safeStr(curVars?.按钮详情?.[key]?.desc)} ${safeStr(curVars?.按钮详情?.[key]?.stage)}`;
+            const customEnList = customUserDesc.match(/[a-zA-Z0-9_\s:()-]{4,}/g) || [];
+            customEnList.forEach(enStr => {
+                const trimEn = enStr.trim();
+                if (trimEn.length >= 4 && !/^(?:http|data|webp|true|false|null)$/i.test(trimEn)) {
+                    posTags.push(`1.6::${trimEn}::`);
+                }
+            });
+
+            return {
+                posBoostStr: [...new Set(posTags.filter(Boolean))].join(", "),
+                removeFromTemplateRegs,
+                removeFromNegRegs,
+                isMutatedAnatomy
+            };
+        }
+
         function extractExtraSceneTagsFromButtonDesc(descText, partKey = "") {
-            const s = safeStr(descText);
-            if (!s) return "";
-            const extra = [];
-            // 提取按钮描述里实时同步的正文特殊穿搭与姿态细节（如松垮大卫衣套洛丽塔裙、跪坐在水泥地板、红框圆眼镜等）
-            if (/灰色.*卫衣.*滑落|大得离谱.*卫衣/.test(s) && !/小穴|子宫|屁眼|阴蒂|鞋子|丝袜/.test(partKey)) {
-                extra.push("oversized grey hoodie slipping off narrow shoulders over gothic lolita dress");
-            }
-            if (/跪坐在.*水泥地板|双膝.*跪倒/.test(s) && /姿势|外貌|身份/.test(partKey)) {
-                extra.push("kneeling on cold floor, petite girl in oversized shirt");
-            }
-            if (/连内裤都不穿|无内裤|真空/.test(s) && /内裤|下装|外貌|姿势/.test(partKey)) {
-                extra.push("no panties, bottomless under skirt");
-            }
-            return extra.join(", ");
+            return translateAnyButtonDescToVisualTags(descText, partKey, "").posBoostStr;
         }
 
         function buildDanbooruImageBlock(item, curStageIdx, u) {
@@ -3119,14 +3256,24 @@ CRITICAL RULES:
             const selfMorphExcludeClean = contextStr.replace(/(?:肉棒和蛋蛋|我的肉棒)[^。！？；\n]{0,20}(?:缩进|消失|融化|没了)|(?:需要|必须|靠|吞吐|没有)[^。！？；\n]{0,15}肉棒[^。！？；\n]{0,15}(?:插入|活命|活下去|填塞)/g, "");
             const hasActiveSexInScene = !isPureInitialClean && totalSexCntNow > 0 && /(?:肉棒|阳具|龟头|阴茎|巨物).{0,12}(?:正插在|捅入|抽插着|顶入|没入|贯穿|深喉)|(?:正在|狠狠|挺腰|按在身下).{0,8}(?:内射|口交|肛交|乳交|足交|抽插|侵犯|轮奸)/.test(selfMorphExcludeClean);
 
-            // ★ 1. 优先在最上方读取当前按钮的详细描述 item.desc，按当前按钮部位 key 编译出专属异化与场景 Tag（彻底杜绝 ReferenceError 和跨部位污染！）
+            // ★ 核心升级：直接编译当前按钮的完整描述 (item.desc)，获取按钮专属的画面Tag，并获取需要从默认模板和负面词中剔除的冲突项！
             const dnaLow = fullCharDna.toLowerCase();
             const isMaleProtagNow = /\b(?:1boy|male focus|flat male chest)\b/.test(dnaLow) && !/\b(?:1girl|loli|breasts)\b/.test(dnaLow);
-            const btnSpecificDesc = `${safeStr(item.desc)} ${safeStr(curVars.按钮详情?.[key]?.desc)} ${safeStr(curVars.按钮详情?.[key]?.stage)}`;
-            const btnMut = compileButtonDescAndMutationToEnTags(btnSpecificDesc, key);
-            const btnSceneExtra = extractExtraSceneTagsFromButtonDesc(btnSpecificDesc, key);
-            const mergedBtnTags = [...new Set([...btnMut.enTags, ...(btnSceneExtra ? [btnSceneExtra] : [])])];
-            const btnMutTagStr = mergedBtnTags.length > 0 ? ", " + mergedBtnTags.join(", ") : "";
+            const btnSpecificDesc = `${safeStr(item.rawKey)} ${safeStr(item.desc)} ${safeStr(curVars.按钮详情?.[key]?.desc)} ${safeStr(curVars.按钮详情?.[key]?.stage)}`;
+            const btnVisual = translateAnyButtonDescToVisualTags(btnSpecificDesc, key, fullCharDna);
+            const btnMutTagStr = btnVisual.posBoostStr ? ", " + btnVisual.posBoostStr : "";
+
+            // 自动清洗默认模板与负面词中与按钮描述冲突的词（比如按钮写了四个奶，就彻底剔除模板里的 flat chest 和负面词里的 huge breasts / bad anatomy！）
+            const sanitizeTemplateByBtnDesc = (tplStr) => {
+                let res = safeStr(tplStr);
+                btnVisual.removeFromTemplateRegs.forEach(reg => { res = res.replace(reg, ""); });
+                return res.replace(/,\s*,+/g, ", ").replace(/^,\s*|,\s*$/g, "");
+            };
+            const sanitizeNegByBtnDesc = (negStr) => {
+                let res = safeStr(negStr);
+                btnVisual.removeFromNegRegs.forEach(reg => { res = res.replace(reg, ""); });
+                return res.replace(/,\s*,+/g, ", ").replace(/^,\s*|,\s*$/g, "");
+            };
 
             const liveDynamicList = [];
             const isUpperOrHeadPart = (key === "骚口实况" || key === "穿搭_头饰" || key === "穿搭_颈部" || key === "内心独白");
@@ -3150,7 +3297,6 @@ CRITICAL RULES:
                     liveDynamicList.push("cum overflow, thick white semen dripping");
                 }
             }
-            // ★ 统一只在 liveExtra 中注入一次 btnMutTagStr，所有三大分支（六孔/局部特写/全身卡片）都会引用 liveExtra，确保 100% 生效且绝不重复叠加！
             const liveExtra = (liveDynamicList.length ? ", " + liveDynamicList.join(", ") : "") + btnMutTagStr;
 
             const faceExpr = [
@@ -3162,7 +3308,6 @@ CRITICAL RULES:
                 "extreme mind break ahegao, empty heart eyes, profuse drooling, corrupted lewd smile"
             ][idx];
 
-            const hasDoublePussy = /double pussy|two vertically stacked vaginas/.test(dnaLow) || /double pussy|multiple vaginas|multiple pussies/.test(btnMutTagStr);
             const vagSexBoost = hasActiveSexInScene && idx >= 1 ? ", huge erect penis pressing against or penetrating gaping pussy, stretching labia, glans visible" : "";
             const wombSexBoost = hasActiveSexInScene && idx >= 1 ? ", huge penis glans pressing directly against open cervix mouth, ejaculating thick cum into womb" : "";
             const mouthSexBoost = hasActiveSexInScene && /口|舌|吞|喉/.test(contextStr) ? ", huge erect penis deepthroating inside open mouth, tongue wrapped around shaft" : "";
@@ -3176,12 +3321,13 @@ CRITICAL RULES:
             const isArachneOrInsect = /arachne|spider|insectoid|chitin/.test(dnaLow);
             const isTentacleLower = /tentacle.*instead of|cecaelia|octopus girl|writhing tentacles/.test(dnaLow);
             const isSlimeMorph = /slime girl|translucent gelatinous/.test(dnaLow);
+            const isPlantAlraune = /alraune|plant monster girl|flower petals/.test(dnaLow);
             const isEldritchNonHuman = /eldritch abomination|flesh mound|shoggoth/.test(dnaLow);
-            const hasNonHumanLegs = isLamiaOrMermaid || isArachneOrInsect || isTentacleLower || isEldritchNonHuman;
+            const hasNonHumanLegs = isLamiaOrMermaid || isArachneOrInsect || isTentacleLower || isEldritchNonHuman || isPlantAlraune;
             const hasForkedTongue = /forked.*tongue|lamia|snake girl|naga|reptile/.test(dnaLow);
 
             const monsterLegNegBoost = hasNonHumanLegs ? "2.0::human legs, two legs, human feet, human ankles, shoes, high heels, boots::, " : "";
-            const anatomyNegWord = (isEldritchNonHuman || isArachneOrInsect || isTentacleLower || hasDoublePussy || btnMut.isMutated) ? "" : "bad anatomy, ";
+            const anatomyNegWord = (isEldritchNonHuman || isArachneOrInsect || isTentacleLower || btnVisual.isMutatedAnatomy) ? "" : "bad anatomy, ";
             const subjectTag = isMaleProtagNow ? "1boy, male focus" : (isEldritchNonHuman ? "1monster, eldritch abomination, monster morphology" : (hasNonHumanLegs || isSlimeMorph ? "1girl, monster girl" : "1girl"));
 
             const STRICT_HEADLESS_NEG = "2.4::head, face, eyes, mouth, nose, hair, bangs, twintails, ponytail, portrait, looking at viewer, head in frame, upper head::, ";
@@ -3199,6 +3345,9 @@ CRITICAL RULES:
                 } else if (isArachneOrInsect) {
                     s = s.replace(/1girl/g, "1girl, monster girl, arachne")
                          .replace(/M-legs spread wide|in M-legs posture|wrapping legs around waist/gi, "spreading multiple chitinous arthropod spider legs wide open, monster breeding posture");
+                } else if (isPlantAlraune) {
+                    s = s.replace(/1girl/g, "1girl, monster girl, alraune, plant girl")
+                         .replace(/M-legs spread wide|in M-legs posture|wrapping legs around waist/gi, "spreading giant blooming flower petals and writhing green vine tendrils wide open, exposing floral nectar core");
                 } else if (isTentacleLower || isEldritchNonHuman) {
                     s = s.replace(/1girl/g, subjectTag)
                          .replace(/M-legs spread wide|in M-legs posture|wrapping legs around waist/gi, "spreading writhing fleshy tentacles and suction cups wide open, wrapping tentacles around male");
@@ -3225,7 +3374,7 @@ CRITICAL RULES:
                 },
                 "胸部实况": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, lower body, abdomen, hips, legs, pussy, wide shot, zoomed out`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, lower body, abdomen, hips, legs, pussy, wide shot, zoomed out`),
                     tags: [
                         `extreme macro close-up of chest and breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[0]}`,
                         `extreme macro close-up of nipples and chest only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[1]}, wet sweat sheen`,
@@ -3237,7 +3386,7 @@ CRITICAL RULES:
                 },
                 "小穴实况": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}full body, upper body, breasts, chest, abdomen, feet, shoes, wide shot, zoomed out, ${monsterLegNegBoost}`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}full body, upper body, breasts, chest, abdomen, feet, shoes, wide shot, zoomed out, ${monsterLegNegBoost}`),
                     tags: [
                         `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, tight closed pink labia, virgin slit`,
                         `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, slightly parted red swollen labia, clear vaginal fluids, wet string${vagSexBoost}`,
@@ -3265,7 +3414,7 @@ CRITICAL RULES:
                     tags: [
                         `extreme macro close-up of clitoris and urethral opening only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, small hooded pink clit, tight closed urethra`,
                         `extreme macro close-up of clitoris only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, swollen erect red clitoris peeking out of hood, glistening wet skin`,
-                        `extreme macro close-up of enlarged clitoris only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, hyperthrobbing red clitoris, trembling urethral meatus`,
+                        `extreme macro close-up of enlarged clitoris only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, hyperthrobbing red clit, trembling urethral meatus`,
                         `extreme macro close-up of clitoris and dilated urethra only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, gaping urethral hole squirting yellow urine stream and clear fluids`,
                         `extreme macro close-up of clitoris hypertrophy and gaping urethra only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, dickgirl-like swollen clit, gushing female ejaculation and pee fountain`,
                         `extreme macro close-up of ruined gaping urethral hole and giant clitoris only, micro crotch focus filling the entire frame, headless, ${skinOnlyDna}, permanently open urethra leaking yellow urine and white foam`
@@ -3287,8 +3436,9 @@ CRITICAL RULES:
 
             if (holePresets[key]) {
                 const cfg = holePresets[key];
-                const tag = cfg.tags[idx];
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部微距特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the extreme macro close-up of ${key}. DO NOT draw full body, head, face, hair, or limbs.\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, headless, extreme macro close-up, ${cfg.dna}, 2.0::${tag}${paraTag}${liveExtra}, filling the entire frame, macro photography::;\nChar1 UC:2.2::${cfg.neg}, multiple views, zoomed out, text, watermark, ${anatomyNegWord}::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                const tag = sanitizeTemplateByBtnDesc(cfg.tags[idx]);
+                const cleanDna = sanitizeTemplateByBtnDesc(cfg.dna);
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部微距特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the extreme macro close-up of ${key}. DO NOT draw full body, head, face, hair, or limbs.\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, headless, extreme macro close-up, ${cleanDna}${liveExtra}, 2.0::${tag}${paraTag}, filling the entire frame, macro photography::;\nChar1 UC:2.2::${cfg.neg}, multiple views, zoomed out, text, watermark, ${anatomyNegWord}::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             const cnWearToEnTags = (cnStr, fallbackEn) => {
@@ -3306,6 +3456,7 @@ CRITICAL RULES:
                     [/兔耳发箍|兔耳/, "fake bunny ears headband"],
                     [/猫耳发箍|猫耳/, "fake cat ears headband"],
                     [/皇冠|王冠|冕/, "tiara, small crown"],
+                    [/红框圆眼镜|红框眼镜/, "red-framed round glasses, eyewear"],
                     [/眼镜|镜框/, "glasses, eyewear"],
                     [/眼罩|蒙眼/, "blindfold, black eye mask"],
                     [/开口环|口球|流涎/, "ring gag, ball gag, drooling saliva"],
@@ -3324,9 +3475,9 @@ CRITICAL RULES:
                     [/蕾丝胸罩|蕾丝文胸|黑色胸罩/, "black lace bra, detailed bra cups"],
                     [/纯白胸罩|白色文胸|白色内衬/, "pure white cotton bra, innocent innerwear"],
                     [/粉色胸罩|粉色文胸/, "pink ribbon lace bra"],
-                    [/运动内衣|裹胸|抹胸/, "tight sports bra, chest wrap bandeau"],
+                    [/运动内衣|裹胸|抹胸|运动小背心/, "tight sports bra, cropped tank top"],
                     [/肚兜/, "traditional silk dudou innerwear"],
-                    [/比基尼|泳衣/, "micro bikini top"],
+                    [/比基尼|泳衣|死库水/, "school swimsuit, sukumizu"],
                     [/胸罩被暴力推至|推至乳肉上方|双峰弹露/, "displaced bra pushed up above breasts, exposed nipples popping out"],
                     [/开洞胸罩|镂空胸罩/, "cupless open-nipple bondage bra"],
                     [/真空未穿胸衣|未穿胸衣|乳尖凸起/, "no bra under thin translucent fabric, erect nipples clearly poking through"],
@@ -3338,7 +3489,7 @@ CRITICAL RULES:
                     [/水手服|JK|校服/, "pleated sailor uniform top, navy collar with white stripes"],
                     [/纽扣崩飞.*白衬衫|湿透白衬衫|白衬衫|衬衫/, "sweat-soaked translucent white dress shirt, popped buttons, open shirt front"],
                     [/半透明蕾丝薄纱吊带睡裙|薄纱|睡裙/, "see-through sheer lace strap nightgown dress, translucent negligee"],
-                    [/哥特|黑蕾丝裙|洛丽塔/, "gothic lolita black lace bodice top with frills and ribbons"],
+                    [/哥特|黑蕾丝|洛丽塔|蓬蓬裙/, "gothic lolita black lace frilly dress with ribbons"],
                     [/卫衣|连帽衫/, "oversized hoodie top"],
                     [/毛衣|针织衫|开背毛衣/, "ribbed knit sweater"],
                     [/T恤|短袖|背心/, "tight fitted t-shirt top"],
@@ -3347,7 +3498,7 @@ CRITICAL RULES:
                     [/巫女服/, "white kosode miko robe top"],
                     [/旗袍/, "silk cheongsam qipao top with cutout"],
                     [/汉服|古装|长袍|仙裙/, "flowing traditional hanfu outer robe with wide sleeves and waist sash"],
-                    [/西装|外套|夹克/, "tailored jacket coat over shirt"],
+                    [/花瓣衣|藤蔓缠绕|树叶遮蔽/, "living flower petals and green vines wrapping body as natural clothing"],
                     [/赤裸上身|无上衣/, "topless torso, bare upper body skin, no shirt"],
                     [/史莱姆粘液包裹躯干/, "translucent glowing pink slime coating bare torso like liquid clothes"],
                     [/干净纯白底裤|纯白底裤|严密遮护|干净底裤/, "clean pure white cotton panties tightly covering crotch, modest fit"],
@@ -3357,7 +3508,7 @@ CRITICAL RULES:
                     [/被扯到一边|湿烂底裤/, "soaked panties pulled aside exposing wet vulva slit"],
                     [/开裆内裤|镂空内裤/, "crotchless lace panties exposing labia"],
                     [/贞操带/, "locked leather and metal chastity belt frame with crotchless opening"],
-                    [/真空|未穿内裤|无内裤|光裸/, "no panties, bottomless exposed bare crotch"],
+                    [/真空|未穿内裤|无内裤|连内裤都不穿|光裸/, "no panties, bottomless exposed bare crotch"],
                     [/产卵触手堵死/, "thick living ovipositor tentacles plugging pussy and anus"],
                     [/裙摆垂顺|端庄得体/, "neat pleated skirt hem hanging gracefully over hips"],
                     [/百褶短裙|百褶裙|短裙|超短裙/, "mini pleated skirt, microskirt"],
@@ -3371,7 +3522,7 @@ CRITICAL RULES:
                     [/无下装|毫无遮挡/, "bottomless lower waist, no skirt, no pants, bare butt cheeks"],
                     [/巴掌印/, "bright red handprint spank marks on bare ass cheeks"],
                     [/修长素腿|并拢端正|素腿|裸腿/, "bare smooth slender legs pressed neatly together, no stockings"],
-                    [/白色吊带长筒袜|白丝|过膝白丝/, "white lace-trimmed garter thighhigh stockings"],
+                    [/白色吊带长筒袜|白丝|过膝白丝|洁白及膝袜|及膝袜/, "white kneehigh stockings, white thighhighs"],
                     [/撕开大洞的连裤黑丝|破洞黑丝/, "torn sheer black pantyhose with large ripped holes exposing thigh skin"],
                     [/黑丝|连裤黑丝|黑长袜/, "sheer black thighhigh stockings, black pantyhose"],
                     [/肉丝|肤色丝袜/, "nude sheer pantyhose"],
@@ -3385,7 +3536,7 @@ CRITICAL RULES:
                     [/马丁靴|短靴|皮靴|长靴/, "laced leather ankle boots"],
                     [/运动鞋|球鞋|帆布鞋/, "clean casual sneakers"],
                     [/凉鞋|拖鞋/, "strappy sandals exposing toes"],
-                    [/赤足|裸足|脚趾微蜷|赤足跪爬/, "barefoot, delicate bare feet, cute pink soles and curled toes"],
+                    [/赤足|裸足|脚趾微蜷|赤足跪爬|赤着双腿|光着.*脚/, "barefoot, delicate bare feet, cute pink soles and curled toes"],
                     [/脚踝被触手悬空吊起/, "bare ankles bound and suspended in air by slimy tentacles"],
                     [/正字涂鸦/, "black tally marks body writing on skin"]
                 ];
@@ -3422,6 +3573,10 @@ CRITICAL RULES:
                 adaptiveBotTag = `extreme close-up of waist transition to giant glossy arachne spider abdomen and chitinous hip joints only, headless monster girl lower torso${cumOnLegsTag}`;
                 adaptiveSockTag = `extreme close-up of multiple glossy chitinous spider arthropod legs and exoskeleton joints only, headless monster girl limbs${cumOnLegsTag}`;
                 adaptiveShoeTag = `extreme macro close-up of sharp chitinous arthropod tarsus claw tips on ground only, headless, no human feet${cumOnShoesTag}`;
+            } else if (isPlantAlraune) {
+                adaptiveBotTag = `extreme close-up of waist nestled in giant blooming flower petals and writhing green vine tendrils only, headless plant monster girl lower torso${cumOnLegsTag}`;
+                adaptiveSockTag = `extreme close-up of thighs wrapped in writhing green vine tendrils and blooming flower petals dripping floral nectar only, headless${cumOnLegsTag}`;
+                adaptiveShoeTag = `extreme macro close-up of feet and ankles entwined by green vine tendrils and flower petals only, headless${cumOnShoesTag}`;
             } else if (isTentacleLower || isEldritchNonHuman) {
                 adaptiveBotTag = `extreme close-up of lower torso merging into writhing fleshy tentacles and suction cups base only, headless eldritch monster lower body${cumOnLegsTag}`;
                 adaptiveSockTag = `extreme close-up of thick writhing tentacles coiled together with glistening suction cups and mucus only, headless, no human legs${cumOnLegsTag}`;
@@ -3449,12 +3604,12 @@ CRITICAL RULES:
                 },
                 "穿搭_胸罩": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}${bodyProf.negBreast}2.2::outer coat, jacket, long sleeves, skirt, pants, full body, lower body, legs, feet, wide shot::`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}2.2::outer coat, jacket, long sleeves, skirt, pants, full body, lower body, legs, feet, wide shot::`),
                     tag: `extreme macro close-up of intimate innerwear bra and chest only, headless cropped front chest focus from below collarbone to underbust filling the frame, outer shirt pulled open or absent to reveal innerwear, ${skinOnlyDna}, ${bodyProf.braFocusTag}, ${bodyProf.breastByStage[Math.min(2, idx)]}, 1.7::(${wearBraTxt})::, ${idx >= 2 ? "nipples poking through or exposed from displaced bra, wet sweat and love juice stains" : "intimate innerwear fabric texture, clean bra fit"}`
                 },
                 "穿搭_上衣": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}${bodyProf.negBreast}2.2::full body, lower body, legs, knees, feet, shoes, wide shot::`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}2.2::full body, lower body, legs, knees, feet, shoes, wide shot::`),
                     tag: `cropped medium close-up of upper torso outerwear garment, sleeves and waist only, headless torso shot cropped from base of neck to waist belt filling the frame, showcasing outer clothing design, ${skinOnlyDna}, ${bodyProf.bodyTag}, ${bodyProf.breastByStage[0]}, 1.7::(${wearTopTxt})::, ${dmgTag}${idx >= 2 ? "disheveled sweat-soaked outer garment clinging to torso" : "neat well-fitted outer top garment and waist silhouette"}`
                 },
                 "穿搭_内裤": {
@@ -3479,7 +3634,7 @@ CRITICAL RULES:
                 },
                 "正字涂鸦": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, feet, shoes, wide shot`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, feet, shoes, wide shot`),
                     tag: `extreme macro close-up of ${graffitiTargetArea} skin only, headless cropped skin focus filling the frame, ${skinOnlyDna}, ${bodyProf.bodyTag}, ${idx === 0 ? "clean smooth unblemished skin, no writing, no marks" : "black marker tally marks (正) and lewd body writing calligraphy written on flushed skin, red slap handprints"}`
                 },
                 "淫纹烙印": {
@@ -3489,7 +3644,7 @@ CRITICAL RULES:
                 },
                 "穿刺环饰": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: `${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, legs, feet, wide shot`,
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, legs, feet, wide shot`),
                     tag: `extreme macro close-up of nipples and labia only, headless macro focus filling the frame, ${skinOnlyDna}, ${bodyProf.breastByStage[Math.min(1, idx)]}, ${idx === 0 ? "clean natural unpierced pink nipples, no metal rings" : "pierced nipples and pierced labia with silver rings, tiny bells and delicate metal chains glinting on wet flushed skin"}`
                 },
                 "体内道具": {
@@ -3522,7 +3677,8 @@ CRITICAL RULES:
             if (partCloseupPresets[key]) {
                 const pCfg = partCloseupPresets[key];
                 const isHeadPart = (key === "穿搭_头饰");
-                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the tightly cropped close-up of ${key}. ${isHeadPart ? "Focus on head and hair ornament only, NO torso or chest." : "STRICTLY HEADLESS! DO NOT draw head, face, eyes, or hair!"}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, ${isHeadPart ? "headshot only" : "headless, out of frame head"}, extreme close-up, ${pCfg.dna}, 2.0::${pCfg.tag}${paraTag}${liveExtra}, filling the entire frame::;\nChar1 UC:2.4::${pCfg.neg}, zoomed out, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
+                const cleanPartTag = sanitizeTemplateByBtnDesc(pCfg.tag);
+                return `第${idx + 1}阶段：${key}_${curStageIdx}（${stgTag}）\n${IMG_OPEN}\n[纯局部特写_${item.cleanTitle || key}]\n${THINK_OPEN}\nONLY draw the tightly cropped close-up of ${key}. ${isHeadPart ? "Focus on head and hair ornament only, NO torso or chest." : "STRICTLY HEADLESS! DO NOT draw head, face, eyes, or hair!"}\n${THINK_CLOSE}\n${HASH_PREFIX}Scene:NSFW, NO FULL BODY, ${isHeadPart ? "headshot only" : "headless, out of frame head"}, extreme close-up, ${pCfg.dna}${liveExtra}, 2.0::${cleanPartTag}${paraTag}, filling the entire frame::;\nChar1 UC:2.4::${pCfg.neg}, zoomed out, multiple views, lowres, ${anatomyNegWord}text, watermark::;${HASH_SUFFIX}\n${IMG_CLOSE}`;
             }
 
             if (key.startsWith("client_") || item.isClient) {
