@@ -1513,59 +1513,64 @@
             const charCardName = safeStr(ctx?.name2).trim();
             const userPersonaName = safeStr(ctx?.name1).trim();
             const deletedSet = new Set(Array.isArray(v?.已删除角色列表) ? v.已删除角色列表 : []);
+            const isDmCard = /系统|旁白|主持人|DM|模拟器|游戏|世界|剧场|笔|状态栏|RPG|剧本/i.test(charCardName);
 
-            // 1. 最高优先级：手动锁定或副API从正文识别锁定的主角真名
+            // 1. 只有当用户「真正在弹窗里手输/点选切换过角色」或「副API明确从正文提取出非聊天名的真名」时，才使用手动锁定真名！
+            // 如果旧缓存里锁定的名字恰好等于酒馆默认的 userPersonaName 或 DM卡名，则不盲目锁死，允许往下扫描正文真正的主角名！
             const lockedName = safeStr(v?.档案?.手动锁定真名).trim();
-            if (lockedName && isValidCharacterName(lockedName) && !deletedSet.has(lockedName)) {
+            const isLockedJustDefaultChatName = (lockedName === userPersonaName || (isDmCard && lockedName === charCardName)) && !v?.档案?._userExplicitlyPickedRole;
+            if (lockedName && !isLockedJustDefaultChatName && isValidCharacterName(lockedName) && !deletedSet.has(lockedName)) {
                 if (v && v.档案) v.档案.当前认知名字 = lockedName;
                 return lockedName;
-            } else if (lockedName && (!isValidCharacterName(lockedName) || deletedSet.has(lockedName))) {
-                if (v && v.档案) v.档案.手动锁定真名 = "";
             }
 
-            // 2. 次高优先级：从最新正文的 _.set 变量指令中提取主角名
+            // 2. 从最新正文的 _.set 变量指令中提取主角名
             const knownRoots = new Set(["档案", "身体", "核心数值", "精神与心理", "受孕与生理", "计数", "体内精液存量", "痕迹与标记", "体内道具与权限", "实况", "穿搭", "调教进度", "精神与心理扩展"]);
             for (let i = chat.length - 1; i >= Math.max(0, chat.length - 5); i--) {
                 const matches = [...safeStr(chat[i]?.mes).matchAll(/_\.(?:set|add)\s*\(\s*['"`]([^.'"`]+)\./g)];
                 for (const m of matches) {
                     const cand = safeStr(m[1]).trim();
-                    if (cand && !knownRoots.has(cand) && isValidCharacterName(cand) && !deletedSet.has(cand)) {
+                    if (cand && !knownRoots.has(cand) && isValidCharacterName(cand) && !deletedSet.has(cand) && cand !== userPersonaName) {
                         if (v?.档案) v.档案.当前认知名字 = cand;
                         return cand;
                     }
                 }
             }
 
-            // 3. ★ 核心新增：直接从小说正文/变身档案中智能挖掘主角在故事里的真实名字（绝不盲目抓聊天名字！）
+            // 3. ★ 全方位从小说正文中挖掘真正的主角真名（支持开局设定、变身名、第三人称高频主语、对话称呼）
             if (chat.length > 0) {
                 const morphState = resolveCurrentMorphedArchiveAndState(userPersonaName || "主角", chat);
                 if (morphState.morphedAliasName && isValidCharacterName(morphState.morphedAliasName) && !deletedSet.has(morphState.morphedAliasName)) {
                     if (v?.档案) v.档案.当前认知名字 = morphState.morphedAliasName;
                     return morphState.morphedAliasName;
                 }
-                const recentText = chat.slice(-4).map(m => safeStr(m?.mes)
+                const scanText = [chat[0], ...chat.slice(-4)].map(m => safeStr(m?.mes)
                     .replace(/<think[\s\S]*?<\/think>|<think_nya>[\s\S]*?<\/think_nya>|<options>[\s\S]*?<\/options>|<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, "")
                 ).join("\n");
 
                 const storyNamePatterns = [
-                    /(?:我叫|我的名字是|名字叫|真名是|现在是|化身成|变成了|身为)[“"「『【]?([\u4e00-\u9fa5]{2,5})[”"」』】]?/,
-                    /\*[^*\n]{0,15}?([\u4e00-\u9fa5]{2,4})(?:感到|觉得|心想|暗想|咬着|看着|低头|双腿|小穴|胸前)/,
-                    /(?:^|\n)\s*([\u4e00-\u9fa5]{2,4})(?:感到下体|微微咬着|深吸一口气|低头看向自己|看着镜子里的自己|跪坐在)/
+                    /(?:主角|女主|少女|少女名叫|女孩名叫|真名|姓名|名字|我叫|我的名字是|名字叫|真名是|现在是|化身成|变成了|重塑为|改写为|身为)[：:\s“"「『【]*([\u4e00-\u9fa5]{2,5})[”"」』】]*/,
+                    /【([\u4e00-\u9fa5]{2,4})(?:的|·|：|:)/,
+                    /\*[^*\n]{0,15}?([\u4e00-\u9fa5]{2,4})(?:感到|觉得|心想|暗想|咬着|看着|低头|双腿|小穴|胸前|浑身|身体)/,
+                    /(?:^|[。！？\n])\s*([\u4e00-\u9fa5]{2,4})(?:感到|微微|深吸|低头|看着|跪坐|躺在|趴在|坐在|站在|夹紧|咬紧|脸色|脸颊|娇躯|胸前|下体|小腹)/m
                 ];
+                const STOP_WORDS = /^(?:自己|现在|今天|虽然|因为|但是|如果|那个|这个|男人|女人|少女|身体|众人|大家|室友|大叔|混混|体育生|老板|学长|老师|少年|青年|双手|双腿|全身|目光|眼神|声音|空气|房间|内心|脑海|意识|快感|精液|小穴|乳房|胸口|小腹)$/;
                 for (const reg of storyNamePatterns) {
-                    const m = recentText.match(reg);
-                    if (m && m[1] && isValidCharacterName(m[1]) && !deletedSet.has(m[1]) && !/^(?:自己|现在|今天|虽然|因为|但是|如果|那个|这个|男人|女人|少女|身体)$/.test(m[1])) {
-                        if (v?.档案) v.档案.当前认知名字 = m[1].trim();
-                        return m[1].trim();
+                    const m = scanText.match(reg);
+                    if (m && m[1]) {
+                        const cand = m[1].trim();
+                        if (isValidCharacterName(cand) && !deletedSet.has(cand) && !STOP_WORDS.test(cand) && cand !== userPersonaName) {
+                            if (v?.档案) v.档案.当前认知名字 = cand;
+                            return cand;
+                        }
                     }
                 }
             }
 
-            const isDmCard = /系统|旁白|主持人|DM|模拟器|游戏|世界|剧场|笔/i.test(charCardName);
-            const cogName = (isValidCharacterName(v?.档案?.当前认知名字) && !deletedSet.has(v?.档案?.当前认知名字)) ? v.档案.当前认知名字 : "";
+            const cogName = (isValidCharacterName(v?.档案?.当前认知名字) && !deletedSet.has(v?.档案?.当前认知名字) && v?.档案?.当前认知名字 !== userPersonaName) ? v.档案.当前认知名字 : "";
             const validCardName = (!isDmCard && isValidCharacterName(charCardName) && !deletedSet.has(charCardName)) ? charCardName : "";
             const validUserName = (isValidCharacterName(userPersonaName) && !deletedSet.has(userPersonaName)) ? userPersonaName : "";
-            return safeStr(cogName || validCardName || validUserName || userPersonaName || charCardName || "主角").trim();
+            return safeStr(cogName || validCardName || lockedName || validUserName || "主角").trim();
         }
 
         function applyNaturalMetabolism(floorText, targetVars, hasExplicitSet = false, isLatestFloor = false, floorIdx = 0) {
@@ -3384,6 +3389,42 @@
             const hasSharpFangs = /sharp fangs|sharp teeth/.test(dnaLow);
             const tongueTypeTag = hasForkedTongue ? "long forked snake tongue" : (hasLongMonsterTongue ? "extremely long monster red tongue" : "long pink tongue") + (hasSharpFangs ? ", sharp fangs, rows of sharp teeth" : "");
 
+            const isFourBreastsHere = /(?:四个|四颗|两对|4个|四只|双排)[^。！？；\n]{0,12}(?:奶|乳|胸|峰)|四乳|four breasts/i.test(`${btnSpecificDesc} ${fullCharDna}`);
+            const isDoublePussyHere = /两个[^。！？；\n]{0,10}(?:粉嫩.*)?小穴|上下.*两个.*穴|并排.*两个.*穴|双穴|两个独立.*穴|double pussy|two vaginas/i.test(`${btnSpecificDesc} ${fullCharDna}`);
+
+            // ★ 源头分流：如果是四乳，绝不在模板里写默认 breastByStage（避免 4+2=6）；如果是双穴，绝不在模板里写单数 pussy vulva / virgin slit（避免 2+1=3）！
+            const chestStageTags = isFourBreastsHere ? [
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, clean dry skin`,
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, erect pink nipples, wet sweat sheen`,
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, swollen areola, ${hasMilkNow ? "milk droplets leaking" : "glistening wet skin"}`,
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, lactation, milk dripping`,
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, heavy lactation squirting`,
+                `close-up of upper torso from collarbone to slender waist, headless, ${skinOnlyDna}, four breasts, corrupted lactating breasts gushing milk`
+            ] : [
+                `extreme macro close-up of chest and breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[0]}`,
+                `extreme macro close-up of nipples and chest only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[1]}, wet sweat sheen`,
+                `extreme macro close-up of chest and breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[2]}, ${hasMilkNow ? "milk droplets leaking" : "glistening wet skin"}`,
+                `extreme macro close-up of lactating chest only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[3]}`,
+                `extreme macro close-up of lactating breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[4]}`,
+                `extreme macro close-up of corrupted lactating breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[5]}`
+            ];
+
+            const vagStageTags = isDoublePussyHere ? [
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, hairless pudendum`,
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, wet clear vaginal fluids${vagSexBoost}`,
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, swollen labia, ${hasVagCumNow ? "thick white cum leaking" : "glistening love juice dripping"}${vagSexBoost}`,
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, gaping vaginal holes, ${hasVagCumNow ? "overflowing cum" : "wet gaping interior"}${vagSexBoost}`,
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, everted labia, heavy cum overflow${vagSexBoost}`,
+                `extreme macro close-up of smooth crotch between legs only, headless, ${skinOnlyDna}, double pussy, permanently open holes, bubbling cum${vagSexBoost}`
+            ] : [
+                `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, tight closed pink labia, virgin slit`,
+                `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, slightly parted red swollen labia, clear vaginal fluids, wet string${vagSexBoost}`,
+                `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, dark purple swollen everted labia minora, ${hasVagCumNow ? "thick white cum leaking" : "glistening clear love juice dripping"}${vagSexBoost}`,
+                `extreme macro close-up of gaping pussy hole only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, relaxed open vaginal hole, visible red interior folds, ${hasVagCumNow ? "overflowing cum" : "wet gaping vaginal interior"}${vagSexBoost}`,
+                `extreme macro close-up of ruined gaping pussy only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, prolapsed vaginal folds, everted labia, heavy cum overflow${vagSexBoost}`,
+                `extreme macro close-up of corrupted gaping pussy hole only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, permanently open vaginal hole, visible prolapsed cervix at entrance, bubbling cum${vagSexBoost}`
+            ];
+
             const holePresets = {
                 "骚口实况": {
                     dna: skinOnlyDna,
@@ -3399,27 +3440,13 @@
                 },
                 "胸部实况": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
-                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, lower body, abdomen, hips, legs, pussy, wide shot, zoomed out`),
-                    tags: [
-                        `extreme macro close-up of chest and breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[0]}`,
-                        `extreme macro close-up of nipples and chest only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[1]}, wet sweat sheen`,
-                        `extreme macro close-up of chest and breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[2]}, ${hasMilkNow ? "milk droplets leaking" : "glistening wet skin"}`,
-                        `extreme macro close-up of lactating chest only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[3]}`,
-                        `extreme macro close-up of lactating breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[4]}`,
-                        `extreme macro close-up of corrupted lactating breasts only, cropped headless chest filling the entire frame, out of frame head, ${skinOnlyDna}, ${bodyProf.breastByStage[5]}`
-                    ]
+                    neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}${bodyProf.negBreast}full body, lower body, hips, legs, pussy, wide shot, zoomed out`),
+                    tags: chestStageTags
                 },
                 "小穴实况": {
                     dna: `${skinOnlyDna}, ${bodyProf.bodyTag}`,
                     neg: sanitizeNegByBtnDesc(`${STRICT_HEADLESS_NEG}full body, upper body, breasts, chest, abdomen, feet, shoes, wide shot, zoomed out, ${monsterLegNegBoost}`),
-                    tags: [
-                        `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, tight closed pink labia, virgin slit`,
-                        `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, slightly parted red swollen labia, clear vaginal fluids, wet string${vagSexBoost}`,
-                        `extreme macro close-up of pussy vulva only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, dark purple swollen everted labia minora, ${hasVagCumNow ? "thick white cum leaking" : "glistening clear love juice dripping"}${vagSexBoost}`,
-                        `extreme macro close-up of gaping pussy hole only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, relaxed open vaginal hole, visible red interior folds, ${hasVagCumNow ? "overflowing cum" : "wet gaping vaginal interior"}${vagSexBoost}`,
-                        `extreme macro close-up of ruined gaping pussy only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, prolapsed vaginal folds, everted labia, heavy cum overflow${vagSexBoost}`,
-                        `extreme macro close-up of corrupted gaping pussy hole only, crotch filling the entire frame, no torso, headless, ${skinOnlyDna}, permanently open vaginal hole, visible prolapsed cervix at entrance, bubbling cum${vagSexBoost}`
-                    ]
+                    tags: vagStageTags
                 },
                 "子宫实况": {
                     dna: "anatomical medical cutaway illustration",
@@ -6845,12 +6872,24 @@ ${btnSchemaJsonLines}
                     // 1. 删掉开头写死的 breasts focus（防止 2+4=6）！
                     // 2. 改用 collarbone to waist（锁骨到细腰的上半身躯干特写）给模型提供空间边界，防止无边际微距往下无限排成 3 排（6个奶）！
                     // 3. 剥离 directPosBoost 里重复的 four breasts，只保留唯一一次 (four breasts:1.35)！
-                    const otherChestBoost = directPosBoost.replace(/\(?\b(?:four breasts|two pairs of breasts|4 breasts|4 nipples)\b(?::\d+(?:\.\d+)?)?\)?\s*,?\s*/gi, "").trim();
-                    cameraFocusTag = `(close-up of upper torso from collarbone to slender waist, headless, front view:1.55), (four breasts:1.35), (exactly 4 breasts arranged in upper pair and lower pair on chest, 4 pink nipples:1.3), ${otherChestBoost ? otherChestBoost + ", " : ""}(${localSkinTags}${outfitEdgeHint ? ", " + outfitEdgeHint : ""}:1.25)`;
+                    const otherChestBoost = directPosBoost.replace(/\(?\b(?:four breasts|two pairs of breasts|4 breasts|4 nipples)\b(?::\d+(?:\.\d+)?)?\)?\s*,?\s*/gi, "").replace(/\(\s*:\d+(?:\.\d+)?\)/g, "").trim();
+                    // ★ 唯一词条 (four breasts:1.35)，绝不再写第二个 4 breasts 或 upper pair and lower pair 防止 CLIP 分词器叠加成 6 个奶！
+                    cameraFocusTag = `(close-up of upper torso from collarbone to waist, headless, front view:1.5), (four breasts:1.35), ${otherChestBoost ? otherChestBoost + ", " : ""}(${localSkinTags}${outfitEdgeHint ? ", " + outfitEdgeHint : ""}:1.25)`;
                     extraNegBoost += "(six breasts, 6 breasts, five breasts, 5 breasts, three pairs of breasts, 3 rows of breasts, rows of breasts, udder, many breasts, 6 nipples, 8 breasts, head, face, eyes, mouth, hair, twintails, glasses, full body, lower body, hips, thighs, legs, pussy, vagina, vulva, double pussy, ass, background:2.0), ";
                 } else {
                     cameraFocusTag = `(extreme close-up, macro photography, chest focus:1.6), ${directPosBoost ? directPosBoost + ", " : ""}(${bodyProf.breastByStage[stgIdx] || bodyProf.breastByStage[0]}:1.4), (cropped chest filling frame:1.45), (${localSkinTags}${outfitEdgeHint ? ", " + outfitEdgeHint : ""}:1.3)`;
                     extraNegBoost += "(four breasts, multiple breasts, extra breasts, six breasts, head, face, eyes, mouth, hair, twintails, glasses, full body, lower body, hips, thighs, legs, pussy, vagina, vulva, double pussy, ass, background:1.95), ";
+                }
+            } else if (key === "小穴实况" || key === "阴蒂尿道" || key === "体内道具" || key === "穿搭_内裤") {
+                cleanPos = stripFullBodyTriggers(cleanPos);
+                if (hasDoublePussyInBtn) {
+                    const otherVagBoost = directPosBoost.replace(/\(?\b(?:double pussy|two vaginas|extra pussy|twin vulvas|multiple pussies)\b(?::\d+(?:\.\d+)?)?\)?\s*,?\s*/gi, "").replace(/\(\s*:\d+(?:\.\d+)?\)/g, "").trim();
+                    // ★ 唯一词条 (double pussy:1.4)，绝不再写 two vaginas / 2 vulva slits / upper and lower pussy 防止 CLIP 分词器累加变成 3~4 个小穴！
+                    cameraFocusTag = `(extreme close-up, macro photography, crotch focus, between legs:1.6), (double pussy:1.4), ${otherVagBoost ? otherVagBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
+                    extraNegBoost += "(three pussies, 3 pussies, 3 vaginas, four pussies, 4 pussies, 4 vaginas, many pussies, multiple pussies all over body, cluster of pussies, trypophobia, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:2.0), ";
+                } else {
+                    cameraFocusTag = `(extreme close-up, macro photography, pussy focus, crotch focus:1.65), (vulva, labia, mons pubis, close-up between legs:1.6), ${directPosBoost ? directPosBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
+                    extraNegBoost += "(double pussy, extra pussy, two vaginas, multiple pussies, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:1.95), ";
                 }
             } else if (key === "小穴实况" || key === "阴蒂尿道" || key === "体内道具" || key === "穿搭_内裤") {
                 cleanPos = stripFullBodyTriggers(cleanPos);
@@ -6944,6 +6983,7 @@ ${btnSchemaJsonLines}
             }
 
             const finalComfyPos = `masterpiece, best quality, ultra-detailed, highres, ${cameraFocusTag}, ${cleanPos}`
+                .replace(/\(\s*[,:\d.]*\s*\)/g, "")
                 .replace(/,\s*,+/g, ", ")
                 .replace(/^,\s*|,\s*$/g, "")
                 .trim();
@@ -8721,6 +8761,7 @@ ${btnSchemaJsonLines}
                 userSettings.customTargetName = finalName;
                 curVars.档案.手动锁定真名 = finalName;
                 curVars.档案.当前认知名字 = finalName;
+                curVars.档案._userExplicitlyPickedRole = true;
             }
 
             if (finalName && finalName !== oldName) {
@@ -9274,7 +9315,7 @@ ${btnSchemaJsonLines}
                             <span style="font-size:10.5px;color:#a6e3a1;">📊 本地图库缓存: ${importedImgCache.size}张 (约 ${dbSizeMB} MB)</span>
                         </div>
                         <div style="font-size:11px;color:#fbcfe8;background:rgba(244,114,182,0.12);border:1px dashed rgba(244,114,182,0.4);border-radius:6px;padding:5px 8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-                            <span>🎯 <b>当前识别到的【${u}】形象</b>：<span id="st-cfg-dna-summary-txt" style="color:#fde047;">${summarizeDnaTagsToChinese(userSettings.lockedAppearanceTags || extractTargetCurrentAppearance(u, curVars).tags)}</span></span>
+                            <span>🎯 <b>当前识别到的【${u}】形象</b>：<span id="st-cfg-dna-summary-txt" style="color:#fde047;">${summarizeDnaTagsToChinese(userSettings.lockedAppearanceTags || extractTargetCurrentAppearance(u, curVars).tags, curVars.档案?.副API中文形象摘要 || curVars.档案?.当前提取形象摘要)}</span>
                             <span style="font-size:10px;color:${curVars.档案?.手动锁死外貌Flag ? '#fda4af' : '#a6e3a1'};">${curVars.档案?.手动锁死外貌Flag ? "🔒 已手动固定Tag (点下方【🎯提取当前形象】可恢复自动跟随剧情)" : "🔄 随最新剧情自动提取中"}</span>
                         </div>
                         <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;">
