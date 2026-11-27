@@ -7045,17 +7045,6 @@ ${btnSchemaJsonLines}
                     cameraFocusTag = `(extreme close-up, macro photography, pussy focus, crotch focus:1.65), (vulva, labia, mons pubis, close-up between legs:1.6), ${directPosBoost ? directPosBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
                     extraNegBoost += "(double pussy, extra pussy, two vaginas, multiple pussies, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:1.95), ";
                 }
-         
-                    // ★ 终极根治“2穴变3穴/4穴”：
-                    // 1. 彻底删掉开头写死的 pussy focus（防止 1 + 2 = 3 个穴）！
-                    // 2. 删掉 two vaginas（防止 double pussy 2个 + two vaginas 2个 = 4个），只用唯一黄金词 (double pussy:1.45), (exactly 2 vertically stacked vulva slits on smooth crotch:1.35)！
-                    const otherVagBoost = directPosBoost.replace(/\(?\b(?:double pussy|two vaginas|extra pussy|twin vulvas|multiple pussies)\b(?::\d+(?:\.\d+)?)?\)?\s*,?\s*/gi, "").trim();
-                    cameraFocusTag = `(extreme close-up, macro photography, crotch focus, between legs:1.6), (double pussy:1.45), (exactly 2 vertically aligned pink vulva slits on perineum, upper and lower pussy:1.35), ${otherVagBoost ? otherVagBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
-                    extraNegBoost += "(three pussies, 3 pussies, 3 vaginas, four pussies, 4 pussies, 4 vaginas, many pussies, multiple pussies all over body, cluster of pussies, trypophobia, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:2.0), ";
-                } else {
-                    cameraFocusTag = `(extreme close-up, macro photography, pussy focus, crotch focus:1.65), (vulva, labia, mons pubis, close-up between legs:1.6), ${directPosBoost ? directPosBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
-                    extraNegBoost += "(double pussy, extra pussy, two vaginas, multiple pussies, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:1.95), ";
-                }
             } else if (key === "屁眼实况") {
                 cleanPos = stripFullBodyTriggers(cleanPos);
                 cameraFocusTag = `(extreme close-up, macro photography, anus focus, ass focus:1.65), ${directPosBoost ? directPosBoost + ", " : ""}(anal pucker, spread butt cheeks, rear close-up:1.6), (${localSkinTags}:1.3)`;
@@ -9467,7 +9456,7 @@ ${btnSchemaJsonLines}
                             <span style="font-size:10.5px;color:#a6e3a1;">📊 本地图库缓存: ${importedImgCache.size}张 (约 ${dbSizeMB} MB)</span>
                         </div>
                         <div style="font-size:11px;color:#fbcfe8;background:rgba(244,114,182,0.12);border:1px dashed rgba(244,114,182,0.4);border-radius:6px;padding:5px 8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-                            <span>🎯 <b>当前识别到的【${u}】形象</b>：<span id="st-cfg-dna-summary-txt" style="color:#fde047;">${summarizeDnaTagsToChinese(userSettings.lockedAppearanceTags || extractTargetCurrentAppearance(u, curVars).tags, curVars.档案?.副API中文形象摘要 || curVars.档案?.当前提取形象摘要)}</span>
+                            <span>🎯 <b>当前识别到的【${u}】形象</b>：<span id="st-cfg-dna-summary-txt" style="color:#fde047;">${summarizeDnaTagsToChinese(userSettings.lockedAppearanceTags || extractTargetCurrentAppearance(u, curVars).tags, curVars.档案?.副API中文形象摘要 || curVars.档案?.当前提取形象摘要)}</span></span>
                             <span style="font-size:10px;color:${curVars.档案?.手动锁死外貌Flag ? '#fda4af' : '#a6e3a1'};">${curVars.档案?.手动锁死外貌Flag ? "🔒 已手动固定Tag (点下方【🎯提取当前形象】可恢复自动跟随剧情)" : "🔄 随最新剧情自动提取中"}</span>
                         </div>
                         <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;">
