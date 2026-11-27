@@ -3049,6 +3049,160 @@
                 _isAutoSubApiExtractingDna = false;
             }
         }
+        function getHeadOnlyDnaTags(fullDna) {
+            const parts = safeStr(fullDna).replace(/\d+(?:\.\d+)?::/g, "").replace(/::/g, "").split(",").map(s => s.trim()).filter(Boolean);
+            const headParts = parts.filter(p => /hair|twintails|ponytail|braid|bangs|bun|hime cut|eyes|four eyes|three eyes|third eye|two pairs of eyes|pupil|mole under eye|glasses|ear|horn|halo|slime|translucent|eldritch|chitin|cyberborg|pale white skin|fair skin|pale skin|dark skin|pink skin|blue skin|green skin|pig snout|fangs|sharp teeth|long.*tongue/i.test(p) && !/breasts|pussy|vagina|waist|hips|petite|lolita|dress|skirt|thigh|stocking|instead of legs|on body/i.test(p));
+            return headParts.length ? headParts.join(", ") : "black hair, long hair, pale white skin";
+        }
+
+        function getBodySizeAndBreastProfile(fullDna) {
+            const s = safeStr(fullDna).toLowerCase();
+            if (/petite|loli|flat chest|small breasts/.test(s)) {
+                return {
+                    tier: "loli_petite",
+                    bodyTag: "petite loli body, slender narrow waist, delicate small hips, thin slender thighs",
+                    breastByStage: [
+                        "flat chest, tiny small breasts, small flat pink nipple buds, no cleavage",
+                        "petite small breasts, puffy erect pink nipples, slight chest swelling",
+                        "petite modest breasts, swollen dark-pink areola, erect nipples",
+                        "swollen lactating petite breasts, distended small mammary, leaking milk droplets",
+                        "heavily swollen lactating breasts on petite frame, dilated nipple holes squirting milk",
+                        "corrupted hyper-swollen lactating udder breasts on petite body, gaping nipple holes gushing milk"
+                    ],
+                    braFocusTag: "petite flat chest in cute small bra, delicate innerwear cup close-up, no deep cleavage",
+                    negBreast: "2.2::huge breasts, gigantic breasts, large breasts, deep cleavage, mature female, milf, wide hips, thick thighs::, "
+                };
+            }
+            if (/huge.*breasts|gigantic.*breasts/.test(s)) {
+                return {
+                    tier: "huge_voluptuous",
+                    bodyTag: "voluptuous body, curvy waist, wide plump hips, thick soft thighs",
+                    breastByStage: [
+                        "huge perky breasts, deep cleavage, small pink nipples",
+                        "huge breasts, swollen erect pink nipples, wet sweat sheen",
+                        "huge heavy breasts, wide dark areola, puffy nipples",
+                        "huge lactating breasts, visible blue veins, squirting breast milk",
+                        "gigantic sagging lactating udder breasts, dilated nipple holes dripping milk",
+                        "corrupted gigantic udder breasts, gaping nipple holes gushing thick milk"
+                    ],
+                    braFocusTag: "huge breasts overflowing from tight bra cups, deep plump cleavage",
+                    negBreast: "1.8::flat chest, small breasts, loli::, "
+                };
+            }
+            if (/large.*breasts|voluptuous/.test(s)) {
+                return {
+                    tier: "large_curvy",
+                    bodyTag: "curvy body, slender waist, plump hips, soft thighs",
+                    breastByStage: [
+                        "large perky breasts, soft cleavage, pink nipples",
+                        "large breasts, swollen erect pink nipples, sweat sheen",
+                        "large full breasts, dark wide areola, puffy erect nipples",
+                        "large lactating breasts, squirting breast milk, blue veins",
+                        "huge sagging lactating breasts, dilated nipple holes dripping milk",
+                        "corrupted huge udder breasts, gaping nipple holes gushing thick milk"
+                    ],
+                    braFocusTag: "large breasts in fitted bra cups, soft cleavage focus",
+                    negBreast: "1.8::flat chest, small breasts::, "
+                };
+            }
+            return {
+                tier: "medium_slender",
+                bodyTag: "slender girl body, slender waist, neat hips, smooth thighs",
+                breastByStage: [
+                    "medium perky breasts, small pink nipples",
+                    "medium breasts, swollen erect pink nipples, wet sweat sheen",
+                    "medium full breasts, wide areola, puffy erect nipples",
+                    "swollen lactating breasts, squirting breast milk",
+                    "heavy sagging lactating breasts, dilated nipple holes dripping milk",
+                    "corrupted udder breasts, gaping nipple holes gushing thick milk"
+                ],
+                braFocusTag: "medium breasts in neat bra cups, subtle cleavage",
+                negBreast: ""
+            };
+        }
+
+        function getSkinOnlyDnaTags(fullDna, includeBodyProportion = true) {
+            const s = safeStr(fullDna).toLowerCase();
+            let baseSkin = "pale white skin, soft glossy skin";
+            if (/dark skin|tan/.test(s)) baseSkin = "dark skin, glossy skin";
+            else if (/pink skin/.test(s)) baseSkin = "pink skin, glossy skin";
+            else if (/blue skin/.test(s)) baseSkin = "blue skin, glossy skin";
+            else if (/green skin/.test(s)) baseSkin = "green skin, glossy skin";
+
+            const matExtras = [];
+            if (includeBodyProportion) {
+                const prof = getBodySizeAndBreastProfile(fullDna);
+                matExtras.push(prof.tier === "loli_petite" ? "petite slender frame" : (prof.tier === "huge_voluptuous" || prof.tier === "large_curvy" ? "voluptuous curvy frame" : "slender frame"));
+            }
+            if (/ghost girl|supernatural apparition|yurei/.test(s)) matExtras.push("pale cold supernatural ghost skin, faint dark mist aura");
+            if (/slime|translucent gelatinous/.test(s)) matExtras.push("translucent gelatinous slime body, semi-transparent glowing slime skin");
+            if (/lamia|snake scales|snake tail|dragon/.test(s)) matExtras.push("glistening snake scales framing the skin edges");
+            if (/mermaid|fish scales|fish tail/.test(s)) matExtras.push("iridescent shimmering fish scales on skin edges");
+            if (/arachne|chitin|exoskeleton|insect/.test(s)) matExtras.push("glossy dark chitinous exoskeleton plates framing the soft flesh");
+            if (/cyborg|mechanical joints|ball-jointed doll/.test(s)) matExtras.push("ball-jointed doll seams, exposed cybernetic mechanical joints");
+            if (/eldritch|flesh mound|abomination/.test(s)) matExtras.push("eldritch writhing flesh tendrils, dark slime");
+            if (/alraune/.test(s)) matExtras.push("creeping vine tendrils framing the skin");
+            if (/dripping wet/.test(s)) matExtras.push("dripping wet cold skin, dark cursed water droplets");
+
+            return [baseSkin, ...matExtras].join(", ");
+        }
+
+        function getSpeciesSignatureFromDna(dnaStr) {
+            const s = safeStr(dnaStr).toLowerCase();
+            if (!s) return "human";
+            const sigs = new Set();
+
+            const isMultiEyeGhost = /spider web|multiple glowing eerie eyes/.test(s);
+            OPEN_MORPH_DICTIONARY.forEach(item => {
+                if (item.id === "succubus_demon" && isMultiEyeGhost && !/demon horns|succubus tail/.test(s)) return;
+                if (item.reg.test(s) || s.includes(item.id) || (item.id === "undead_ghost" && /ghost girl|supernatural apparition|yurei/.test(s))) {
+                    sigs.add(item.id);
+                }
+            });
+            const wild = mineWildDynamicTraits(s);
+            wild.wildIds.forEach(id => {
+                if (!id.startsWith("custom_")) sigs.add(id);
+            });
+
+            return sigs.size > 0 ? Array.from(sigs).sort().join("|") : "human";
+        }
+
+        function getPartAnatomySignature(editKey, fullDnaStr, descText = "") {
+            const key = String(editKey || "");
+            const combined = `${safeStr(fullDnaStr)} ${safeStr(descText)}`.toLowerCase();
+            const skin = /dark skin|tan/.test(combined) ? "dark" : (/pink skin/.test(combined) ? "pink" : (/blue skin/.test(combined) ? "blue" : "pale"));
+            const bodyTier = /petite|loli|flat chest|small breasts/.test(combined) ? "loli" : (/huge|gigantic/.test(combined) ? "huge" : "normal");
+
+            if (key === "胸部实况" || key === "穿搭_胸罩" || key === "穿搭_上衣" || key === "穿刺环饰") {
+                const bCount = /four breasts|四个奶|四颗.*乳|四乳|两对.*乳/.test(combined) ? "4breasts"
+                    : (/six breasts|六个奶|多乳/.test(combined) ? "6breasts"
+                    : (/three breasts|三个奶|三乳/.test(combined) ? "3breasts" : "2breasts"));
+                const web = /spider web|纺丝|淫丝/.test(combined) ? "web" : "noweb";
+                return `chest_${skin}_${bodyTier}_${bCount}_${web}`;
+            }
+            if (key === "小穴实况" || key === "阴蒂尿道" || key === "穿搭_内裤" || key === "体内道具" || key === "破瓜纪念") {
+                const vCount = /double pussy|two vaginas|两个.*小穴|两个.*穴|双穴/.test(combined) ? "2pussies"
+                    : (/multiple pussies|three vaginas|全身.*小穴|多穴/.test(combined) ? "multipussies" : "1pussy");
+                return `vag_${skin}_${vCount}`;
+            }
+            if (key === "穿搭_头饰" || key === "内心独白" || key === "骚口实况") {
+                const eCount = /four eyes|two pairs of eyes|四只眼|四眼|四目|两对眼/.test(combined) ? "4eyes"
+                    : (/three eyes|third eye|三只眼|三目/.test(combined) ? "3eyes" : "2eyes");
+                const fangs = /sharp fangs|尖牙|虎牙|长舌/.test(combined) ? "fangs" : "nofangs";
+                return `head_${skin}_${eCount}_${fangs}`;
+            }
+            return `gen_${skin}_${bodyTier}_${getSpeciesSignatureFromDna(combined)}`;
+        }
+
+        function getFullMorphFormSignature(dnaStr) {
+            const s = safeStr(dnaStr).toLowerCase();
+            const sp = getSpeciesSignatureFromDna(s);
+            const hc = (s.match(/\b(?:silver|white|blonde|golden|black|pink|purple|blue|red|crimson|brown|green|grey)\s+hair\b/) || ["black hair"])[0];
+            const sk = /dark skin|tan/.test(s) ? "dark" : (/pink skin/.test(s) ? "pink" : (/blue skin/.test(s) ? "blue" : "pale"));
+            const bt = /1boy|male focus/.test(s) ? "male" : (/petite|loli|flat chest|small breasts/.test(s) ? "loli" : (/huge|gigantic/.test(s) ? "huge" : "normal"));
+            return `${sp}__${hc.replace(/\s+/g, "_")}__${sk}__${bt}`;
+        }
+
 
         function getProtagScopedImgKey(editKey, stageNum) {
             const u = detectProtagonistName(curVars) || "protag";
@@ -6891,9 +7045,7 @@ ${btnSchemaJsonLines}
                     cameraFocusTag = `(extreme close-up, macro photography, pussy focus, crotch focus:1.65), (vulva, labia, mons pubis, close-up between legs:1.6), ${directPosBoost ? directPosBoost + ", " : ""}(${localSkinTags}${stockingEdgeHint ? ", " + stockingEdgeHint : ""}:1.3)`;
                     extraNegBoost += "(double pussy, extra pussy, two vaginas, multiple pussies, head, face, eyes, mouth, hair, twintails, glasses, breasts, chest, nipples, four breasts, multiple breasts, torso, upper body, full body, knees, calves, ankles, feet, shoes, standing, background:1.95), ";
                 }
-            } else if (key === "小穴实况" || key === "阴蒂尿道" || key === "体内道具" || key === "穿搭_内裤") {
-                cleanPos = stripFullBodyTriggers(cleanPos);
-                if (hasDoublePussyInBtn) {
+         
                     // ★ 终极根治“2穴变3穴/4穴”：
                     // 1. 彻底删掉开头写死的 pussy focus（防止 1 + 2 = 3 个穴）！
                     // 2. 删掉 two vaginas（防止 double pussy 2个 + two vaginas 2个 = 4个），只用唯一黄金词 (double pussy:1.45), (exactly 2 vertically stacked vulva slits on smooth crotch:1.35)！
