@@ -2383,9 +2383,9 @@
         // 🔍 核心泛型语法解析器：自动从任意文本中扫描所有【数量 + 器官】异化特征，分门别类存入 8 大解剖分区！
         function parseDynamicOrganMutations(rawText) {
             let s = stripFakeAccessoryAndMetaphorWords(safeStr(rawText));
-            // 剥离日常色情修辞（防止“浅粉花瓣/菊花”误触发植物娘，防止“六孔总账/四穴储精/三穴全开/双腿之间”误触发多器官！）
+            // 剥离日常色情修辞与干扰量词（防止“浅粉花瓣/菊花”误触发植物娘，防止“六孔总账/四穴储精/三穴全开/双腿之间/四肢”误触发多器官！）
             s = s.replace(/(?:浅粉|粉嫩|娇嫩|小巧|两片|内里|私处|阴唇|花唇|菊穴|后庭)[^，。！？；\n]{0,8}(?:花瓣|花蕊|花蜜|花冠|菊花)/g, "阴唇软肉")
-                 .replace(/六孔总账|六孔崩坏|六孔开发|六孔平均|四穴储精|四穴总精|四穴内|三穴不断|三穴全开|前后双穴|双峰挺拔|双峰弹露|双乳乳头|两片.*?阴唇|两片.*?花唇|两片.*?唇瓣|两颗.*?乳蕾|两颗.*?乳头|两瓣.*?臀|两腿之间|双腿之间|四肢着地|四份档案|四个名字/g, "");
+                 .replace(/六孔总账|六孔崩坏|六孔开发|六孔平均|四穴储精|四穴总精|四穴内|三穴不断|三穴全开|前后双穴|双峰挺拔|双峰弹露|双乳乳头|两片.*?阴唇|两片.*?花唇|两片.*?唇瓣|两颗.*?乳蕾|两颗.*?乳头|两瓣.*?臀|两腿之间|双腿之间|四肢|四周|四处|四溅|四溢|四份档案|四个名字/g, "");
 
             const profile = {
                 eyes:    { count: 2, bodyEyes: false, cn: "", enPos: "", enNeg: "" },
@@ -2397,16 +2397,16 @@
                 belly:   { translucent: false, cn: "", enPos: "" }
             };
 
-            const NUM_TOKEN = "(?:两对|三对|四对|双排|两排|三排|一对|一双|全身|浑身|遍布|布满|满身|密密麻麻|无数|百|千|多|好几|[独单一双两二三四五六七八九十1-9]\\d*)";
+            const NUM_TOKEN = "(?:两对|三对|四对|双排|两排|三排|一对|一双|全身|浑身|遍布|布满|满身|密密麻麻|无数|百|千|多|好几|[1-9]\\d*|[独单一双两二三四五六七八九十])";
             const UNIT_TOKEN = "(?:个|颗|只|条|张|对|双|排|道|处|孔|洞)?";
-            constMOD_TOKEN = "[^，。！？；\\n:\\d]{0,10}?";
+            const MOD_TOKEN = "[^，。！？；、\\n:\\d]{0,8}?";
 
             // 1. 👁️ 眼睛数量自动识别（支持三眼、四眼、五眼、六眼、百眼...）
             if (/(?:后背|大腿|躯干|全身|皮下|肉缝|皮肤)[^。！？；\n]{0,14}(?:眼球|眼珠|复眼|百目|眼睛)|multiple glowing eerie eyes/i.test(s)) {
                 profile.eyes.bodyEyes = true;
             }
             const eyeMatches = [
-                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${constMOD_TOKEN}(?:眼睛|眼眸|竖眼|鬼眼|复眼|血瞳|眼珠)|(独眼|三只眼|三目|四只眼|四眼|四目|五只眼|五眼|六只眼|六眼|八只眼|八眼)`, "gi")),
+                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${MOD_TOKEN}(?:眼睛|眼眸|竖眼|鬼眼|复眼|血瞳|眼珠)|(独眼|三只眼|三目|四只眼|四眼|四目|五只眼|五眼|六只眼|六眼|八只眼|八眼)`, "gi")),
                 ...s.matchAll(/\b(one|three|four|five|six|seven|eight|multiple|\d+)\s+eyes\b/gi)
             ];
             eyeMatches.forEach(m => {
@@ -2434,7 +2434,7 @@
 
             // 2. 🍒 乳房/奶子数量自动识别（支持三奶、四奶、五奶、六奶、八奶、母猪多排奶...）
             const breastMatches = [
-                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${constMOD_TOKEN}(?:奶子|乳房|巨乳|胸乳|奶袋|椒乳|酥胸|奶|乳)(?![头尖晕孔腺汁水])|(三乳|四乳|五乳|六乳|八乳|多乳)`, "gi")),
+                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${MOD_TOKEN}(?:奶子|乳房|巨乳|胸乳|奶袋|椒乳|酥胸|奶|乳)(?![头尖晕孔腺汁水])|(三乳|四乳|五乳|六乳|八乳|多乳)`, "gi")),
                 ...s.matchAll(/\b(three|four|five|six|eight|multiple|\d+)\s+breasts\b/gi)
             ];
             breastMatches.forEach(m => {
@@ -2445,7 +2445,7 @@
                     if (enIdx > 0) n = enIdx;
                     else if (m[1].toLowerCase() === "multiple") n = "multi";
                 }
-                if (n && n >= 3) profile.breasts.count = n;
+                if (n && (n >= 3 || n === "multi")) profile.breasts.count = n;
             });
             if (/纺丝腺|吐.*淫丝|粉红.*淫丝|spider web.*nipples/i.test(s)) profile.breasts.webNipples = true;
             if (profile.breasts.count !== 2) {
@@ -2455,7 +2455,6 @@
                 profile.breasts.enPos = c === 4 ? "1.1::four breasts::"
                     : (c === 3 ? "1.35::three breasts::"
                     : `1.4::${enWord} breasts, rows of breasts::`);
-                // 自动封杀比当前数量更大的乳房数（如 4乳 严禁画 5乳/6乳/8乳/udder）！
                 profile.breasts.enNeg = c === 4
                     ? "2.2::six breasts, 6 breasts, five breasts, 5 breasts, three pairs of breasts, 3 rows of breasts, rows of breasts, animal udder, breasts on abdomen, breasts on stomach, 6 nipples, 3 breasts::"
                     : (c === 3 ? "2.2::four breasts, 4 breasts, six breasts, 6 breasts, two pairs of breasts::" : "");
@@ -2463,7 +2462,7 @@
 
             // 3. 🌺 小穴数量自动识别（支持双穴、三小穴、四小穴、五小穴、六小穴、全身小穴...）
             const pussyMatches = [
-                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${constMOD_TOKEN}(?:小穴|肉穴|淫穴|蜜穴|花穴|阴道|性交洞|产道)|(双穴|三穴|四穴|五穴|六穴|多穴|全身小穴)(?!储精|总精|内|齐开|同入)`, "gi")),
+                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${MOD_TOKEN}(?:小穴|肉穴|淫穴|蜜穴|花穴|阴道|性交洞|产道)|(双穴|三穴|四穴|五穴|六穴|多穴|全身小穴)(?!储精|总精|内|齐开|同入)`, "gi")),
                 ...s.matchAll(/\b(double|two|three|four|five|six|multiple|\d+)\s+(?:pussy|pussies|vaginas)\b/gi)
             ];
             pussyMatches.forEach(m => {
@@ -2495,7 +2494,7 @@
 
             // 4. 🕳️ 屁眼/后庭数量自动识别（支持双屁眼、三屁眼、多菊穴...）
             const analMatches = [
-                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${constMOD_TOKEN}(?:屁眼|后庭|菊穴|肛门)|(双菊|双屁眼|三屁眼|三菊穴|多屁眼)`, "gi")),
+                ...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${MOD_TOKEN}(?:屁眼|后庭|菊穴|肛门)|(双菊|双屁眼|三屁眼|三菊穴|多屁眼)`, "gi")),
                 ...s.matchAll(/\b(double|two|three|four|multiple|\d+)\s+(?:anus|anuses|assholes)\b/gi)
             ];
             analMatches.forEach(m => {
@@ -2521,7 +2520,7 @@
             if (/(?:肚子|小腹|肚皮|胸口)[^。！？；\n]{0,8}(?:裂开|长出|张开)[^。！？；\n]{0,8}(?:嘴|大嘴|口器)|腹口|stomach mouth/i.test(s)) {
                 profile.mouths.bellyMouth = true;
             }
-            const mouthMatches = [...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${constMOD_TOKEN}(?:嘴巴|骚口|淫口|口器)|(双口|三张嘴|多张嘴)`, "gi"))];
+            const mouthMatches = [...s.matchAll(new RegExp(`(${NUM_TOKEN})${UNIT_TOKEN}${MOD_TOKEN}(?:嘴巴|骚口|淫口|口器)|(双口|三张嘴|多张嘴)`, "gi"))];
             mouthMatches.forEach(m => {
                 const n = parseCnOrDigitToCount(m[1] || m[2]);
                 if (n && (n >= 2 || n === "multi")) profile.mouths.count = n;
@@ -2531,7 +2530,7 @@
             if (/分叉舌|蛇信子|两条.*舌|多条.*舌|forked.*tongue/i.test(s)) profile.mouths.forkedTongue = true;
 
             // 6. 💪 手臂数量与半透明肚皮自动识别（四臂、六臂、八臂、人彘）
-            const armMatches = [...s.matchAll(new RegExp(`(${NUM_TOKEN})(?:条|只)${constMOD_TOKEN}(?:手臂|胳膊)|(四臂|六臂|八臂|多臂)`, "gi"))];
+            const armMatches = [...s.matchAll(new RegExp(`(${NUM_TOKEN})(?:条|只)${MOD_TOKEN}(?:手臂|胳膊)|(四臂|六臂|八臂|多臂)`, "gi"))];
             armMatches.forEach(m => {
                 const n = parseCnOrDigitToCount(m[1] || m[2]);
                 if (n && n >= 3) profile.arms.count = n;
